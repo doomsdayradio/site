@@ -1,0 +1,9 @@
+/* TEAM */
+Project: Doomsday Radio
+Site: https://doomsday.radio/
+
+/* THANKS */
+All creators, writers, and wasteland listeners.
+
+/* TECHNOLOGY */
+HTML, CSS, JavaScript, GitHub Pages

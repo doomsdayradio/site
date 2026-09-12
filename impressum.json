@@ -1,0 +1,30 @@
+{
+  "headerTitle": "\u2726  Impressum  \u2726",
+  "titleLines": [
+    "DOOMSDAY RADIO"
+  ],
+  "statusInfoTitle": "Diensteanbieter",
+  "statusInfo": [
+    { "label": "Name", "value": "Fabian Fromm" },
+    { "label": "Straße", "value": "Im Winkel 2" },
+    { "label": "PLZ, Stadt", "value": "30926, Seelze" },
+    { "label": "Land", "value": "Deutschland" },
+    { "label": "E-Mail", "value": "webmaster@doomsday.radio" }
+  ],
+  "diagnosticsTitle": "Verantwortlicher für Inhalte",
+  "diagnostics": [
+    { "label": "Name", "value": "Manuel Achterberg" },
+    { "label": "Straße", "value": "Waldweg 51" },
+    { "label": "PLZ, Stadt", "value": "29221, Celle" },
+    { "label": "Land", "value": "Deutschland" },
+    { "label": "E-Mail", "value": "inhalt@doomsday.radio" }
+  ],
+  "requestTitle": "Vielen Dank an",
+  "request": [
+    { "label": "Stranded Stranglers", "value": "Exzellente Musik" },
+    { "label": "Register.radio", "value": "Discount and Support" },
+    { "label": "Maker Fair", "value": "Inspiration" }
+  ],
+  "cta": "Haltet durch und bleibt auf Empfang!",
+  "barcodeText": "DOOMSDAY.RADIO"
+}
