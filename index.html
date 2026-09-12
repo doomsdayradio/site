@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doomsday Radio</title>
+  <meta name="description" content="Doomsday Radio ist eine postapokalyptische KI-Radio-Welt mit Teaser, Archiv, Lore und interaktiver Karte.">
+  <link rel="canonical" href="https://doomsday.radio/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Doomsday Radio">
+  <meta property="og:locale" content="de_DE">
+  <meta property="og:title" content="Doomsday Radio">
+  <meta property="og:description" content="Postapokalyptische KI-Radio-Welt mit schwarzem Humor, Brutalitaet und Absurditaet.">
+  <meta property="og:url" content="https://doomsday.radio/">
+  <meta property="og:image" content="https://doomsday.radio/ddd_radio_logo.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Doomsday Radio">
+  <meta name="twitter:description" content="Postapokalyptische KI-Radio-Welt mit Teaser, Archiv, Lore und Karte.">
+  <meta name="twitter:image" content="https://doomsday.radio/ddd_radio_logo.png">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./index.css">
+</head>
+<body>
+
+  <div id="canvas-container" aria-hidden="true"></div>
+
+  <canvas id="dust"></canvas>
+  <div class="noise"></div>
+  <div class="scanlines"></div>
+  <div class="vignette"></div>
+
+  <div class="rust-stain a"></div>
+  <div class="rust-stain b"></div>
+  <div class="rust-stain c"></div>
+
+  <div class="glitch-line"></div>
+  <div class="glitch-line"></div>
+  <div class="glitch-line"></div>
+
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
+
+  <div class="center">
+    <div class="dial">
+      <div class="dial-ring"></div>
+      <div class="dial-ring"></div>
+      <div class="dial-ring"></div>
+      <div class="waves">
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+      </div>
+      <div class="freq-ticks" id="freqTicks"></div>
+    </div>
+
+    <div class="hero-mark">
+      <h1 class="sr-only">Doomsday Radio</h1>
+      <img class="hero-logo" src="./ddd_radio_logo.png" alt="Doomsday Radio">
+      <p class="freq">Eine Welt, die sich über Radio vermittelt, ordnet und erinnert.</p>
+      <div class="signal-dot"></div>
+    </div>
+  </div>
+
+  <div class="action-bar">
+    <a class="button action-link" href="https://lore.doomsday.radio/">Lore</a>
+    <a class="button action-link" href="https://signaldecoder.doomsday.radio/">Spiele</a>
+    <a class="button action-link" href="https://wetter.doomsday.radio/">Dienste</a>
+    <button id="toggle-paper" class="button" type="button" aria-pressed="false" data-start-visible="false">Impressum</button>
+  </div>
+
+  <div class="status">
+    <span>SIG:▮▮▮▯▯ &nbsp; SNR:-42dB</span>
+    <span id="clock">00:00:00</span>
+    <span>FREQ:107.END &nbsp; PWR:LOW</span>
+  </div>
+
+  <script src="./story/map/libs/three.min.js"></script>
+  <script src="./script.js"></script>
+  <script src="./index-ui.js"></script>
+    <script defer src="/analytics-loader.js"></script>
+</body>
+</html>
