@@ -16,7 +16,6 @@ env:
   BUNNY_STORAGE_ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
   BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
   BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
-  BUNNY_PATH: site
 
 jobs:
   deploy:
@@ -44,14 +43,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          aws s3 sync . "s3://${BUNNY_STORAGE_ZONE}/${BUNNY_PATH}/" \
+          aws s3 sync . "s3://${BUNNY_STORAGE_ZONE}/" \
             --endpoint-url "${BUNNY_STORAGE_ENDPOINT}" \
-            --delete \
             --exclude '.git/*' \
             --exclude '.github/*'
 
       - name: Publish deployment summary
         run: |
-          echo "Bunny path: ${BUNNY_PATH}/"
+          echo "Bunny path: / (bucket root)"
           echo "Bunny endpoint: ${BUNNY_STORAGE_ENDPOINT}"
           echo "Commit: ${GITHUB_SHA}"

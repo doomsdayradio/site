@@ -15,8 +15,8 @@ This repo is intentionally separated from the monorepo so it can be built, teste
 
 ## Bunny deployment
 
-The `main` branch deploys the static site to the shared Bunny Storage Zone
-under the `site/` prefix. The workflow does not publish the `.git` directory
+The `main` branch deploys the static landing page directly to the root of the shared
+Bunny Storage Zone (`/`). The workflow does not publish the `.git` directory
 or GitHub workflow files.
 
 Configure these GitHub repository variables and secrets before enabling the
@@ -29,11 +29,12 @@ workflow:
 | `BUNNY_STORAGE_PASSWORD` | secret | Storage Zone S3 password |
 
 The Bunny Pull Zone must use the custom hostname `doomsday.radio`. DNS should
-point the domain to the Pull Zone hostname. Product repositories use the same
-Storage Zone with their own prefixes from the migration specification.
+point the domain to the Pull Zone hostname. Other product repositories deploy
+into their respective subfolders (e.g. `lore/`, `wetter/`, `news/`).
 
-The workflow uploads the current repository into the `site/` prefix through
-the S3-compatible Bunny endpoint. CDN cache purging is deliberately not part
-of this first setup; it can be added later with a separate Pull Zone API
-secret. Bunny credentials are never written to the repository or emitted in
-the workflow log.
+The workflow uploads the repository root directly to `s3://${BUNNY_STORAGE_ZONE}/`
+through the S3-compatible Bunny endpoint (without `--delete` on the root, so
+subfolder deployments from other repositories are preserved). CDN cache purging
+is deliberately not part of this setup; it can be added later with a separate Pull
+Zone API secret. Bunny credentials are never written to the repository or emitted
+in the workflow log.
