@@ -1,0 +1,72 @@
+name: Deploy site to Bunny CDN
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-site-bunny
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  BUNNY_STORAGE_HOST: storage.bunnycdn.com
+  BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
+  BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
+  BUNNY_PULL_ZONE_ID: ${{ vars.BUNNY_PULL_ZONE_ID }}
+  BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+  BUNNY_PATH: site
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required Bunny configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in BUNNY_STORAGE_ZONE BUNNY_STORAGE_PASSWORD BUNNY_PULL_ZONE_ID BUNNY_API_KEY; do
+            if [ -z "${!name:-}" ]; then
+              echo "Missing GitHub variable/secret: ${name}" >&2
+              exit 1
+            fi
+          done
+
+      - name: Upload static files
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            relative="${file#./}"
+            target="${BUNNY_PATH}/${relative}"
+            url="https://${BUNNY_STORAGE_HOST}/${BUNNY_STORAGE_ZONE}/${target}"
+            echo "Uploading ${target}"
+            curl --fail-with-body --silent --show-error --retry 3 \
+              --request PUT \
+              --header "AccessKey: ${BUNNY_STORAGE_PASSWORD}" \
+              --header "Content-Type: application/octet-stream" \
+              --upload-file "${file}" \
+              "${url}"
+          done < <(find . -type f -not -path './.git/*' -not -path './.github/*' -print0)
+
+      - name: Purge pull zone cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error --retry 3 \
+            --request POST \
+            --header "AccessKey: ${BUNNY_API_KEY}" \
+            --header "Content-Type: application/json" \
+            --data '{"async":true}' \
+            "https://api.bunny.net/pullzone/${BUNNY_PULL_ZONE_ID}/purgeCache"
+
+      - name: Publish deployment summary
+        run: |
+          echo "Bunny path: ${BUNNY_PATH}/"
+          echo "Commit: ${GITHUB_SHA}"
