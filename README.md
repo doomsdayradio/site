@@ -24,15 +24,16 @@ workflow:
 
 | Name | Type | Value |
 | --- | --- | --- |
+| `BUNNY_STORAGE_ENDPOINT` | variable | `https://de-s3.storage.bunnycdn.com` |
 | `BUNNY_STORAGE_ZONE` | variable | Shared Bunny Storage Zone name |
-| `BUNNY_PULL_ZONE_ID` | variable | Pull Zone ID serving `doomsday.radio` |
-| `BUNNY_STORAGE_PASSWORD` | secret | Storage Zone password/API key |
-| `BUNNY_API_KEY` | secret | Bunny API key allowed to purge the Pull Zone |
+| `BUNNY_STORAGE_PASSWORD` | secret | Storage Zone S3 password |
 
 The Bunny Pull Zone must use the custom hostname `doomsday.radio`. DNS should
 point the domain to the Pull Zone hostname. Product repositories use the same
 Storage Zone with their own prefixes from the migration specification.
 
-The workflow uploads the current `site/` prefix and purges the Pull Zone cache
-after a successful upload. Bunny credentials are never written to the
-repository or emitted in the workflow log.
+The workflow uploads the current repository into the `site/` prefix through
+the S3-compatible Bunny endpoint. CDN cache purging is deliberately not part
+of this first setup; it can be added later with a separate Pull Zone API
+secret. Bunny credentials are never written to the repository or emitted in
+the workflow log.
