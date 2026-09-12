@@ -1,14 +1,14 @@
 # site
 
-Repository for the Doomsday Radio migration.
+This repository is part of the Doomsday Radio multi-repo migration.
 
 ## Purpose
-This repo holds the migrated source for the site domain in the structured multi-repo architecture.
+Public landing page and project index for Doomsday Radio.
 
-## Source mapping
-- source: legacy monorepo
-- status: initial migration scaffold
+## Source relationship
+This repo is intentionally separated from the monorepo so it can be built, tested, and deployed independently.
 
 ## Notes
-- keep repo-local CI and deployment config here
-- versioned builds only
+- Keep product logic, tests, and deployment config in this repo.
+- Prefer stable public URLs or versioned contracts over relative cross-repo links.
+- Only radio-specific assets belong in Bunny Storage; non-radio assets may remain in the repo.
