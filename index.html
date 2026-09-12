@@ -66,6 +66,24 @@
     <div class="hero-mark">
       <h1 class="sr-only">Doomsday Radio</h1>
       <img class="hero-logo" src="./ddd_radio_logo.png" alt="Doomsday Radio">
+      <section class="radio-player" aria-label="Doomsday Radio Livestream">
+        <audio id="radio-stream" preload="none" data-src="https://stream.doomsday.radio/live"></audio>
+        <div id="equalizer" class="equalizer" aria-hidden="true"></div>
+        <div class="player-controls">
+          <button id="stream-toggle" class="stream-toggle" type="button" aria-label="Livestream abspielen" aria-pressed="false">
+            <span class="stream-icon" aria-hidden="true"></span>
+          </button>
+          <div class="stream-copy" aria-live="polite">
+            <strong>LIVE TRANSMISSION</strong>
+            <span id="stream-status">SIGNAL BEREIT</span>
+          </div>
+          <label class="volume-control">
+            <span class="sr-only">Lautstärke</span>
+            <span aria-hidden="true">VOL</span>
+            <input id="stream-volume" type="range" min="0" max="1" step="0.05" value="0.8">
+          </label>
+        </div>
+      </section>
       <p class="freq">Eine Welt, die sich über Radio vermittelt, ordnet und erinnert.</p>
       <div class="signal-dot"></div>
     </div>
@@ -87,6 +105,6 @@
   <script src="./story/map/libs/three.min.js"></script>
   <script src="./script.js"></script>
   <script src="./index-ui.js"></script>
-    <script defer src="/analytics-loader.js"></script>
+  <script defer src="/analytics-loader.js"></script>
 </body>
 </html>

@@ -11,6 +11,109 @@ const lowPerformanceMode = prefersReducedMotion
 document.documentElement.classList.toggle('fx-lite', lowPerformanceMode);
 document.documentElement.classList.toggle('reduced-motion', prefersReducedMotion);
 
+/* livestream player and audio-reactive equalizer */
+(function(){
+  const player=document.querySelector('.radio-player');
+  const audio=document.getElementById('radio-stream');
+  const toggle=document.getElementById('stream-toggle');
+  const status=document.getElementById('stream-status');
+  const volume=document.getElementById('stream-volume');
+  const equalizer=document.getElementById('equalizer');
+  const bars=[];
+  let audioContext=null;
+  let analyser=null;
+  let frequencyData=null;
+  let visualizerFrame=0;
+  let hasStarted=false;
+
+  for(let index=0;index<32;index++){
+    const bar=document.createElement('span');
+    bar.className='equalizer-bar is-fallback';
+    bar.style.setProperty('--idle-height',(0.08+Math.sin((index+2)*0.55)*0.08+index%3*0.025).toFixed(2));
+    bar.style.setProperty('--bar-height',(0.25+Math.random()*0.75).toFixed(2));
+    bar.style.setProperty('--bar-speed',(0.32+Math.random()*0.55).toFixed(2)+'s');
+    bar.style.setProperty('--bar-delay',(-Math.random()*0.8).toFixed(2)+'s');
+    equalizer.appendChild(bar);
+    bars.push(bar);
+  }
+
+  if(location.origin==='https://doomsday.radio') audio.crossOrigin='anonymous';
+  audio.src=audio.dataset.src;
+  audio.volume=Number(volume.value);
+
+  function setupAnalyser(){
+    if(analyser || location.origin!=='https://doomsday.radio') return;
+    const AudioContext=window.AudioContext||window.webkitAudioContext;
+    if(!AudioContext) return;
+    audioContext=new AudioContext();
+    analyser=audioContext.createAnalyser();
+    analyser.fftSize=128;
+    analyser.smoothingTimeConstant=0.78;
+    frequencyData=new Uint8Array(analyser.frequencyBinCount);
+    audioContext.createMediaElementSource(audio).connect(analyser).connect(audioContext.destination);
+    bars.forEach(function(bar){bar.classList.remove('is-fallback')});
+  }
+
+  function drawEqualizer(){
+    if(!analyser || audio.paused){visualizerFrame=0;return}
+    analyser.getByteFrequencyData(frequencyData);
+    bars.forEach(function(bar,index){
+      const bin=Math.min(frequencyData.length-1,Math.floor(index*frequencyData.length/bars.length));
+      const level=Math.max(0.08,frequencyData[bin]/255);
+      bar.style.transform='scaleY('+level.toFixed(2)+')';
+      bar.style.opacity=String(0.5+level*0.5);
+    });
+    visualizerFrame=requestAnimationFrame(drawEqualizer);
+  }
+
+  function setActive(isActive){
+    player.classList.toggle('is-playing',isActive);
+    toggle.setAttribute('aria-label',isActive?'Livestream pausieren':'Livestream abspielen');
+    toggle.setAttribute('aria-pressed',String(isActive));
+  }
+
+  async function playStream(){
+    status.textContent='VERBINDE...';
+    setActive(true);
+    toggle.disabled=true;
+    try{
+      setupAnalyser();
+      if(audioContext && audioContext.state==='suspended') await audioContext.resume();
+      await audio.play();
+    }catch(error){
+      status.textContent='SIGNAL NICHT ERREICHBAR';
+      setActive(false);
+    }finally{
+      toggle.disabled=false;
+    }
+  }
+
+  toggle.addEventListener('click',function(){
+    if(audio.paused) playStream();
+    else audio.pause();
+  });
+
+  volume.addEventListener('input',function(){audio.volume=Number(volume.value)});
+
+  audio.addEventListener('playing',function(){
+    hasStarted=true;
+    setActive(true);
+    status.textContent='ON AIR';
+    if(analyser && !visualizerFrame) visualizerFrame=requestAnimationFrame(drawEqualizer);
+  });
+
+  audio.addEventListener('pause',function(){
+    setActive(false);
+    status.textContent=hasStarted?'SIGNAL PAUSIERT':'SIGNAL BEREIT';
+  });
+
+  audio.addEventListener('waiting',function(){status.textContent='PUFFERE SIGNAL...'});
+  audio.addEventListener('error',function(){
+    setActive(false);
+    status.textContent='SIGNAL NICHT ERREICHBAR';
+  });
+})();
+
 /* frequency dial ticks */
 (function(){
   const el=document.getElementById('freqTicks');
