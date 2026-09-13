@@ -65,6 +65,7 @@ if (host && !prefersReducedMotion) {
     let previousSprayX = null;
     let previousSprayY = null;
     let lastPointerSpray = 0;
+    let lastAudioSpray = 0;
     let pointerActive = false;
 
     window.addEventListener('pointermove', function(event) {
@@ -75,6 +76,26 @@ if (host && !prefersReducedMotion) {
     }, { passive: true });
 
     function sprayAtPointer(now) {
+      const signal = window.doomsdayAudioSignal;
+      if (signal && signal.playing && now - lastAudioSpray > (lowPerformanceMode ? 420 : 240)) {
+        lastAudioSpray = now;
+        const rect = logo ? logo.getBoundingClientRect() : null;
+        const centerX = rect ? rect.left + rect.width * 0.5 : window.innerWidth * 0.5;
+        const centerY = rect ? rect.top + rect.height * 0.55 : window.innerHeight * 0.42;
+        const level = Math.max(0.08, Math.min(1, signal.level || 0));
+        const phase = now * 0.0014;
+        fluid.setConfig({
+          colorPalette: [ambientPalette[Math.floor((phase % ambientPalette.length + ambientPalette.length) % ambientPalette.length)]],
+          brightness: lowPerformanceMode ? 0.32 : 0.42,
+          splatRadius: lowPerformanceMode ? 0.13 : 0.17
+        });
+        fluid.splatAtLocation(
+          (centerX + Math.sin(phase) * (8 + level * 14)) * (window.devicePixelRatio || 1),
+          centerY + Math.cos(phase * 0.7) * (5 + level * 10),
+          Math.cos(phase) * (8 + level * 18),
+          -10 - level * 26
+        );
+      }
       if (pointerActive && pointerX !== null && pointerY !== null) {
         if (sprayX === null || sprayY === null) {
           sprayX = pointerX;

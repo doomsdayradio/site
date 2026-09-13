@@ -24,6 +24,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Checkout Showcase source
+        uses: actions/checkout@v4
+        with:
+          repository: doomsdayradio/svc-design
+          ref: main
+          path: _showcase
+
+      - name: Verify public Showcase stylesheet export
+        run: python3 _showcase/tools/build_public_design_system.py --output design-system.css --check
+
+      - name: Validate public design contract
+        run: python3 tools/validate_public_design.py
+
       - name: Validate required Bunny configuration
         shell: bash
         run: |

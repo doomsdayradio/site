@@ -11,6 +11,7 @@ const lowPerformanceMode = prefersReducedMotion
 document.documentElement.classList.toggle('fx-lite', lowPerformanceMode);
 document.documentElement.classList.toggle('reduced-motion', prefersReducedMotion);
 window.doomsdayAudioSignal={bass:0,mid:0,treble:0,level:0,playing:false};
+document.documentElement.style.setProperty('--audio-level','0');
 
 /* livestream player and audio-reactive equalizer */
 (function(){
@@ -25,15 +26,14 @@ window.doomsdayAudioSignal={bass:0,mid:0,treble:0,level:0,playing:false};
   let analyser=null;
   let frequencyData=null;
   let visualizerFrame=0;
+  let fallbackFrame=0;
+  let isPlaying=false;
   let hasStarted=false;
 
   for(let index=0;index<32;index++){
     const bar=document.createElement('span');
     bar.className='equalizer-bar is-fallback';
     bar.style.setProperty('--idle-height',(0.08+Math.sin((index+2)*0.55)*0.08+index%3*0.025).toFixed(2));
-    bar.style.setProperty('--bar-height',(0.25+Math.random()*0.75).toFixed(2));
-    bar.style.setProperty('--bar-speed',(0.32+Math.random()*0.55).toFixed(2)+'s');
-    bar.style.setProperty('--bar-delay',(-Math.random()*0.8).toFixed(2)+'s');
     equalizer.appendChild(bar);
     bars.push(bar);
   }
@@ -55,6 +55,10 @@ window.doomsdayAudioSignal={bass:0,mid:0,treble:0,level:0,playing:false};
     bars.forEach(function(bar){bar.classList.remove('is-fallback')});
   }
 
+  function startFallbackSignal(){
+    if(!fallbackFrame) fallbackFrame=requestAnimationFrame(drawFallbackSignal);
+  }
+
   function drawEqualizer(){
     if(!analyser || audio.paused){visualizerFrame=0;return}
     analyser.getByteFrequencyData(frequencyData);
@@ -71,8 +75,9 @@ window.doomsdayAudioSignal={bass:0,mid:0,treble:0,level:0,playing:false};
     signal.bass+=(bass-signal.bass)*0.16;
     signal.mid+=(mid-signal.mid)*0.16;
     signal.treble+=(treble-signal.treble)*0.16;
-    signal.level+=(Math.max(bass,mid,treble)-signal.level)*0.12;
+    signal.level+=(Math.max(bass,mid,treble)-signal.level)*0.32;
     signal.playing=true;
+    document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     bars.forEach(function(bar,index){
       const bin=Math.min(frequencyData.length-1,Math.floor(index*frequencyData.length/bars.length));
       const level=Math.max(0.08,frequencyData[bin]/255);
@@ -80,6 +85,26 @@ window.doomsdayAudioSignal={bass:0,mid:0,treble:0,level:0,playing:false};
       bar.style.opacity=String(0.5+level*0.5);
     });
     visualizerFrame=requestAnimationFrame(drawEqualizer);
+  }
+
+  function drawFallbackSignal(now){
+    if(!isPlaying){
+      fallbackFrame=0;
+      return;
+    }
+    const signal=window.doomsdayAudioSignal;
+    const pulse=0.24+Math.max(0,Math.sin(now*0.008))*0.28+Math.max(0,Math.sin(now*0.013+1.8))*0.16;
+    signal.level+=(pulse-signal.level)*0.32;
+    signal.playing=true;
+    document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
+    bars.forEach(function(bar,index){
+      const profile=0.24+0.5*Math.abs(Math.sin(index*0.46+0.7));
+      const travellingWave=0.18*Math.max(0,Math.sin(now*0.006-index*0.52));
+      const level=Math.max(0.1,Math.min(1,signal.level*(profile+travellingWave)));
+      bar.style.transform='scaleY('+level.toFixed(2)+')';
+      bar.style.opacity=String(0.5+level*0.5);
+    });
+    fallbackFrame=requestAnimationFrame(drawFallbackSignal);
   }
 
   function setActive(isActive){
@@ -93,7 +118,7 @@ window.doomsdayAudioSignal={bass:0,mid:0,treble:0,level:0,playing:false};
     setActive(true);
     toggle.disabled=true;
     try{
-      setupAnalyser();
+      try{setupAnalyser()}catch(error){analyser=null;frequencyData=null}
       if(audioContext && audioContext.state==='suspended') await audioContext.resume();
       await audio.play();
     }catch(error){
@@ -109,17 +134,25 @@ window.doomsdayAudioSignal={bass:0,mid:0,treble:0,level:0,playing:false};
     else audio.pause();
   });
 
-  volume.addEventListener('input',function(){audio.volume=Number(volume.value)});
+  volume.addEventListener('input',function(){
+    audio.volume=Number(volume.value);
+  });
 
   audio.addEventListener('playing',function(){
     hasStarted=true;
+    isPlaying=true;
     setActive(true);
     status.textContent='ON AIR';
     if(analyser && !visualizerFrame) visualizerFrame=requestAnimationFrame(drawEqualizer);
+    if(!analyser) startFallbackSignal();
   });
 
   audio.addEventListener('pause',function(){
+    isPlaying=false;
+    if(fallbackFrame) cancelAnimationFrame(fallbackFrame);
+    fallbackFrame=0;
     window.doomsdayAudioSignal.playing=false;
+    document.documentElement.style.setProperty('--audio-level','0');
     setActive(false);
     status.textContent=hasStarted?'SIGNAL PAUSIERT':'SIGNAL BEREIT';
   });
