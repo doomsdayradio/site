@@ -22,14 +22,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Checkout Showcase source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: doomsdayradio/svc-design
           ref: main
           path: _showcase
+          token: ${{ secrets.CROSS_REPO_READ_TOKEN }}
 
       - name: Verify public Showcase stylesheet export
         run: python3 _showcase/tools/build_public_design_system.py --output design-system.css --check
