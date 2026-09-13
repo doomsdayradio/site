@@ -259,7 +259,7 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   color:rgba(131,255,171,0.9);
   text-decoration:none;
   border:1px solid rgba(131,255,171,0.3);
-  border-radius:999px;
+  border-radius:4px;
   padding:0.46rem 0.9rem;
   background:rgba(93,76,62,0.78);
   transition:all .2s ease;
