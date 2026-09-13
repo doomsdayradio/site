@@ -5,7 +5,7 @@ const logo = document.querySelector('.hero-logo');
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const lowPerformanceMode = document.documentElement.classList.contains('fx-lite');
 const ambientPalette = ['#b9855f', '#c99a72', '#d6ae86', '#e0c09b'];
-const mousePalette = ['#879f36', '#a9c83f', '#d1ff45'];
+const mousePalette = ['#b84f18', '#d97824', '#e9a13a', '#f0bd64', '#cf6930'];
 
 if (host && !prefersReducedMotion) {
   try {
@@ -74,10 +74,6 @@ if (host && !prefersReducedMotion) {
       pointerActive = true;
     }, { passive: true });
 
-    document.documentElement.addEventListener('pointerleave', function() {
-      pointerActive = false;
-    });
-
     function sprayAtPointer(now) {
       if (pointerActive && pointerX !== null && pointerY !== null) {
         if (sprayX === null || sprayY === null) {
@@ -87,24 +83,27 @@ if (host && !prefersReducedMotion) {
           previousSprayY = sprayY;
         }
 
-        sprayX += (pointerX - sprayX) * 0.18;
-        sprayY += (pointerY - sprayY) * 0.18;
+        sprayX += (pointerX - sprayX) * 0.075;
+        sprayY += (pointerY - sprayY) * 0.075;
 
-        if (now - lastPointerSpray > (lowPerformanceMode ? 120 : 85)) {
+        if (now - lastPointerSpray > (lowPerformanceMode ? 320 : 220)) {
           lastPointerSpray = now;
           const movementX = sprayX - previousSprayX;
           const movementY = sprayY - previousSprayY;
-          const driftX = movementX * 1.15 + (Math.random() - 0.5) * 5;
-          const driftY = -movementY * 1.15 - 2 - Math.random() * 4;
+          const phase = now * 0.00022;
+          const driftX = movementX * 0.55 + Math.sin(phase) * 3.5;
+          const driftY = -movementY * 0.55 - 2.5 + Math.cos(phase * 0.73) * 2;
+          const orbitX = Math.sin(phase * 0.61) * 7;
+          const orbitY = Math.cos(phase * 0.47) * 7;
 
           fluid.setConfig({
-            colorPalette: [mouseColor(movementX, movementY)],
-            brightness: 0.44,
-            splatRadius: 0.12
+            colorPalette: [mouseColor(now)],
+            brightness: 0.38,
+            splatRadius: 0.16
           });
           fluid.splatAtLocation(
-            (sprayX + (Math.random() - 0.5) * 11) * (window.devicePixelRatio || 1),
-            sprayY + (Math.random() - 0.5) * 11,
+            (sprayX + orbitX) * (window.devicePixelRatio || 1),
+            sprayY + orbitY,
             driftX,
             driftY
           );
@@ -118,90 +117,6 @@ if (host && !prefersReducedMotion) {
     }
 
     requestAnimationFrame(sprayAtPointer);
-
-    let lastAudioSplat = 0;
-    let lastBassPulse = 0;
-    let bassEnvelope = 0;
-    let trebleSide = 1;
-    let visualOpacity = 0.26;
-    function reactToAudio(now) {
-      const signal = window.doomsdayAudioSignal;
-      const targetOpacity = signal && signal.playing
-        ? 0.28 + Math.min(0.18, signal.level * 0.42)
-        : 0.26;
-      visualOpacity += (targetOpacity - visualOpacity) * 0.045;
-      host.style.opacity = visualOpacity.toFixed(3);
-
-      if (signal && signal.playing) bassEnvelope += (signal.bass - bassEnvelope) * 0.055;
-      else bassEnvelope *= 0.96;
-
-      const audioInterval = signal
-        ? (lowPerformanceMode ? 520 : 340) - Math.min(170, signal.level * 280)
-        : 340;
-      if (signal && signal.playing && now - lastAudioSplat > audioInterval) {
-        lastAudioSplat = now;
-        const pulse = Math.min(1, signal.level * 2.1);
-        const phase = now * 0.00018;
-        const emitterRatio = 0.38 + Math.sin(phase) * 0.13;
-        const emitters = logoEmitters(emitterRatio);
-
-        function emitFromLogoSide(side, energy, verticalOffset) {
-          const direction = side === 'left' ? -1 : 1;
-          const force = 55 + energy * 340 + pulse * 55;
-          fluid.setConfig({
-            colorPalette: [audioColor(signal)],
-            brightness: 0.3 + energy * 0.5,
-            splatRadius: 0.14 + energy * 0.18
-          });
-          fluid.splatAtLocation(
-            side === 'left' ? emitters.leftX : emitters.rightX,
-            emitters.y + verticalOffset,
-            direction * force,
-            Math.sin(phase * 1.7 + direction) * (18 + energy * 70)
-          );
-        }
-
-        if (lowPerformanceMode) {
-          if (signal.bass >= signal.mid) emitFromLogoSide('left', signal.bass, 18);
-          else emitFromLogoSide('right', signal.mid, 18);
-        } else {
-          if (signal.bass > 0.025) emitFromLogoSide('left', signal.bass, 22);
-          if (signal.mid > 0.025) emitFromLogoSide('right', signal.mid, 22);
-        }
-
-        const frequencyEnergy = signal.bass * 0.5 + signal.mid * 0.35 + signal.treble * 0.15;
-        if (signal.treble > 0.04 && !lowPerformanceMode) {
-          trebleSide *= -1;
-          emitFromLogoSide(trebleSide < 0 ? 'left' : 'right', signal.treble, -70);
-        }
-
-        if (signal.bass > 0.1 && signal.bass > bassEnvelope * 1.12 + 0.015 && now - lastBassPulse > 700) {
-          lastBassPulse = now;
-          const bassEmitters = logoEmitters(0.62);
-          const bassForce = 90 + frequencyEnergy * 280;
-          fluid.setConfig({
-            colorPalette: ['#d4a373'],
-            brightness: 0.42 + signal.bass * 0.34,
-            splatRadius: 0.27 + signal.bass * 0.1
-          });
-          fluid.splatAtLocation(
-            bassEmitters.leftX,
-            bassEmitters.y,
-            -bassForce,
-            24
-          );
-          fluid.splatAtLocation(
-            bassEmitters.rightX,
-            bassEmitters.y,
-            bassForce,
-            24
-          );
-        }
-      }
-      requestAnimationFrame(reactToAudio);
-    }
-
-    requestAnimationFrame(reactToAudio);
   } catch (error) {
     host.hidden = true;
     window.doomsdayFluidReady = false;
@@ -209,16 +124,21 @@ if (host && !prefersReducedMotion) {
   }
 }
 
-function audioColor(signal) {
-  const red = 178 + signal.bass * 55 + signal.mid * 18;
-  const green = 126 + signal.mid * 52 + signal.treble * 24;
-  const blue = 88 + signal.treble * 58 + signal.mid * 16;
-  return rgbToHex(red, green, blue);
+function mouseColor(now) {
+  const palettePosition = (Math.sin(now * 0.000075) + 1) * 0.5 * (mousePalette.length - 1);
+  const startIndex = Math.floor(palettePosition);
+  const endIndex = Math.min(mousePalette.length - 1, startIndex + 1);
+  return mixHex(mousePalette[startIndex], mousePalette[endIndex], palettePosition - startIndex);
 }
 
-function mouseColor(deltaX, deltaY) {
-  if (Math.abs(deltaX) > Math.abs(deltaY)) return mousePalette[2];
-  return deltaY < 0 ? mousePalette[1] : mousePalette[0];
+function mixHex(start, end, amount) {
+  const startColor = parseInt(start.slice(1), 16);
+  const endColor = parseInt(end.slice(1), 16);
+  return rgbToHex(
+    ((startColor >> 16) & 255) + (((endColor >> 16) & 255) - ((startColor >> 16) & 255)) * amount,
+    ((startColor >> 8) & 255) + (((endColor >> 8) & 255) - ((startColor >> 8) & 255)) * amount,
+    (startColor & 255) + ((endColor & 255) - (startColor & 255)) * amount
+  );
 }
 
 function rgbToHex(red, green, blue) {
