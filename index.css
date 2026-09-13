@@ -9,7 +9,7 @@ html,body{
 #fluid-background{
   position:fixed;inset:0;z-index:0;
   pointer-events:none;
-  opacity:0.085;
+  opacity:0.26;
   mix-blend-mode:screen;
 }
 
