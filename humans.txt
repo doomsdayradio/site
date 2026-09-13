@@ -4,6 +4,8 @@ Site: https://doomsday.radio/
 
 /* THANKS */
 All creators, writers, and wasteland listeners.
+WebGL Fluid Simulation by Pavel Dobryakov (MIT License)
+WebGL Fluid Enhanced by Michael Brusegard (MIT License)
 
 /* TECHNOLOGY */
-HTML, CSS, JavaScript, GitHub Pages
+HTML, CSS, JavaScript, WebGL, Bunny CDN

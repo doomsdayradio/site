@@ -10,6 +10,7 @@ const lowPerformanceMode = prefersReducedMotion
 
 document.documentElement.classList.toggle('fx-lite', lowPerformanceMode);
 document.documentElement.classList.toggle('reduced-motion', prefersReducedMotion);
+window.doomsdayAudioSignal={bass:0,mid:0,treble:0,level:0,playing:false};
 
 /* livestream player and audio-reactive equalizer */
 (function(){
@@ -57,6 +58,21 @@ document.documentElement.classList.toggle('reduced-motion', prefersReducedMotion
   function drawEqualizer(){
     if(!analyser || audio.paused){visualizerFrame=0;return}
     analyser.getByteFrequencyData(frequencyData);
+    let bass=0;
+    let mid=0;
+    let treble=0;
+    for(let index=0;index<frequencyData.length;index++){
+      const value=frequencyData[index]/255;
+      if(index<8) bass+=value/8;
+      else if(index<28) mid+=value/20;
+      else treble+=value/(frequencyData.length-28);
+    }
+    const signal=window.doomsdayAudioSignal;
+    signal.bass+=(bass-signal.bass)*0.16;
+    signal.mid+=(mid-signal.mid)*0.16;
+    signal.treble+=(treble-signal.treble)*0.16;
+    signal.level+=(Math.max(bass,mid,treble)-signal.level)*0.12;
+    signal.playing=true;
     bars.forEach(function(bar,index){
       const bin=Math.min(frequencyData.length-1,Math.floor(index*frequencyData.length/bars.length));
       const level=Math.max(0.08,frequencyData[bin]/255);
@@ -103,12 +119,14 @@ document.documentElement.classList.toggle('reduced-motion', prefersReducedMotion
   });
 
   audio.addEventListener('pause',function(){
+    window.doomsdayAudioSignal.playing=false;
     setActive(false);
     status.textContent=hasStarted?'SIGNAL PAUSIERT':'SIGNAL BEREIT';
   });
 
   audio.addEventListener('waiting',function(){status.textContent='PUFFERE SIGNAL...'});
   audio.addEventListener('error',function(){
+    window.doomsdayAudioSignal.playing=false;
     setActive(false);
     status.textContent='SIGNAL NICHT ERREICHBAR';
   });
