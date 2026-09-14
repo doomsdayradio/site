@@ -79,6 +79,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     audioContext=new AudioContext();
     analyser=audioContext.createAnalyser();
     analyser.fftSize=1024;
+    analyser.minDecibels=-100;
+    analyser.maxDecibels=0;
     analyser.smoothingTimeConstant=0.55;
     frequencyData=new Uint8Array(analyser.frequencyBinCount);
     floatFrequencyData=new Float32Array(analyser.frequencyBinCount);
@@ -169,7 +171,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     }
     const bassBandRms=Math.sqrt(bassEnergy/Math.max(1,Math.ceil(145/binWidth)));
     const bassDb=20*Math.log10(Math.max(0.00001,bassBandRms));
-    const directBass=Math.max(0,Math.min(1,(bassDb+65)/45));
+    const directBass=Math.max(0,Math.min(1,(bassDb+90)/90));
     const signal=window.doomsdayAudioSignal;
     bass/=Math.max(1,Math.ceil(145/binWidth));
     lowBass/=Math.max(1,Math.ceil(85/binWidth));
