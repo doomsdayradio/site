@@ -116,12 +116,12 @@ if (host && !prefersReducedMotion) {
       const levelPunch = Math.max(0, Math.min(1, (level - 0.88) / 0.12));
       const visualPunch = Math.min(1, Math.max(bassPunch, volumePulse, levelPunch * 0.82));
       if (isPlaying && hardBassActivity >= 0.88) hardBassFrames += 1;
-      else {
+      else if (hardBassActivity < 0.72) {
         hardBassFrames = 0;
         hardBassTriggered = false;
       }
       if (isPlaying && level >= 0.88) highLevelFrames += 1;
-      else {
+      else if (level < 0.78) {
         highLevelFrames = 0;
         highLevelTriggered = false;
       }

@@ -190,8 +190,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
       signal.treble=treble;
       signal.level=meydaFeatures.level;
       signal.transient=meydaFeatures.transient;
-      signal.hardBass=meydaFeatures.hardBass;
-      signal.hardBassConfirmed=meydaFeatures.hardBassConfirmed;
     }
     signal.playing=true;
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
