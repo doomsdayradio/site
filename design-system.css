@@ -705,13 +705,19 @@ h3,
 h4,
 h5,
 h6 {
+  font-family: var(--ddd-font-display, "Orbitron", sans-serif);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  margin-top: 0;
   color: var(--ddd-color-heading-1, #ffd166);
 }
-h2 { color: var(--ddd-color-heading-2, #f36c04); }
-h3 { color: var(--ddd-color-heading-3, #dfff78); }
-h4 { color: var(--ddd-color-heading-4, #d95e3a); }
-h5 { color: var(--ddd-color-heading-5, #83ffab); }
-h6 { color: var(--ddd-color-heading-6, rgba(240, 186, 146, 0.8)); }
+h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); color: var(--ddd-color-heading-1, #ffd166); }
+h2 { font-size: clamp(1.4rem, 3vw, 2.2rem); color: var(--ddd-color-heading-2, #f36c04); }
+h3 { font-size: clamp(1.15rem, 2.2vw, 1.6rem); color: var(--ddd-color-heading-3, #dfff78); }
+h4 { font-size: clamp(1.0rem, 1.8vw, 1.3rem); color: var(--ddd-color-heading-4, #d95e3a); }
+h5 { font-size: clamp(0.88rem, 1.4vw, 1.05rem); color: var(--ddd-color-heading-5, #83ffab); }
+h6 { font-size: clamp(0.78rem, 1.2vw, 0.92rem); color: var(--ddd-color-heading-6, rgba(240, 186, 146, 0.8)); }
 
 .module-copy h1,
 .module-copy h2,
@@ -986,6 +992,61 @@ h6 { color: var(--ddd-color-heading-6, rgba(240, 186, 146, 0.8)); }
   font-size: 1.8rem;
   color: var(--ddd-color-signal-glow, #dfff78);
   text-shadow: 0 0 10px rgba(209, 255, 69, 0.3);
+}
+
+.heading-specimen-board {
+  margin-top: 36px;
+  border-top: 1px solid var(--ddd-color-line, rgba(180, 75, 47, 0.35));
+  padding-top: 24px;
+}
+.heading-specimen-header {
+  margin-bottom: 20px;
+}
+.heading-specimen-lead {
+  margin: 6px 0 0;
+  color: var(--ddd-color-muted, rgba(240, 186, 146, 0.8));
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.heading-row {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 20px;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--ddd-color-line-subtle, rgba(240, 186, 146, 0.18));
+}
+.heading-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.heading-level-tag {
+  font-family: var(--ddd-font-mono, monospace);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--ddd-color-signal, #d1ff45);
+}
+.heading-token-name {
+  font-family: var(--ddd-font-mono, monospace);
+  font-size: 0.7rem;
+  color: var(--ddd-color-text, #e8e2d6);
+  opacity: 0.85;
+}
+.heading-token-val {
+  font-family: var(--ddd-font-mono, monospace);
+  font-size: 0.65rem;
+  color: var(--ddd-color-muted, rgba(240, 186, 146, 0.8));
+}
+.heading-sample h1,
+.heading-sample h2,
+.heading-sample h3,
+.heading-sample h4,
+.heading-sample h5,
+.heading-sample h6 {
+  margin: 0;
+  line-height: 1.15;
 }
 
 /* ============================================================
@@ -1368,18 +1429,35 @@ h6 { color: var(--ddd-color-heading-6, rgba(240, 186, 146, 0.8)); }
 .archive-card h3,
 .archive-detail h1,
 .archive-detail h2,
-.archive-detail h3 {
+.archive-detail h3,
+.archive-detail h4,
+.archive-detail h5,
+.archive-detail h6,
+.lore-body h1,
+.lore-body h2,
+.lore-body h3,
+.lore-body h4,
+.lore-body h5,
+.lore-body h6 {
   font-family: var(--ddd-font-display, "Orbitron", sans-serif);
+  font-weight: 800;
+  letter-spacing: 0.02em;
 }
 
 .archive-card h3 { color: var(--ddd-color-heading-3, #dfff78); }
 
-.archive-detail h1 { color: var(--ddd-color-heading-1, #ffd166); }
-.archive-detail h2 { color: var(--ddd-color-heading-2, #f36c04); }
-.archive-detail h3 { color: var(--ddd-color-heading-3, #dfff78); }
-.archive-detail h4 { color: var(--ddd-color-heading-4, #d95e3a); }
-.archive-detail h5 { color: var(--ddd-color-heading-5, #83ffab); }
-.archive-detail h6 { color: var(--ddd-color-heading-6, rgba(240, 186, 146, 0.8)); }
+.archive-detail h1,
+.lore-body h1 { color: var(--ddd-color-heading-1, #ffd166); }
+.archive-detail h2,
+.lore-body h2 { color: var(--ddd-color-heading-2, #f36c04); }
+.archive-detail h3,
+.lore-body h3 { color: var(--ddd-color-heading-3, #dfff78); }
+.archive-detail h4,
+.lore-body h4 { color: var(--ddd-color-heading-4, #d95e3a); }
+.archive-detail h5,
+.lore-body h5 { color: var(--ddd-color-heading-5, #83ffab); }
+.archive-detail h6,
+.lore-body h6 { color: var(--ddd-color-heading-6, rgba(240, 186, 146, 0.8)); }
 
 .archive-card h3 {
   font-size: 1rem;
