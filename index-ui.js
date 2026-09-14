@@ -121,7 +121,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
       level:rms,
       transient:Math.max(flux,rmsRise*4),
       hardBass:bassContrast*flux,
-      hardBassConfirmed:bassContrast>=0.72&&flux>=0.32
+      hardBassConfirmed:bassContrast>=0.68&&flux>=0.28
     };
   }
 

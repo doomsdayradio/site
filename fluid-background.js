@@ -101,8 +101,8 @@ if (host && !prefersReducedMotion) {
       const hardBass = Math.max(0, Math.min(1, signal ? (signal.hardBass || 0) : 0));
       const mid = Math.max(0, Math.min(1, signal ? (signal.mid || level) : level));
       const treble = Math.max(0, Math.min(1, signal ? (signal.treble || level) : level));
-      const bassActivity = Math.max(0, Math.min(1, (bass - 0.28) / 0.72));
-      const bassHardThreshold = 0.42;
+      const bassActivity = Math.max(0, Math.min(1, (bass - 0.25) / 0.75));
+      const bassHardThreshold = 0.38;
       const bassHardActivity = Math.max(0, Math.min(1, (bass - bassHardThreshold) / 0.38));
       const hardBassActivity = signal && signal.hardBassConfirmed ? hardBass : 0;
       const bassPunch = Math.max(
@@ -112,14 +112,14 @@ if (host && !prefersReducedMotion) {
       );
       const volumeActivity = Math.max(0, Math.min(1, (level - 0.3) / 0.7));
       const volumePulse = transient * (0.08 + volumeActivity * 0.34);
-      const levelPunch = Math.max(0, Math.min(1, (level - 0.9) / 0.1));
+      const levelPunch = Math.max(0, Math.min(1, (level - 0.88) / 0.12));
       const visualPunch = Math.min(1, Math.max(bassPunch, volumePulse, levelPunch * 0.82));
-      if (isPlaying && hardBassActivity >= 0.72) hardBassFrames += 1;
+      if (isPlaying && hardBassActivity >= 0.66) hardBassFrames += 1;
       else {
         hardBassFrames = 0;
         hardBassTriggered = false;
       }
-      if (isPlaying && level >= 0.9) highLevelFrames += 1;
+      if (isPlaying && level >= 0.88) highLevelFrames += 1;
       else {
         highLevelFrames = 0;
         highLevelTriggered = false;
@@ -143,7 +143,7 @@ if (host && !prefersReducedMotion) {
 
       // Volume adds occasional light puffs; only bass can create a strong emission.
       const glitchBurstActive = glitchEmissionBursts > 0 && now < glitchEmissionUntil;
-      const shouldEmitAudio = isPlaying && (glitchBurstActive || transient >= 0.16 || hardBassActivity >= 0.72 || level >= 0.9);
+      const shouldEmitAudio = isPlaying && (glitchBurstActive || transient >= 0.14 || hardBassActivity >= 0.66 || level >= 0.88);
       const audioInterval = glitchBurstActive ? (lowPerformanceMode ? 170 : 125) : (lowPerformanceMode ? 360 : 240);
 
       if (shouldEmitAudio && now - lastAudioSpray > audioInterval) {
