@@ -164,7 +164,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
       }
     }
     const bassBandRms=Math.sqrt(bassEnergy/Math.max(1,Math.ceil(145/binWidth)));
-    const directBass=Math.max(0,Math.min(1,(bassBandRms-0.008)/0.05));
+    const bassDb=20*Math.log10(Math.max(0.00001,bassBandRms));
+    const directBass=Math.max(0,Math.min(1,(bassDb+60)/54));
     const signal=window.doomsdayAudioSignal;
     bass/=Math.max(1,Math.ceil(145/binWidth));
     lowBass/=Math.max(1,Math.ceil(85/binWidth));
