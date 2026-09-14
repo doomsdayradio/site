@@ -217,8 +217,8 @@ if (host && !prefersReducedMotion) {
 
           fluid.setConfig({
             colorPalette: [mouseColor(now)],
-            brightness: 0.2,
-            splatRadius: 0.16
+            brightness: 0.11,
+            splatRadius: 0.12
           });
           fluid.splatAtLocation(
             (sprayX + orbitX) * (window.devicePixelRatio || 1),
