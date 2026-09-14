@@ -77,19 +77,38 @@ if (host && !prefersReducedMotion) {
     let audioSideToggle = 0;
     let pointerActive = false;
 
+    function isInteractiveTarget(target) {
+      return Boolean(target && target.closest('button,a,input,label,select,textarea,.radio-player,.action-bar,.status'));
+    }
+
     function updatePointer(event) {
+      if (isInteractiveTarget(event.target)) return;
       pointerX = event.clientX;
       pointerY = event.clientY;
       pointerActive = true;
     }
 
     window.addEventListener('pointermove', updatePointer, { passive: true });
-    window.addEventListener('pointerdown', updatePointer, { passive: true });
+    window.addEventListener('pointerdown', function(event) {
+      if (isInteractiveTarget(event.target)) {
+        pointerActive = false;
+        return;
+      }
+      updatePointer(event);
+    }, { passive: true });
     window.addEventListener('pointerup', function(event) {
-      if (event.pointerType !== 'mouse') pointerActive = false;
+      pointerActive = false;
+      if (event.pointerType !== 'mouse') {
+        sprayX = null;
+        sprayY = null;
+      }
     }, { passive: true });
     window.addEventListener('pointercancel', function(event) {
-      if (event.pointerType !== 'mouse') pointerActive = false;
+      pointerActive = false;
+      if (event.pointerType !== 'mouse') {
+        sprayX = null;
+        sprayY = null;
+      }
     }, { passive: true });
 
     function sprayAtPointer(now) {
@@ -183,10 +202,10 @@ if (host && !prefersReducedMotion) {
           previousSprayY = sprayY;
         }
 
-        sprayX += (pointerX - sprayX) * 0.075;
-        sprayY += (pointerY - sprayY) * 0.075;
+        sprayX += (pointerX - sprayX) * (lowPerformanceMode ? 0.24 : 0.34);
+        sprayY += (pointerY - sprayY) * (lowPerformanceMode ? 0.24 : 0.34);
 
-        if (now - lastPointerSpray > (lowPerformanceMode ? 320 : 220)) {
+        if (now - lastPointerSpray > (lowPerformanceMode ? 110 : 75)) {
           lastPointerSpray = now;
           const movementX = sprayX - previousSprayX;
           const movementY = sprayY - previousSprayY;

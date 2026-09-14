@@ -1,5 +1,7 @@
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 
+html,body,button,a,.hero-logo-stage{user-select:none;-webkit-user-select:none}
+
 html,body{
   width:100%;height:100%;overflow:hidden;
   background:#2b2118;
@@ -111,6 +113,7 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   width:min(420px,72vw);
   max-width:100%;
   line-height:0;
+  touch-action:none;
 }
 
 .hero-logo{
@@ -120,8 +123,8 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   max-width:100%;
   height:auto;
   filter:
-    drop-shadow(0 0 var(--audio-glow-inner-r, 3px) var(--audio-glow-color, rgba(243,108,4,0.48)))
-    drop-shadow(0 0 var(--audio-glow-outer-r, 7px) var(--audio-glow-outer, rgba(243,108,4,0.22)));
+    drop-shadow(0 0 var(--audio-glow-inner-r, 5px) var(--audio-glow-color, rgba(243,108,4,0.7)))
+    drop-shadow(0 0 var(--audio-glow-outer-r, 11px) var(--audio-glow-outer, rgba(243,108,4,0.38)));
   animation:logo-float 7s ease-in-out infinite;
   transform:scale(calc(1 + var(--audio-level,0) * 0.012));
   will-change:filter;
