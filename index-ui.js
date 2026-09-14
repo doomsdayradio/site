@@ -10,6 +10,7 @@ const lowPerformanceMode = prefersReducedMotion
 
 document.documentElement.classList.toggle('fx-lite', lowPerformanceMode);
 document.documentElement.classList.toggle('reduced-motion', prefersReducedMotion);
+document.documentElement.classList.toggle('bass-debug', new URLSearchParams(location.search).has('bass-debug'));
 window.doomsdayAudioSignal={bass:0.55,mid:0.6,treble:0.45,level:0.74,transient:0,hardBass:0,playing:false};
 document.documentElement.style.setProperty('--audio-level','0.74');
 document.documentElement.style.setProperty('--audio-bass','0.55');
@@ -32,6 +33,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
   const ledMeter=document.querySelector('.led-meter-wrapper');
   const ledRow=document.getElementById('signal-led-row');
   const ledReadout=document.getElementById('signal-led-readout');
+  const bassDebugReadout=document.getElementById('bass-debug-readout');
+  const bassDebugFill=document.getElementById('bass-debug-fill');
   const btnIcon=toggle?toggle.querySelector('.stream-icon'):null;
   const ledSegments=[];
   const bars=[];
@@ -194,6 +197,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
     document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
     document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
+    const bassPercent=Math.round(Math.max(0,Math.min(1,signal.bass))*100);
+    bassDebugReadout.textContent=String(bassPercent).padStart(2,'0')+'%';
+    bassDebugFill.style.width=bassPercent+'%';
     updateSignalVisualization(signal);
     bars.forEach(function(bar,index){
       const profile=0.24+0.5*Math.abs(Math.sin(index*0.46+0.7));

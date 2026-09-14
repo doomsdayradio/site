@@ -23,7 +23,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
   <link rel="stylesheet" href="/design-system.css">
-  <link rel="stylesheet" href="./index.css?v=20260914-audio-emit3">
+  <link rel="stylesheet" href="./index.css?v=20260914-bassdebug1">
 </head>
 <body>
 
@@ -47,6 +47,12 @@
   <div class="corner tr"></div>
   <div class="corner bl"></div>
   <div class="corner br"></div>
+
+  <div id="bass-debug" class="bass-debug" aria-hidden="true">
+    <span class="bass-debug-label">BASS</span>
+    <output id="bass-debug-readout">00%</output>
+    <span class="bass-debug-track"><span id="bass-debug-fill"></span></span>
+  </div>
 
   <main class="center specimen">
     <div class="dial">
@@ -117,8 +123,8 @@
   <script src="./story/map/libs/three.min.js"></script>
   <script src="./script.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/meyda@5.6.3/dist/web/meyda.min.js"></script>
-  <script src="./index-ui.js?v=20260914-audio-meyda1"></script>
-  <script type="module" src="./fluid-background.js?v=20260914-audio-meyda1"></script>
+  <script src="./index-ui.js?v=20260914-bassdebug1"></script>
+  <script type="module" src="./fluid-background.js?v=20260914-bassdebug1"></script>
   <script defer src="/analytics-loader.js"></script>
 </body>
 </html>

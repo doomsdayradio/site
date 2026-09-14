@@ -73,11 +73,19 @@ if (host && !prefersReducedMotion) {
     let audioSideToggle = 0;
     let pointerActive = false;
 
-    window.addEventListener('pointermove', function(event) {
-      if (event.pointerType !== 'mouse') return;
+    function updatePointer(event) {
       pointerX = event.clientX;
       pointerY = event.clientY;
       pointerActive = true;
+    }
+
+    window.addEventListener('pointermove', updatePointer, { passive: true });
+    window.addEventListener('pointerdown', updatePointer, { passive: true });
+    window.addEventListener('pointerup', function(event) {
+      if (event.pointerType !== 'mouse') pointerActive = false;
+    }, { passive: true });
+    window.addEventListener('pointercancel', function(event) {
+      if (event.pointerType !== 'mouse') pointerActive = false;
     }, { passive: true });
 
     function sprayAtPointer(now) {
