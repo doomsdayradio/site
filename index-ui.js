@@ -10,7 +10,7 @@ const lowPerformanceMode = prefersReducedMotion
 
 document.documentElement.classList.toggle('fx-lite', lowPerformanceMode);
 document.documentElement.classList.toggle('reduced-motion', prefersReducedMotion);
-window.doomsdayAudioSignal={bass:0.55,mid:0.6,treble:0.45,level:0.74,playing:false};
+window.doomsdayAudioSignal={bass:0.55,mid:0.6,treble:0.45,level:0.74,hardBass:0,playing:false};
 document.documentElement.style.setProperty('--audio-level','0.74');
 document.documentElement.style.setProperty('--audio-bass','0.55');
 document.documentElement.style.setProperty('--audio-mid','0.60');
@@ -69,7 +69,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     if(!AudioContext) return;
     audioContext=new AudioContext();
     analyser=audioContext.createAnalyser();
-    analyser.fftSize=128;
+    analyser.fftSize=256;
     analyser.smoothingTimeConstant=0.78;
     frequencyData=new Uint8Array(analyser.frequencyBinCount);
     audioContext.createMediaElementSource(audio).connect(analyser).connect(audioContext.destination);
@@ -84,16 +84,25 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     if(!analyser || audio.paused){visualizerFrame=0;return}
     analyser.getByteFrequencyData(frequencyData);
     let bass=0;
+    let lowBass=0;
     let mid=0;
     let treble=0;
     for(let index=0;index<frequencyData.length;index++){
       const value=frequencyData[index]/255;
-      if(index<8) bass+=value/8;
-      else if(index<28) mid+=value/20;
+      if(index<8){
+        bass+=value/8;
+        if(index<3) lowBass+=value/3;
+      }else if(index<28) mid+=value/20;
       else treble+=value/(frequencyData.length-28);
     }
     const signal=window.doomsdayAudioSignal;
+    const competingSpectrum=Math.max(mid*1.08,treble*1.28,0.18);
+    const lowBassDominance=Math.max(0,Math.min(1,(lowBass-competingSpectrum)/0.24));
+    const lowBassRise=Math.max(0,lowBass-(signal.lowBass||0));
+    const hardBass=Math.max(0,Math.min(1,lowBassDominance*0.72+Math.min(1,lowBassRise/0.12)*0.28));
     signal.bass+=(bass-signal.bass)*0.16;
+    signal.lowBass=lowBass;
+    signal.hardBass=hardBass;
     signal.mid+=(mid-signal.mid)*0.16;
     signal.treble+=(treble-signal.treble)*0.16;
     signal.level+=(Math.max(bass,mid,treble)-signal.level)*0.32;
@@ -122,6 +131,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     signal.bass+=(signal.level-signal.bass)*0.18;
     signal.mid+=(pulse*0.86-signal.mid)*0.18;
     signal.treble+=(pulse*0.62-signal.treble)*0.18;
+    signal.lowBass=signal.bass;
+    signal.hardBass=0;
     document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
     document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
     document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
@@ -209,6 +220,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
       mid:mid,
       treble:treble,
       level:level,
+      hardBass:0,
       playing:false
     };
     document.documentElement.style.setProperty('--audio-level',level.toFixed(3));

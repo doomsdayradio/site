@@ -68,7 +68,6 @@ if (host && !prefersReducedMotion) {
     let lastPointerSpray = 0;
     let lastAudioSpray = 0;
     let lastLogoGlitch = 0;
-    let previousBass = null;
     let audioSideToggle = 0;
     let pointerActive = false;
 
@@ -84,6 +83,7 @@ if (host && !prefersReducedMotion) {
       const isPlaying = Boolean(signal && signal.playing);
       const level = Math.max(0, Math.min(1, signal ? (signal.level || 0) : 0));
       const bass = Math.max(0, Math.min(1, signal ? (signal.bass || level) : level));
+      const hardBass = Math.max(0, Math.min(1, signal ? (signal.hardBass || 0) : 0));
       const mid = Math.max(0, Math.min(1, signal ? (signal.mid || level) : level));
       const treble = Math.max(0, Math.min(1, signal ? (signal.treble || level) : level));
       const bassEmissionThreshold = 0.28;
@@ -94,10 +94,7 @@ if (host && !prefersReducedMotion) {
       const volumeActivity = Math.max(0, Math.min(1, (level - 0.3) / 0.7));
       const volumePulse = volumeActivity * (0.045 + Math.max(0, Math.sin(now * 0.0037 + 0.8)) * 0.075);
       const visualPunch = Math.min(1, Math.max(bassPunch, volumePulse));
-      const bassPeakThreshold = 0.62;
-      const bassRise = previousBass === null ? 0 : bass - previousBass;
-      const hasBassPeak = isPlaying && bass >= bassPeakThreshold && bassRise >= 0.012;
-      previousBass = bass;
+      const hasBassPeak = isPlaying && hardBass >= 0.72;
 
       if (logoStage && hasBassPeak && now - lastLogoGlitch > 1200) {
         lastLogoGlitch = now;
