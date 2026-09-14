@@ -37,8 +37,8 @@ if (host && !prefersReducedMotion) {
 
     fluid.start();
     const initialEmitters = logoEmitters(0.48);
-    fluid.splatAtLocation(initialEmitters.leftX, initialEmitters.y, -55, -12);
-    fluid.splatAtLocation(initialEmitters.rightX, initialEmitters.y, 55, -12);
+    fluid.splatAtLocation(initialEmitters.leftX, initialEmitters.y, -18, -6);
+    fluid.splatAtLocation(initialEmitters.rightX, initialEmitters.y, 18, -6);
     window.doomsdayFluidReady = true;
 
     function logoEmitters(verticalRatio) {
@@ -85,43 +85,36 @@ if (host && !prefersReducedMotion) {
       const treble = Math.max(0, Math.min(1, signal ? (signal.treble || level) : level));
       const peakLevel = Math.max(level, bass);
 
-      // Only emit clouds when sound is actively playing AND level punches at 60%+ (0.60+)
-      const shouldEmitAudio = isPlaying && peakLevel >= 0.60;
-      const audioInterval = (lowPerformanceMode ? 260 : 150) / Math.max(0.7, Math.min(1.8, 0.6 + (peakLevel - 0.6) * 2.5));
+      // Only emit subtle puffs when sound is actively playing AND level punches at 65%+
+      const shouldEmitAudio = isPlaying && peakLevel >= 0.65;
+      const audioInterval = (lowPerformanceMode ? 460 : 320) / Math.max(0.75, Math.min(1.3, 0.75 + (peakLevel - 0.65) * 1.2));
 
       if (shouldEmitAudio && now - lastAudioSpray > audioInterval) {
         lastAudioSpray = now;
-        const normalizedPunch = (peakLevel - 0.60) / 0.40; // 0.0 (at 60%) to 1.0 (at 100%)
+        const normalizedPunch = (peakLevel - 0.65) / 0.35; // 0.0 (at 65%) to 1.0 (at 100%)
 
-        // Scale cloud puff size, density, and impulse velocity dynamically with the punch intensity
-        const cloudRadius = (lowPerformanceMode ? 0.12 : 0.14) + (normalizedPunch * 0.14) + (bass * 0.06);
-        const cloudBrightness = (lowPerformanceMode ? 0.28 : 0.32) + (normalizedPunch * 0.45) + (mid * 0.15);
+        // Subdued, subtle cloud puff size & gentle brightness
+        const cloudRadius = (lowPerformanceMode ? 0.08 : 0.10) + (normalizedPunch * 0.05);
+        const cloudBrightness = (lowPerformanceMode ? 0.16 : 0.20) + (normalizedPunch * 0.14);
         const cloudColor = soundWaveColor(now, bass, mid, treble, peakLevel);
 
         fluid.setConfig({
           colorPalette: [cloudColor],
-          brightness: Math.min(0.92, cloudBrightness),
-          splatRadius: Math.min(0.35, cloudRadius)
+          brightness: Math.min(0.35, cloudBrightness),
+          splatRadius: Math.min(0.16, cloudRadius)
         });
 
-        // Emitter alternates between left and right broadcast arches with bass/mid punch
-        const emitters = logoEmitters(0.44 + Math.sin(now * 0.002) * 0.08);
+        // Emitter alternates between left and right broadcast arches with gentle drift
+        const emitters = logoEmitters(0.44 + Math.sin(now * 0.002) * 0.06);
         audioSideToggle = (audioSideToggle + 1) % 2;
         const isLeft = audioSideToggle === 0;
 
         const emitX = isLeft ? emitters.leftX : emitters.rightX;
-        const emitY = emitters.y + Math.cos(now * 0.003) * 6;
-        const forceX = (isLeft ? -1 : 1) * (24 + normalizedPunch * 65 + bass * 35);
-        const forceY = -10 - (normalizedPunch * 35 + mid * 25 + treble * 15);
+        const emitY = emitters.y + Math.cos(now * 0.003) * 4;
+        const forceX = (isLeft ? -1 : 1) * (10 + normalizedPunch * 16 + bass * 8);
+        const forceY = -6 - (normalizedPunch * 10 + mid * 6);
 
         fluid.splatAtLocation(emitX, emitY, forceX, forceY);
-
-        // On strong peaks (> 80%), emit an immediate complementary puff on the opposite arch
-        if (peakLevel > 0.80) {
-          const secondaryX = isLeft ? emitters.rightX : emitters.leftX;
-          const secondaryForceX = (isLeft ? 1 : -1) * (18 + normalizedPunch * 45);
-          fluid.splatAtLocation(secondaryX, emitY + 3, secondaryForceX, forceY * 0.75);
-        }
       }
       if (pointerActive && pointerX !== null && pointerY !== null) {
         if (sprayX === null || sprayY === null) {
