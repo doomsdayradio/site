@@ -211,10 +211,10 @@ if (host && !prefersReducedMotion) {
           const movementX = sprayX - previousSprayX;
           const movementY = sprayY - previousSprayY;
           const phase = now * 0.00022;
-          const driftX = movementX * 0.55 + Math.sin(phase) * 3.5;
-          const driftY = -movementY * 0.55 - 2.5 + Math.cos(phase * 0.73) * 2;
-          const orbitX = Math.sin(phase * 0.61) * 7;
-          const orbitY = Math.cos(phase * 0.47) * 7;
+          const driftX = movementX * 0.12 + Math.sin(phase) * 0.8;
+          const driftY = -movementY * 0.12 - 0.6 + Math.cos(phase * 0.73) * 0.5;
+          const orbitX = Math.sin(phase * 0.61) * 3;
+          const orbitY = Math.cos(phase * 0.47) * 3;
 
           fluid.setConfig({
             colorPalette: [mouseColor(now)],

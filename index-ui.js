@@ -16,10 +16,10 @@ document.documentElement.style.setProperty('--audio-level','0.74');
 document.documentElement.style.setProperty('--audio-bass','0.55');
 document.documentElement.style.setProperty('--audio-mid','0.60');
 document.documentElement.style.setProperty('--audio-treble','0.45');
-document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,0.55)');
-document.documentElement.style.setProperty('--audio-glow-outer','rgba(243,108,4,0.28)');
-document.documentElement.style.setProperty('--audio-glow-inner-r','3px');
-document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
+document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,0)');
+document.documentElement.style.setProperty('--audio-glow-outer','rgba(243,108,4,0)');
+document.documentElement.style.setProperty('--audio-glow-inner-r','0px');
+document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
 /* livestream player and audio-reactive equalizer */
 (function(){
