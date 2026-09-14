@@ -42,6 +42,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
   let analyser=null;
   let frequencyData=null;
   let meydaAnalyzer=null;
+  let outputGain=null;
   let meydaFeatures=null;
   let previousMeydaRms=0;
   let visualizerFrame=0;
@@ -79,7 +80,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     analyser.smoothingTimeConstant=0.78;
     frequencyData=new Uint8Array(analyser.frequencyBinCount);
     const source=audioContext.createMediaElementSource(audio);
-    source.connect(analyser).connect(audioContext.destination);
+    outputGain=audioContext.createGain();
+    outputGain.gain.value=Number(volume.value);
+    source.connect(analyser);
+    source.connect(outputGain).connect(audioContext.destination);
+    audio.volume=1;
     if(window.Meyda){
       meydaAnalyzer=window.Meyda.createMeydaAnalyzer({
         audioContext:audioContext,
@@ -337,7 +342,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
   });
 
   volume.addEventListener('input',function(){
-    audio.volume=Number(volume.value);
+    if(outputGain) outputGain.gain.value=Number(volume.value);
+    else audio.volume=Number(volume.value);
   });
 
   audio.addEventListener('playing',function(){
