@@ -75,12 +75,10 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   max-width:100%;
   height:auto;
   filter:
-    drop-shadow(0 0 calc(4px + var(--audio-glow-orange-r, 10px)) var(--audio-glow-orange, rgba(243,108,4,0.75)))
-    drop-shadow(0 0 calc(6px + var(--audio-glow-green-r, 12px)) var(--audio-glow-green, rgba(131,255,171,0.65)))
-    drop-shadow(0 0 calc(2px + var(--audio-glow-white-r, 5px)) var(--audio-glow-white, rgba(245,239,228,0.7)));
+    drop-shadow(0 0 var(--audio-glow-inner-r, 3px) var(--audio-glow-color, rgba(243,108,4,0.48)))
+    drop-shadow(0 0 var(--audio-glow-outer-r, 7px) var(--audio-glow-outer, rgba(243,108,4,0.22)));
   animation:logo-float 7s ease-in-out infinite;
-  transform:scale(calc(1 + var(--audio-level,0) * 0.018));
-  transition:filter 60ms linear;
+  transform:scale(calc(1 + var(--audio-level,0) * 0.012));
   will-change:filter;
 }
 

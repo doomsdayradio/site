@@ -15,11 +15,15 @@ document.documentElement.style.setProperty('--audio-level','0.74');
 document.documentElement.style.setProperty('--audio-bass','0.55');
 document.documentElement.style.setProperty('--audio-mid','0.60');
 document.documentElement.style.setProperty('--audio-treble','0.45');
-document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,0.65)');
+document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,0.55)');
+document.documentElement.style.setProperty('--audio-glow-outer','rgba(243,108,4,0.28)');
+document.documentElement.style.setProperty('--audio-glow-inner-r','3px');
+document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
 
 /* livestream player and audio-reactive equalizer */
 (function(){
   const player=document.querySelector('.radio-player');
+  const logo=document.querySelector('.hero-logo');
   const audio=document.getElementById('radio-stream');
   const toggle=document.getElementById('stream-toggle');
   const status=document.getElementById('stream-status');
@@ -132,21 +136,43 @@ document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,
   }
 
   function updateSignalVisualization(signal){
-    const peak=Math.max(signal.bass,signal.mid,signal.treble,signal.level);
     const percent=Math.round(Math.max(0,Math.min(1,signal.level))*100);
-    const orangeAlpha=(0.4+signal.bass*0.55).toFixed(2);
-    const greenAlpha=(0.35+signal.mid*0.55).toFixed(2);
-    const whiteAlpha=(0.3+signal.treble*0.55).toFixed(2);
-    const orangeRadius=(signal.bass*18).toFixed(1)+'px';
-    const greenRadius=(signal.mid*14).toFixed(1)+'px';
-    const whiteRadius=(signal.treble*10).toFixed(1)+'px';
+    const now=performance.now();
 
-    document.documentElement.style.setProperty('--audio-glow-orange','rgba(243,108,4,'+orangeAlpha+')');
-    document.documentElement.style.setProperty('--audio-glow-green','rgba(131,255,171,'+greenAlpha+')');
-    document.documentElement.style.setProperty('--audio-glow-white','rgba(245,239,228,'+whiteAlpha+')');
-    document.documentElement.style.setProperty('--audio-glow-orange-r',orangeRadius);
-    document.documentElement.style.setProperty('--audio-glow-green-r',greenRadius);
-    document.documentElement.style.setProperty('--audio-glow-white-r',whiteRadius);
+    // Distinct harmonic 3-phase chromatic rotation across canonical palette:
+    // Orange (#f36c04), Signal Green (#83ffab), Warm Phosphor White (#f5efe4)
+    const phase=now*0.0009;
+    const pOrange=Math.pow(Math.max(0,Math.cos(phase)),2.2);
+    const pGreen=Math.pow(Math.max(0,Math.cos(phase-2.0944)),2.2); // +120 deg
+    const pWhite=Math.pow(Math.max(0,Math.cos(phase-4.1888)),2.2); // +240 deg
+
+    // Audio-reactive spectral influence
+    const wOrange=pOrange*0.8 + (signal.bass||0)*1.4;
+    const wGreen=pGreen*0.8 + (signal.mid||0)*1.4;
+    const wWhite=pWhite*0.8 + (signal.treble||0)*1.2;
+    const totalWeight=Math.max(0.001,wOrange+wGreen+wWhite);
+
+    const r=Math.round((243*wOrange + 131*wGreen + 245*wWhite)/totalWeight);
+    const g=Math.round((108*wOrange + 255*wGreen + 239*wWhite)/totalWeight);
+    const b=Math.round((4*wOrange + 171*wGreen + 228*wWhite)/totalWeight);
+
+    const lvl=Math.max(0,Math.min(1,signal.level));
+    const innerAlpha=(0.35 + lvl*0.22).toFixed(2);
+    const outerAlpha=(0.14 + lvl*0.14).toFixed(2);
+    const innerR=(2.0 + lvl*2.5).toFixed(1)+'px';
+    const outerR=(5.0 + lvl*5.0).toFixed(1)+'px';
+
+    const innerColor='rgba('+r+','+g+','+b+','+innerAlpha+')';
+    const outerColor='rgba('+r+','+g+','+b+','+outerAlpha+')';
+
+    if(logo){
+      logo.style.filter='drop-shadow(0 0 '+innerR+' '+innerColor+') drop-shadow(0 0 '+outerR+' '+outerColor+')';
+    }
+
+    document.documentElement.style.setProperty('--audio-glow-color',innerColor);
+    document.documentElement.style.setProperty('--audio-glow-outer',outerColor);
+    document.documentElement.style.setProperty('--audio-glow-inner-r',innerR);
+    document.documentElement.style.setProperty('--audio-glow-outer-r',outerR);
     document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
     document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
     document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
