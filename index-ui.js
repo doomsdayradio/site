@@ -168,6 +168,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     const directBass=Math.max(0,Math.min(1,(directBassRatio-0.16)/0.42));
     const signal=window.doomsdayAudioSignal;
     bass/=Math.max(1,Math.ceil(145/binWidth));
+    lowBass/=Math.max(1,Math.ceil(85/binWidth));
     mid/=Math.max(1,Math.ceil(2020/binWidth));
     treble/=Math.max(1,frequencyData.length-Math.ceil(2200/binWidth));
     const rawLevel=Math.max(bass,mid,treble);
