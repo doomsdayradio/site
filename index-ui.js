@@ -101,11 +101,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
       const end=Math.min(spectrum.length,Math.ceil(endHz/binWidth));
       let total=0;
       for(let index=start;index<end;index++) total+=spectrum[index]*spectrum[index];
-      return total/Math.max(1,end-start);
+      return total;
     }
     let totalEnergy=0;
     for(let index=1;index<spectrum.length;index++) totalEnergy+=spectrum[index]*spectrum[index];
-    const totalBandEnergy=Math.max(0.001,totalEnergy/spectrum.length);
+    const totalBandEnergy=Math.max(0.001,totalEnergy);
     const bassRatio=bandEnergy(35,160)/totalBandEnergy;
     const midRatio=bandEnergy(160,2200)/totalBandEnergy;
     const trebleRatio=bandEnergy(2200,10000)/totalBandEnergy;
@@ -115,7 +115,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     const flux=Math.max(0,Math.min(1,(features.spectralFlux||0)*3));
     const bassContrast=Math.max(0,Math.min(1,(bassRatio-midRatio*1.25-0.12)/0.28));
     meydaFeatures={
-      bass:Math.max(0,Math.min(1,(bassRatio-0.015)/0.18)),
+      bass:Math.max(0,Math.min(1,(bassRatio-0.02)/0.16)),
       mid:Math.max(0,Math.min(1,midRatio*0.22)),
       treble:Math.max(0,Math.min(1,trebleRatio*0.12)),
       level:rms,
