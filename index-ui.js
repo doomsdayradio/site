@@ -10,7 +10,7 @@ const lowPerformanceMode = prefersReducedMotion
 
 document.documentElement.classList.toggle('fx-lite', lowPerformanceMode);
 document.documentElement.classList.toggle('reduced-motion', prefersReducedMotion);
-window.doomsdayAudioSignal={bass:0.55,mid:0.6,treble:0.45,level:0.74,hardBass:0,playing:false};
+window.doomsdayAudioSignal={bass:0.55,mid:0.6,treble:0.45,level:0.74,transient:0,hardBass:0,playing:false};
 document.documentElement.style.setProperty('--audio-level','0.74');
 document.documentElement.style.setProperty('--audio-bass','0.55');
 document.documentElement.style.setProperty('--audio-mid','0.60');
@@ -96,6 +96,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
       else treble+=value/(frequencyData.length-28);
     }
     const signal=window.doomsdayAudioSignal;
+    const rawLevel=Math.max(bass,mid,treble);
+    const levelRise=Math.max(0,rawLevel-signal.level);
     const competingSpectrum=Math.max(mid*1.22,treble*1.4,0.2);
     const lowBassDominance=Math.max(0,Math.min(1,(lowBass-competingSpectrum)/0.2));
     const lowBassRise=Math.max(0,lowBass-(signal.lowBass||0));
@@ -106,7 +108,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     signal.hardBassConfirmed=lowBass >= 0.68 && lowBassRise >= 0.08 && hardBass >= 0.82;
     signal.mid+=(mid-signal.mid)*0.16;
     signal.treble+=(treble-signal.treble)*0.16;
-    signal.level+=(Math.max(bass,mid,treble)-signal.level)*0.32;
+    signal.level+=(rawLevel-signal.level)*0.32;
+    signal.transient=Math.max(0,Math.min(1,levelRise/0.08));
     signal.playing=true;
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     updateSignalVisualization(signal);
@@ -135,6 +138,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     signal.lowBass=signal.bass;
     signal.hardBass=0;
     signal.hardBassConfirmed=false;
+    signal.transient=0;
     document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
     document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
     document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
@@ -222,6 +226,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
       mid:mid,
       treble:treble,
       level:level,
+      transient:0,
       hardBass:0,
       hardBassConfirmed:false,
       playing:false

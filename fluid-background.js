@@ -84,12 +84,12 @@ if (host && !prefersReducedMotion) {
       const signal = window.doomsdayAudioSignal;
       const isPlaying = Boolean(signal && signal.playing);
       const level = Math.max(0, Math.min(1, signal ? (signal.level || 0) : 0));
+      const transient = Math.max(0, Math.min(1, signal ? (signal.transient || 0) : 0));
       const bass = Math.max(0, Math.min(1, signal ? (signal.bass || level) : level));
       const hardBass = Math.max(0, Math.min(1, signal ? (signal.hardBass || 0) : 0));
       const mid = Math.max(0, Math.min(1, signal ? (signal.mid || level) : level));
       const treble = Math.max(0, Math.min(1, signal ? (signal.treble || level) : level));
-      const bassEmissionThreshold = 0.28;
-      const bassActivity = Math.max(0, Math.min(1, (bass - bassEmissionThreshold) / (1 - bassEmissionThreshold)));
+      const bassActivity = Math.max(0, Math.min(1, (bass - 0.28) / 0.72));
       const bassHardThreshold = 0.42;
       const bassHardActivity = Math.max(0, Math.min(1, (bass - bassHardThreshold) / 0.38));
       const hardBassActivity = signal && signal.hardBassConfirmed ? hardBass : 0;
@@ -99,7 +99,7 @@ if (host && !prefersReducedMotion) {
         hardBassActivity * hardBassActivity
       );
       const volumeActivity = Math.max(0, Math.min(1, (level - 0.3) / 0.7));
-      const volumePulse = volumeActivity * (0.045 + Math.max(0, Math.sin(now * 0.0037 + 0.8)) * 0.075);
+      const volumePulse = transient * (0.08 + volumeActivity * 0.34);
       const visualPunch = Math.min(1, Math.max(bassPunch, volumePulse));
       if (isPlaying && hardBassActivity >= 0.72) hardBassFrames += 1;
       else {
@@ -120,8 +120,8 @@ if (host && !prefersReducedMotion) {
       }
 
       // Volume adds occasional light puffs; only bass can create a strong emission.
-      const shouldEmitAudio = isPlaying && (bass >= bassEmissionThreshold || level >= 0.42);
-      const audioInterval = (lowPerformanceMode ? 640 : 470) / Math.max(0.78, 0.82 + visualPunch * 1.1 + volumeActivity * 0.22);
+      const shouldEmitAudio = isPlaying && (transient >= 0.16 || hardBassActivity >= 0.72);
+      const audioInterval = lowPerformanceMode ? 360 : 240;
 
       if (shouldEmitAudio && now - lastAudioSpray > audioInterval) {
         lastAudioSpray = now;
