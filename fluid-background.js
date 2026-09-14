@@ -83,11 +83,12 @@ if (host && !prefersReducedMotion) {
       const bass = Math.max(0, Math.min(1, signal ? (signal.bass || level) : level));
       const mid = Math.max(0, Math.min(1, signal ? (signal.mid || level) : level));
       const treble = Math.max(0, Math.min(1, signal ? (signal.treble || level) : level));
-      const bassActivity = Math.max(0, Math.min(1, (bass - 0.42) / 0.58));
+      const bassEmissionThreshold = 0.35;
+      const bassActivity = Math.max(0, Math.min(1, (bass - bassEmissionThreshold) / (1 - bassEmissionThreshold)));
       const bassPunch = bassActivity * bassActivity;
 
       // Keep ordinary signal activity nearly still; bass is the only strong driver.
-      const shouldEmitAudio = isPlaying && bass >= 0.42;
+      const shouldEmitAudio = isPlaying && bass >= bassEmissionThreshold;
       const audioInterval = (lowPerformanceMode ? 620 : 460) / Math.max(0.9, 0.9 + bassPunch * 0.8);
 
       if (shouldEmitAudio && now - lastAudioSpray > audioInterval) {
