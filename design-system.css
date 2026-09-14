@@ -21,6 +21,11 @@
   --ddd-danger-500: #ff5a3d;
   --ddd-good-500: #83ffab;
 
+  /* Logo visualization palette: orange, green, and warm white. */
+  --ddd-color-logo-orange: var(--ddd-orange-500);
+  --ddd-color-logo-green: var(--ddd-signal-500);
+  --ddd-color-logo-white: var(--ddd-paper-200);
+
   /* Functional mappings */
   --ddd-color-page: #3b3128;
   --ddd-color-surface: rgba(43, 33, 24, 0.88);
@@ -40,7 +45,7 @@
   --ddd-color-heading-2: var(--ddd-orange-500);
   --ddd-color-heading-3: var(--ddd-signal-300);
   --ddd-color-heading-4: var(--ddd-rust-400);
-  --ddd-color-heading-5: var(--ddd-active-400);
+  --ddd-color-heading-5: var(--ddd-signal-500);
   --ddd-color-heading-6: var(--ddd-color-muted);
   --ddd-color-line: rgba(180, 75, 47, 0.35);
   --ddd-color-line-signal: rgba(255, 157, 47, 0.36);

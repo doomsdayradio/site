@@ -12,6 +12,9 @@ document.documentElement.classList.toggle('fx-lite', lowPerformanceMode);
 document.documentElement.classList.toggle('reduced-motion', prefersReducedMotion);
 window.doomsdayAudioSignal={bass:0,mid:0,treble:0,level:0,playing:false};
 document.documentElement.style.setProperty('--audio-level','0');
+document.documentElement.style.setProperty('--audio-bass','0');
+document.documentElement.style.setProperty('--audio-mid','0');
+document.documentElement.style.setProperty('--audio-treble','0');
 
 /* livestream player and audio-reactive equalizer */
 (function(){
@@ -21,6 +24,9 @@ document.documentElement.style.setProperty('--audio-level','0');
   const status=document.getElementById('stream-status');
   const volume=document.getElementById('stream-volume');
   const equalizer=document.getElementById('equalizer');
+  const peakMeter=document.querySelector('.signal-peak-meter');
+  const peakFill=document.getElementById('signal-peak-fill');
+  const peakReadout=document.getElementById('signal-peak-readout');
   const bars=[];
   let audioContext=null;
   let analyser=null;
@@ -78,6 +84,7 @@ document.documentElement.style.setProperty('--audio-level','0');
     signal.level+=(Math.max(bass,mid,treble)-signal.level)*0.32;
     signal.playing=true;
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
+    updateSignalVisualization(signal);
     bars.forEach(function(bar,index){
       const bin=Math.min(frequencyData.length-1,Math.floor(index*frequencyData.length/bars.length));
       const level=Math.max(0.08,frequencyData[bin]/255);
@@ -97,6 +104,13 @@ document.documentElement.style.setProperty('--audio-level','0');
     signal.level+=(pulse-signal.level)*0.32;
     signal.playing=true;
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
+    signal.bass+=(signal.level-signal.bass)*0.18;
+    signal.mid+=(pulse*0.86-signal.mid)*0.18;
+    signal.treble+=(pulse*0.62-signal.treble)*0.18;
+    document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
+    document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
+    document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
+    updateSignalVisualization(signal);
     bars.forEach(function(bar,index){
       const profile=0.24+0.5*Math.abs(Math.sin(index*0.46+0.7));
       const travellingWave=0.18*Math.max(0,Math.sin(now*0.006-index*0.52));
@@ -105,6 +119,18 @@ document.documentElement.style.setProperty('--audio-level','0');
       bar.style.opacity=String(0.5+level*0.5);
     });
     fallbackFrame=requestAnimationFrame(drawFallbackSignal);
+  }
+
+  function updateSignalVisualization(signal){
+    const peak=Math.max(signal.bass,signal.mid,signal.treble,signal.level);
+    const percent=Math.round(Math.max(0,Math.min(1,peak))*100);
+    document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
+    document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
+    document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
+    peakFill.style.width=percent+'%';
+    peakReadout.value=String(percent).padStart(2,'0')+'%';
+    peakReadout.textContent=String(percent).padStart(2,'0')+'%';
+    peakMeter.setAttribute('aria-valuenow',String(percent));
   }
 
   function setActive(isActive){
@@ -153,6 +179,13 @@ document.documentElement.style.setProperty('--audio-level','0');
     fallbackFrame=0;
     window.doomsdayAudioSignal.playing=false;
     document.documentElement.style.setProperty('--audio-level','0');
+    document.documentElement.style.setProperty('--audio-bass','0');
+    document.documentElement.style.setProperty('--audio-mid','0');
+    document.documentElement.style.setProperty('--audio-treble','0');
+    peakFill.style.width='0%';
+    peakReadout.value='00%';
+    peakReadout.textContent='00%';
+    peakMeter.setAttribute('aria-valuenow','0');
     setActive(false);
     status.textContent=hasStarted?'SIGNAL PAUSIERT':'SIGNAL BEREIT';
   });

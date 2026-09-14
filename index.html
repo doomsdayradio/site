@@ -23,7 +23,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
   <link rel="stylesheet" href="/design-system.css">
-  <link rel="stylesheet" href="./index.css?v=20260914-homefix1">
+  <link rel="stylesheet" href="./index.css?v=20260914-home-audio-visual1">
 </head>
 <body>
 
@@ -68,6 +68,11 @@
       <section class="radio-player module-card" aria-label="Doomsday Radio Livestream">
         <audio id="radio-stream" preload="none" data-src="https://stream.doomsday.radio/live"></audio>
         <div id="equalizer" class="equalizer" aria-hidden="true"></div>
+        <div class="signal-peak-meter" role="meter" aria-label="Signalintensität" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <span class="signal-peak-label">SIGNAL INTENSITY</span>
+          <span class="signal-peak-track"><span id="signal-peak-fill"></span></span>
+          <output id="signal-peak-readout">00%</output>
+        </div>
         <div class="player-controls">
           <div class="stream-action">
             <button id="stream-toggle" class="stream-toggle" type="button" aria-label="Livestream abspielen" aria-pressed="false">
@@ -107,7 +112,7 @@
 
   <script src="./story/map/libs/three.min.js"></script>
   <script src="./script.js"></script>
-  <script src="./index-ui.js?v=20260913-volume3"></script>
+  <script src="./index-ui.js?v=20260914-home-audio-visual1"></script>
   <script type="module" src="./fluid-background.js?v=20260913-resonance3"></script>
   <script defer src="/analytics-loader.js"></script>
 </body>
