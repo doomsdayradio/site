@@ -85,6 +85,25 @@ if (host && !prefersReducedMotion) {
       pointerActive = true;
     }
 
+    function emitTapCloud(event) {
+      const angle = Math.random() * Math.PI * 2;
+      const force = 58 + Math.random() * 24;
+      const tapColor = mousePalette[Math.floor(Math.random() * mousePalette.length)];
+
+      fluid.setConfig({
+        colorPalette: [tapColor],
+        brightness: 0.34,
+        splatRadius: lowPerformanceMode ? 0.16 : 0.22,
+        splatForce: force
+      });
+      fluid.splatAtLocation(
+        event.clientX * (window.devicePixelRatio || 1),
+        event.clientY,
+        Math.cos(angle) * force,
+        Math.sin(angle) * force
+      );
+    }
+
     window.addEventListener('pointermove', updatePointer, { passive: true });
     window.addEventListener('pointerdown', function(event) {
       if (isInteractiveTarget(event.target)) {
@@ -92,6 +111,7 @@ if (host && !prefersReducedMotion) {
         return;
       }
       updatePointer(event);
+      emitTapCloud(event);
     }, { passive: true });
     window.addEventListener('pointerup', function(event) {
       pointerActive = false;
