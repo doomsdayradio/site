@@ -159,39 +159,6 @@ if (host && !prefersReducedMotion) {
       }
 
       // Volume adds occasional light puffs; only bass can create a strong emission.
-      const glitchBurstActive = glitchEmissionBursts > 0 && now < glitchEmissionUntil;
-      const shouldEmitAudio = isPlaying && (glitchBurstActive || transient >= 0.14 || hardBassActivity >= 0.88 || level >= 0.88);
-      const audioInterval = glitchBurstActive ? (lowPerformanceMode ? 170 : 125) : (lowPerformanceMode ? 360 : 240);
-
-      if (shouldEmitAudio && now - lastAudioSpray > audioInterval) {
-        lastAudioSpray = now;
-        const normalizedPunch = visualPunch;
-        const emissionPunch = glitchBurstActive ? Math.max(normalizedPunch, 0.88) : Math.max(normalizedPunch, hardBassEmission);
-
-        const cloudRadius = (lowPerformanceMode ? 0.055 : 0.07) + (emissionPunch * 0.11) + (glitchBurstActive ? 0.025 : 0);
-        const cloudBrightness = (lowPerformanceMode ? 0.10 : 0.12) + (emissionPunch * 0.22) + (glitchBurstActive ? 0.08 : 0);
-        const cloudColor = soundWaveColor(now, bass, mid, treble, normalizedPunch);
-
-        fluid.setConfig({
-          colorPalette: [cloudColor],
-          brightness: Math.min(0.5, cloudBrightness),
-          splatRadius: Math.min(0.22, cloudRadius),
-          splatForce: 520
-        });
-
-        // Emitter alternates between left and right broadcast arches with gentle drift
-        const emitters = logoEmitters(0.44 + Math.sin(now * 0.002) * 0.06);
-        audioSideToggle = (audioSideToggle + 1) % 2;
-        const isLeft = audioSideToggle === 0;
-
-        const emitX = isLeft ? emitters.leftX : emitters.rightX;
-        const emitY = emitters.y + Math.cos(now * 0.003) * 4;
-        const forceX = (isLeft ? -1 : 1) * (4 + bassPunch * 31 + levelPunch * 20 + volumePulse * 5 + hardBassEmission * 18 + (glitchBurstActive ? 11 : 0));
-        const forceY = -2 - (bassPunch * 18 + levelPunch * 11 + volumePulse * 3 + hardBassEmission * 10 + (glitchBurstActive ? 8 : 0));
-
-        fluid.splatAtLocation(emitX, emitY, forceX, forceY);
-        if (glitchBurstActive) glitchEmissionBursts -= 1;
-      }
       if (pointerActive && pointerX !== null && pointerY !== null) {
         if (sprayX === null || sprayY === null) {
           sprayX = pointerX;
@@ -203,21 +170,20 @@ if (host && !prefersReducedMotion) {
         sprayX += (pointerX - sprayX) * (lowPerformanceMode ? 0.24 : 0.34);
         sprayY += (pointerY - sprayY) * (lowPerformanceMode ? 0.24 : 0.34);
 
-        if (now - lastPointerSpray > (lowPerformanceMode ? 260 : 220)) {
+        if (now - lastPointerSpray > (lowPerformanceMode ? 110 : 75)) {
           lastPointerSpray = now;
           const movementX = sprayX - previousSprayX;
           const movementY = sprayY - previousSprayY;
           const phase = now * 0.00022;
-          const driftX = movementX * 0.06 + Math.sin(phase) * 0.36;
-          const driftY = -movementY * 0.06 - 0.24 + Math.cos(phase * 0.73) * 0.22;
-          const orbitX = Math.sin(phase * 0.61) * 2;
-          const orbitY = Math.cos(phase * 0.47) * 2;
+          const driftX = movementX * 0.55 + Math.sin(phase) * 3.5;
+          const driftY = -movementY * 0.55 - 2.5 + Math.cos(phase * 0.73) * 2;
+          const orbitX = Math.sin(phase * 0.61) * 7;
+          const orbitY = Math.cos(phase * 0.47) * 7;
 
           fluid.setConfig({
             colorPalette: [mouseColor(now)],
-            brightness: 0.012,
-            splatRadius: 0.04,
-            splatForce: 10
+            brightness: 0.11,
+            splatRadius: 0.12
           });
           fluid.splatAtLocation(
             (sprayX + orbitX) * (window.devicePixelRatio || 1),
