@@ -72,6 +72,8 @@ if (host && !prefersReducedMotion) {
     let hardBassTriggered = false;
     let highLevelFrames = 0;
     let highLevelTriggered = false;
+    let glitchEmissionBursts = 0;
+    let glitchEmissionUntil = 0;
     let audioSideToggle = 0;
     let pointerActive = false;
 
@@ -129,6 +131,8 @@ if (host && !prefersReducedMotion) {
         lastLogoGlitch = now;
         if (hasBassPeak) hardBassTriggered = true;
         if (hasLevelPeak) highLevelTriggered = true;
+        glitchEmissionBursts = 3;
+        glitchEmissionUntil = now + 520;
         logoStage.classList.remove('logo-bass-hit');
         void logoStage.offsetWidth;
         logoStage.classList.add('logo-bass-hit');
@@ -138,21 +142,23 @@ if (host && !prefersReducedMotion) {
       }
 
       // Volume adds occasional light puffs; only bass can create a strong emission.
-      const shouldEmitAudio = isPlaying && (transient >= 0.16 || hardBassActivity >= 0.72 || level >= 0.9);
-      const audioInterval = lowPerformanceMode ? 360 : 240;
+      const glitchBurstActive = glitchEmissionBursts > 0 && now < glitchEmissionUntil;
+      const shouldEmitAudio = isPlaying && (glitchBurstActive || transient >= 0.16 || hardBassActivity >= 0.72 || level >= 0.9);
+      const audioInterval = glitchBurstActive ? (lowPerformanceMode ? 170 : 125) : (lowPerformanceMode ? 360 : 240);
 
       if (shouldEmitAudio && now - lastAudioSpray > audioInterval) {
         lastAudioSpray = now;
         const normalizedPunch = visualPunch;
+        const emissionPunch = glitchBurstActive ? Math.max(normalizedPunch, 0.88) : normalizedPunch;
 
-        const cloudRadius = (lowPerformanceMode ? 0.055 : 0.07) + (normalizedPunch * 0.11);
-        const cloudBrightness = (lowPerformanceMode ? 0.10 : 0.12) + (normalizedPunch * 0.22);
+        const cloudRadius = (lowPerformanceMode ? 0.055 : 0.07) + (emissionPunch * 0.11) + (glitchBurstActive ? 0.025 : 0);
+        const cloudBrightness = (lowPerformanceMode ? 0.10 : 0.12) + (emissionPunch * 0.22) + (glitchBurstActive ? 0.08 : 0);
         const cloudColor = soundWaveColor(now, bass, mid, treble, normalizedPunch);
 
         fluid.setConfig({
           colorPalette: [cloudColor],
-          brightness: Math.min(0.42, cloudBrightness),
-          splatRadius: Math.min(0.19, cloudRadius)
+          brightness: Math.min(0.5, cloudBrightness),
+          splatRadius: Math.min(0.22, cloudRadius)
         });
 
         // Emitter alternates between left and right broadcast arches with gentle drift
@@ -162,10 +168,11 @@ if (host && !prefersReducedMotion) {
 
         const emitX = isLeft ? emitters.leftX : emitters.rightX;
         const emitY = emitters.y + Math.cos(now * 0.003) * 4;
-        const forceX = (isLeft ? -1 : 1) * (4 + bassPunch * 31 + levelPunch * 20 + volumePulse * 5);
-        const forceY = -2 - (bassPunch * 18 + levelPunch * 11 + volumePulse * 3);
+        const forceX = (isLeft ? -1 : 1) * (4 + bassPunch * 31 + levelPunch * 20 + volumePulse * 5 + (glitchBurstActive ? 11 : 0));
+        const forceY = -2 - (bassPunch * 18 + levelPunch * 11 + volumePulse * 3 + (glitchBurstActive ? 8 : 0));
 
         fluid.splatAtLocation(emitX, emitY, forceX, forceY);
+        if (glitchBurstActive) glitchEmissionBursts -= 1;
       }
       if (pointerActive && pointerX !== null && pointerY !== null) {
         if (sprayX === null || sprayY === null) {
