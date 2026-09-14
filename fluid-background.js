@@ -70,6 +70,8 @@ if (host && !prefersReducedMotion) {
     let lastLogoGlitch = 0;
     let hardBassFrames = 0;
     let hardBassTriggered = false;
+    let highLevelFrames = 0;
+    let highLevelTriggered = false;
     let audioSideToggle = 0;
     let pointerActive = false;
 
@@ -108,17 +110,25 @@ if (host && !prefersReducedMotion) {
       );
       const volumeActivity = Math.max(0, Math.min(1, (level - 0.3) / 0.7));
       const volumePulse = transient * (0.08 + volumeActivity * 0.34);
-      const visualPunch = Math.min(1, Math.max(bassPunch, volumePulse));
+      const levelPunch = Math.max(0, Math.min(1, (level - 0.9) / 0.1));
+      const visualPunch = Math.min(1, Math.max(bassPunch, volumePulse, levelPunch * 0.82));
       if (isPlaying && hardBassActivity >= 0.72) hardBassFrames += 1;
       else {
         hardBassFrames = 0;
         hardBassTriggered = false;
       }
+      if (isPlaying && level >= 0.9) highLevelFrames += 1;
+      else {
+        highLevelFrames = 0;
+        highLevelTriggered = false;
+      }
       const hasBassPeak = hardBassFrames >= 3 && !hardBassTriggered;
+      const hasLevelPeak = highLevelFrames >= 2 && !highLevelTriggered;
 
-      if (logoStage && hasBassPeak && now - lastLogoGlitch > 1200) {
+      if (logoStage && (hasBassPeak || hasLevelPeak) && now - lastLogoGlitch > 1200) {
         lastLogoGlitch = now;
-        hardBassTriggered = true;
+        if (hasBassPeak) hardBassTriggered = true;
+        if (hasLevelPeak) highLevelTriggered = true;
         logoStage.classList.remove('logo-bass-hit');
         void logoStage.offsetWidth;
         logoStage.classList.add('logo-bass-hit');
@@ -128,7 +138,7 @@ if (host && !prefersReducedMotion) {
       }
 
       // Volume adds occasional light puffs; only bass can create a strong emission.
-      const shouldEmitAudio = isPlaying && (transient >= 0.16 || hardBassActivity >= 0.72);
+      const shouldEmitAudio = isPlaying && (transient >= 0.16 || hardBassActivity >= 0.72 || level >= 0.9);
       const audioInterval = lowPerformanceMode ? 360 : 240;
 
       if (shouldEmitAudio && now - lastAudioSpray > audioInterval) {
@@ -152,8 +162,8 @@ if (host && !prefersReducedMotion) {
 
         const emitX = isLeft ? emitters.leftX : emitters.rightX;
         const emitY = emitters.y + Math.cos(now * 0.003) * 4;
-        const forceX = (isLeft ? -1 : 1) * (4 + bassPunch * 31 + volumePulse * 5);
-        const forceY = -2 - (bassPunch * 18 + volumePulse * 3);
+        const forceX = (isLeft ? -1 : 1) * (4 + bassPunch * 31 + levelPunch * 20 + volumePulse * 5);
+        const forceY = -2 - (bassPunch * 18 + levelPunch * 11 + volumePulse * 3);
 
         fluid.splatAtLocation(emitX, emitY, forceX, forceY);
       }
