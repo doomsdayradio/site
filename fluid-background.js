@@ -2,6 +2,7 @@ import WebGLFluidEnhanced from 'https://cdn.jsdelivr.net/npm/webgl-fluid-enhance
 
 const host = document.getElementById('fluid-background');
 const logo = document.querySelector('.hero-logo');
+const logoStage = document.querySelector('.hero-logo-stage') || logo;
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const lowPerformanceMode = document.documentElement.classList.contains('fx-lite');
 const ambientPalette = ['#b9855f', '#c99a72', '#d6ae86', '#e0c09b'];
@@ -85,41 +86,45 @@ if (host && !prefersReducedMotion) {
       const bass = Math.max(0, Math.min(1, signal ? (signal.bass || level) : level));
       const mid = Math.max(0, Math.min(1, signal ? (signal.mid || level) : level));
       const treble = Math.max(0, Math.min(1, signal ? (signal.treble || level) : level));
-      const bassEmissionThreshold = 0.3;
+      const bassEmissionThreshold = 0.28;
       const bassActivity = Math.max(0, Math.min(1, (bass - bassEmissionThreshold) / (1 - bassEmissionThreshold)));
-      const bassPunch = bassActivity * bassActivity;
-      const bassPeakThreshold = 0.5;
+      const bassHardThreshold = 0.42;
+      const bassHardActivity = Math.max(0, Math.min(1, (bass - bassHardThreshold) / 0.38));
+      const bassPunch = Math.max(bassActivity * bassActivity, bassHardActivity * bassHardActivity);
+      const volumeActivity = Math.max(0, Math.min(1, (level - 0.3) / 0.7));
+      const volumePulse = volumeActivity * (0.045 + Math.max(0, Math.sin(now * 0.0037 + 0.8)) * 0.075);
+      const visualPunch = Math.min(1, Math.max(bassPunch, volumePulse));
+      const bassPeakThreshold = 0.62;
       const bassRise = previousBass === null ? 0 : bass - previousBass;
-      const hasBassPeak = isPlaying && bass >= bassPeakThreshold && bassRise >= 0.006;
+      const hasBassPeak = isPlaying && bass >= bassPeakThreshold && bassRise >= 0.012;
       previousBass = bass;
 
-      if (logo && hasBassPeak && now - lastLogoGlitch > 700) {
+      if (logoStage && hasBassPeak && now - lastLogoGlitch > 1200) {
         lastLogoGlitch = now;
-        logo.classList.remove('logo-bass-hit');
-        void logo.offsetWidth;
-        logo.classList.add('logo-bass-hit');
+        logoStage.classList.remove('logo-bass-hit');
+        void logoStage.offsetWidth;
+        logoStage.classList.add('logo-bass-hit');
         window.setTimeout(function() {
-          logo.classList.remove('logo-bass-hit');
-        }, 240);
+          logoStage.classList.remove('logo-bass-hit');
+        }, 260);
       }
 
-      // Keep ordinary signal activity nearly still; bass is the only strong driver.
-      const shouldEmitAudio = isPlaying && bass >= bassEmissionThreshold;
-      const audioInterval = (lowPerformanceMode ? 620 : 460) / Math.max(0.9, 0.9 + bassPunch * 0.8);
+      // Volume adds occasional light puffs; only bass can create a strong emission.
+      const shouldEmitAudio = isPlaying && (bass >= bassEmissionThreshold || level >= 0.42);
+      const audioInterval = (lowPerformanceMode ? 640 : 470) / Math.max(0.78, 0.82 + visualPunch * 1.1 + volumeActivity * 0.22);
 
       if (shouldEmitAudio && now - lastAudioSpray > audioInterval) {
         lastAudioSpray = now;
-        const normalizedPunch = bassPunch;
+        const normalizedPunch = visualPunch;
 
-        // Keep the ambient puff small; only a strong bass hit should noticeably grow it.
-        const cloudRadius = (lowPerformanceMode ? 0.055 : 0.07) + (normalizedPunch * 0.055);
-        const cloudBrightness = (lowPerformanceMode ? 0.10 : 0.12) + (normalizedPunch * 0.13);
+        const cloudRadius = (lowPerformanceMode ? 0.055 : 0.07) + (normalizedPunch * 0.11);
+        const cloudBrightness = (lowPerformanceMode ? 0.10 : 0.12) + (normalizedPunch * 0.22);
         const cloudColor = soundWaveColor(now, bass, mid, treble, normalizedPunch);
 
         fluid.setConfig({
           colorPalette: [cloudColor],
-          brightness: Math.min(0.25, cloudBrightness),
-          splatRadius: Math.min(0.13, cloudRadius)
+          brightness: Math.min(0.42, cloudBrightness),
+          splatRadius: Math.min(0.19, cloudRadius)
         });
 
         // Emitter alternates between left and right broadcast arches with gentle drift
@@ -129,8 +134,8 @@ if (host && !prefersReducedMotion) {
 
         const emitX = isLeft ? emitters.leftX : emitters.rightX;
         const emitY = emitters.y + Math.cos(now * 0.003) * 4;
-        const forceX = (isLeft ? -1 : 1) * (4 + normalizedPunch * 12);
-        const forceY = -2 - (normalizedPunch * 7);
+        const forceX = (isLeft ? -1 : 1) * (4 + bassPunch * 31 + volumePulse * 5);
+        const forceY = -2 - (bassPunch * 18 + volumePulse * 3);
 
         fluid.splatAtLocation(emitX, emitY, forceX, forceY);
       }
