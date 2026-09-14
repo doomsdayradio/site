@@ -197,9 +197,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
     document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
     document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
-    const bassPercent=Math.round(Math.max(0,Math.min(1,signal.bass))*100);
-    bassDebugReadout.textContent=String(bassPercent).padStart(2,'0')+'%';
-    bassDebugFill.style.width=bassPercent+'%';
     updateSignalVisualization(signal);
     bars.forEach(function(bar,index){
       const profile=0.24+0.5*Math.abs(Math.sin(index*0.46+0.7));
@@ -252,6 +249,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
     document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
     document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
+    const bassPercent=Math.round(Math.max(0,Math.min(1,signal.bass))*100);
+    bassDebugReadout.textContent=String(bassPercent).padStart(2,'0')+'%';
+    bassDebugFill.style.width=bassPercent+'%';
     const litCount=Math.round(Math.max(0,Math.min(1,signal.level))*ledSegments.length);
     const flickerSeed=performance.now()*0.007;
     ledSegments.forEach(function(segment,index){
