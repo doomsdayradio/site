@@ -124,7 +124,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     const flux=Math.max(0,Math.min(1,(features.spectralFlux||0)*3));
     const bassContrast=Math.max(0,Math.min(1,(bassRatio-midRatio*0.75-0.08)/0.32));
     meydaFeatures={
-      bass:Math.max(0,Math.min(1,(bassRatio-0.08)/0.52)),
+      bass:Math.max(0,Math.min(1,(bassRatio-0.32)/0.28)),
       mid:Math.max(0,Math.min(1,midRatio*0.22)),
       treble:Math.max(0,Math.min(1,trebleRatio*0.12)),
       level:rms,
