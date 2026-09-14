@@ -262,10 +262,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
 
     const lvl=Math.max(0,Math.min(1,signal.level));
     const bassGlow=Math.max(0,Math.min(1,0.18+(signal.bass||0)*0.82));
-    const innerAlpha=(0.28 + bassGlow*0.48).toFixed(2);
-    const outerAlpha=(0.1 + bassGlow*0.28).toFixed(2);
-    const innerR=(2.5 + bassGlow*6.5).toFixed(1)+'px';
-    const outerR=(6.0 + bassGlow*13.0).toFixed(1)+'px';
+    const innerAlpha=(0.18 + bassGlow*0.32).toFixed(2);
+    const outerAlpha=(0.06 + bassGlow*0.16).toFixed(2);
+    const innerR=(5.0 + bassGlow*10.0).toFixed(1)+'px';
+    const outerR=(14.0 + bassGlow*22.0).toFixed(1)+'px';
 
     const innerColor='rgba('+r+','+g+','+b+','+innerAlpha+')';
     const outerColor='rgba('+r+','+g+','+b+','+outerAlpha+')';
