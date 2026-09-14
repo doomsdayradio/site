@@ -631,6 +631,7 @@ html.reduced-motion .glitch-line{
 
 @media (max-width:640px){
   .center{padding:0 10px 170px}
+  .hero-mark{top:max(10px, env(safe-area-inset-top, 0px))}
   .hero-logo{width:min(290px,72vw)}
   .radio-player{width:min(380px,88vw);margin-top:0.5rem}
   .equalizer{height:58px;gap:2px}
