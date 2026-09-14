@@ -96,14 +96,14 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
       else treble+=value/(frequencyData.length-28);
     }
     const signal=window.doomsdayAudioSignal;
-    const competingSpectrum=Math.max(mid*1.08,treble*1.28,0.18);
-    const lowBassDominance=Math.max(0,Math.min(1,(lowBass-competingSpectrum)/0.24));
+    const competingSpectrum=Math.max(mid*1.22,treble*1.4,0.2);
+    const lowBassDominance=Math.max(0,Math.min(1,(lowBass-competingSpectrum)/0.2));
     const lowBassRise=Math.max(0,lowBass-(signal.lowBass||0));
-    const hardBass=Math.max(0,Math.min(1,lowBassDominance*0.72+Math.min(1,lowBassRise/0.12)*0.28));
+    const hardBass=Math.max(0,Math.min(1,lowBassDominance*0.62+Math.min(1,lowBassRise/0.16)*0.38));
     signal.bass+=(bass-signal.bass)*0.16;
     signal.lowBass=lowBass;
     signal.hardBass=hardBass;
-    signal.hardBassConfirmed=hardBass >= 0.72;
+    signal.hardBassConfirmed=lowBass >= 0.68 && lowBassRise >= 0.08 && hardBass >= 0.82;
     signal.mid+=(mid-signal.mid)*0.16;
     signal.treble+=(treble-signal.treble)*0.16;
     signal.level+=(Math.max(bass,mid,treble)-signal.level)*0.32;
