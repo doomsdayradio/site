@@ -78,27 +78,30 @@ if (host && !prefersReducedMotion) {
 
     function sprayAtPointer(now) {
       const signal = window.doomsdayAudioSignal;
-      const isAudioActive = signal && (signal.playing || signal.level > 0.1);
-      const audioInterval = isAudioActive
-        ? (lowPerformanceMode ? 280 : 160) / Math.max(0.6, Math.min(1.8, 0.7 + (signal.level || 0) * 1.1))
-        : (lowPerformanceMode ? 650 : 450);
+      const isPlaying = Boolean(signal && signal.playing);
+      const level = Math.max(0, Math.min(1, signal ? (signal.level || 0) : 0));
+      const bass = Math.max(0, Math.min(1, signal ? (signal.bass || level) : level));
+      const mid = Math.max(0, Math.min(1, signal ? (signal.mid || level) : level));
+      const treble = Math.max(0, Math.min(1, signal ? (signal.treble || level) : level));
+      const peakLevel = Math.max(level, bass);
 
-      if (signal && now - lastAudioSpray > audioInterval) {
+      // Only emit clouds when sound is actively playing AND level punches at 60%+ (0.60+)
+      const shouldEmitAudio = isPlaying && peakLevel >= 0.60;
+      const audioInterval = (lowPerformanceMode ? 260 : 150) / Math.max(0.7, Math.min(1.8, 0.6 + (peakLevel - 0.6) * 2.5));
+
+      if (shouldEmitAudio && now - lastAudioSpray > audioInterval) {
         lastAudioSpray = now;
-        const level = Math.max(0.05, Math.min(1, signal.level || 0));
-        const bass = Math.max(0.05, Math.min(1, signal.bass || level));
-        const mid = Math.max(0.05, Math.min(1, signal.mid || level));
-        const treble = Math.max(0.05, Math.min(1, signal.treble || level));
+        const normalizedPunch = (peakLevel - 0.60) / 0.40; // 0.0 (at 60%) to 1.0 (at 100%)
 
-        // Scale cloud puff size, density, and impulse velocity directly from sound wave intensity
-        const cloudRadius = (lowPerformanceMode ? 0.11 : 0.13) + (bass * 0.11) + (level * 0.07);
-        const cloudBrightness = (lowPerformanceMode ? 0.24 : 0.28) + (level * 0.38) + (mid * 0.18);
-        const cloudColor = soundWaveColor(now, bass, mid, treble, level);
+        // Scale cloud puff size, density, and impulse velocity dynamically with the punch intensity
+        const cloudRadius = (lowPerformanceMode ? 0.12 : 0.14) + (normalizedPunch * 0.14) + (bass * 0.06);
+        const cloudBrightness = (lowPerformanceMode ? 0.28 : 0.32) + (normalizedPunch * 0.45) + (mid * 0.15);
+        const cloudColor = soundWaveColor(now, bass, mid, treble, peakLevel);
 
         fluid.setConfig({
           colorPalette: [cloudColor],
-          brightness: Math.min(0.85, cloudBrightness),
-          splatRadius: Math.min(0.32, cloudRadius)
+          brightness: Math.min(0.92, cloudBrightness),
+          splatRadius: Math.min(0.35, cloudRadius)
         });
 
         // Emitter alternates between left and right broadcast arches with bass/mid punch
@@ -108,16 +111,16 @@ if (host && !prefersReducedMotion) {
 
         const emitX = isLeft ? emitters.leftX : emitters.rightX;
         const emitY = emitters.y + Math.cos(now * 0.003) * 6;
-        const forceX = (isLeft ? -1 : 1) * (18 + bass * 55 + level * 25);
-        const forceY = -8 - (mid * 32 + treble * 18);
+        const forceX = (isLeft ? -1 : 1) * (24 + normalizedPunch * 65 + bass * 35);
+        const forceY = -10 - (normalizedPunch * 35 + mid * 25 + treble * 15);
 
         fluid.splatAtLocation(emitX, emitY, forceX, forceY);
 
-        // On strong bass/beat peaks, emit a secondary complementary puff on the other side
-        if (bass > 0.62 || level > 0.75) {
+        // On strong peaks (> 80%), emit an immediate complementary puff on the opposite arch
+        if (peakLevel > 0.80) {
           const secondaryX = isLeft ? emitters.rightX : emitters.leftX;
-          const secondaryForceX = (isLeft ? 1 : -1) * (12 + bass * 35);
-          fluid.splatAtLocation(secondaryX, emitY + 4, secondaryForceX, forceY * 0.8);
+          const secondaryForceX = (isLeft ? 1 : -1) * (18 + normalizedPunch * 45);
+          fluid.splatAtLocation(secondaryX, emitY + 3, secondaryForceX, forceY * 0.75);
         }
       }
       if (pointerActive && pointerX !== null && pointerY !== null) {
