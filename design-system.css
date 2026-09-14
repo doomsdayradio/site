@@ -127,15 +127,25 @@
   padding: 0;
 }
 
-html {
+html,
+body {
   scroll-behavior: smooth;
   background: #18120e;
   background: var(--ddd-color-page, #2b2118);
+  color: var(--ddd-color-text, #e8e2d6);
   font-family: var(--ddd-font-reading, "Space Grotesk", sans-serif);
   font-size: var(--ddd-font-size-body, 0.95rem);
   line-height: var(--ddd-line-height-body, 1.55);
   overflow-x: hidden;
+}
+
+body {
   padding-bottom: 3rem;
+}
+
+p {
+  color: var(--ddd-color-text, #e8e2d6);
+  line-height: var(--ddd-line-height-body, 1.55);
 }
 /* --- Atmospheric FX from Startseite --- */
 canvas#dust {
@@ -1356,6 +1366,13 @@ h6 { font-size: clamp(0.78rem, 1.2vw, 0.92rem); color: var(--ddd-color-heading-6
   padding: 0 0 28px 80px;
 }
 
+.archive-section-body > p {
+  color: var(--ddd-color-muted, rgba(240, 186, 146, 0.8));
+  font-size: 0.95rem;
+  line-height: 1.6;
+  max-width: 72ch;
+}
+
 .archive-section-intro,
 .archive-subsection-summary,
 .subsection-summary {
@@ -1424,6 +1441,12 @@ h6 { font-size: clamp(0.78rem, 1.2vw, 0.92rem); color: var(--ddd-color-heading-6
   align-content: start;
   gap: 9px;
   padding: 15px;
+}
+
+.archive-card-copy p {
+  color: var(--ddd-color-muted, rgba(240, 186, 146, 0.8));
+  font-size: 0.88rem;
+  line-height: 1.5;
 }
 
 .archive-card h3,
