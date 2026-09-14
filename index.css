@@ -123,8 +123,8 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   max-width:100%;
   height:auto;
   filter:
-    drop-shadow(0 0 var(--audio-glow-inner-r, 5px) var(--audio-glow-color, rgba(243,108,4,0.7)))
-    drop-shadow(0 0 var(--audio-glow-outer-r, 11px) var(--audio-glow-outer, rgba(243,108,4,0.38)));
+    drop-shadow(0 0 var(--audio-glow-inner-r, 0px) var(--audio-glow-color, rgba(243,108,4,0)))
+    drop-shadow(0 0 var(--audio-glow-outer-r, 0px) var(--audio-glow-outer, rgba(243,108,4,0)));
   animation:logo-float 7s ease-in-out infinite;
   transform:scale(calc(1 + var(--audio-level,0) * 0.012));
   will-change:filter;
@@ -185,9 +185,8 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
 
 .hero-logo-stage.logo-bass-hit .hero-logo{
   filter:
-    drop-shadow(-2px 0 0 rgba(255,90,61,0.7))
-    drop-shadow(2px 0 0 rgba(131,255,171,0.65))
-    drop-shadow(0 0 var(--audio-glow-outer-r,7px) var(--audio-glow-outer,rgba(243,108,4,0.28)));
+    drop-shadow(0 0 var(--audio-glow-inner-r,0px) var(--audio-glow-color,rgba(243,108,4,0)))
+    drop-shadow(0 0 var(--audio-glow-outer-r,0px) var(--audio-glow-outer,rgba(243,108,4,0)));
 }
 
 .radio-player{

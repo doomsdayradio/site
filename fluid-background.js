@@ -37,9 +37,6 @@ if (host && !prefersReducedMotion) {
     });
 
     fluid.start();
-    const initialEmitters = logoEmitters(0.48);
-    fluid.splatAtLocation(initialEmitters.leftX, initialEmitters.y, -7, -2);
-    fluid.splatAtLocation(initialEmitters.rightX, initialEmitters.y, 7, -2);
     window.doomsdayFluidReady = true;
 
     function logoEmitters(verticalRatio) {
@@ -211,16 +208,16 @@ if (host && !prefersReducedMotion) {
           const movementX = sprayX - previousSprayX;
           const movementY = sprayY - previousSprayY;
           const phase = now * 0.00022;
-          const driftX = movementX * 0.12 + Math.sin(phase) * 0.8;
-          const driftY = -movementY * 0.12 - 0.6 + Math.cos(phase * 0.73) * 0.5;
-          const orbitX = Math.sin(phase * 0.61) * 3;
-          const orbitY = Math.cos(phase * 0.47) * 3;
+          const driftX = movementX * 0.025 + Math.sin(phase) * 0.16;
+          const driftY = -movementY * 0.025 - 0.12 + Math.cos(phase * 0.73) * 0.10;
+          const orbitX = Math.sin(phase * 0.61) * 1.2;
+          const orbitY = Math.cos(phase * 0.47) * 1.2;
 
           fluid.setConfig({
             colorPalette: [mouseColor(now)],
-            brightness: 0.015,
-            splatRadius: 0.05,
-            splatForce: 24
+            brightness: 0.006,
+            splatRadius: 0.025,
+            splatForce: 4
           });
           fluid.splatAtLocation(
             (sprayX + orbitX) * (window.devicePixelRatio || 1),

@@ -71,11 +71,11 @@ def validate_public_page(path: Path) -> None:
 def validate_public_stylesheet() -> None:
     css = PUBLIC_DESIGN_STYLESHEET_FILE.read_text(encoding="utf-8")
     required_rules = {
-        ".module-copy h1": "color: var(--ddd-color-heading-3",
-        ".hardware-button": "text-decoration: none",
+        ".module-copy h1": r"color:\s*var\(--ddd-color-heading-3",
+        ".hardware-button": r"text-decoration:\s*none",
     }
     for selector, declaration in required_rules.items():
-        if selector not in css or declaration not in css:
+        if selector not in css or not re.search(declaration, css):
             fail(PUBLIC_DESIGN_STYLESHEET_FILE, f"missing central design rule: {selector}")
 
 
