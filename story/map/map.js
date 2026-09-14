@@ -526,29 +526,7 @@ function setPanelOpen(open) {
 }
 
 function syncResponsiveUi() {
-  const weatherToggle = document.getElementById("toggle-weather");
-  const cloudsToggle = document.getElementById("toggle-clouds");
-  const gridToggle = document.getElementById("toggle-grid");
-  if (!isMobileViewport()) {
-    if (weatherToggle) weatherToggle.disabled = false;
-    if (cloudsToggle) cloudsToggle.disabled = false;
-    if (gridToggle) gridToggle.disabled = false;
-    setPanelOpen(false);
-    return;
-  }
-
-  if (weatherToggle) {
-    weatherToggle.checked = false;
-    weatherToggle.disabled = true;
-  }
-  if (cloudsToggle) {
-    cloudsToggle.checked = false;
-    cloudsToggle.disabled = true;
-  }
-  if (gridToggle) {
-    gridToggle.checked = false;
-    gridToggle.disabled = true;
-  }
+  setPanelOpen(false);
   if (state.layout) renderMap();
 }
 
@@ -791,8 +769,8 @@ function renderMap() {
     }
   }
 
-  const enableWeather = document.getElementById("toggle-weather").checked && !isMobileViewport();
-  const enableClouds = document.getElementById("toggle-clouds").checked && !isMobileViewport();
+  const enableWeather = document.getElementById("toggle-weather").checked;
+  const enableClouds = document.getElementById("toggle-clouds").checked;
 
   if (enableWeather && !isInfluenceView && !isElevationView && !isPopulationView) {
     renderWeatherLayer(terrainGroups, tile, margin, canvasWidth, canvasHeight, pois);
