@@ -105,6 +105,7 @@ if (host && !prefersReducedMotion) {
       const bassHardThreshold = 0.38;
       const bassHardActivity = Math.max(0, Math.min(1, (bass - bassHardThreshold) / 0.38));
       const hardBassActivity = signal && signal.hardBassConfirmed ? hardBass : 0;
+      const hardBassEmission = Math.max(0, Math.min(1, (hardBassActivity - 0.88) / 0.12));
       const bassPunch = Math.max(
         bassActivity * bassActivity,
         bassHardActivity * bassHardActivity,
@@ -114,7 +115,7 @@ if (host && !prefersReducedMotion) {
       const volumePulse = transient * (0.08 + volumeActivity * 0.34);
       const levelPunch = Math.max(0, Math.min(1, (level - 0.88) / 0.12));
       const visualPunch = Math.min(1, Math.max(bassPunch, volumePulse, levelPunch * 0.82));
-      if (isPlaying && hardBassActivity >= 0.66) hardBassFrames += 1;
+      if (isPlaying && hardBassActivity >= 0.88) hardBassFrames += 1;
       else {
         hardBassFrames = 0;
         hardBassTriggered = false;
@@ -143,13 +144,13 @@ if (host && !prefersReducedMotion) {
 
       // Volume adds occasional light puffs; only bass can create a strong emission.
       const glitchBurstActive = glitchEmissionBursts > 0 && now < glitchEmissionUntil;
-      const shouldEmitAudio = isPlaying && (glitchBurstActive || transient >= 0.14 || hardBassActivity >= 0.66 || level >= 0.88);
+      const shouldEmitAudio = isPlaying && (glitchBurstActive || transient >= 0.14 || hardBassActivity >= 0.88 || level >= 0.88);
       const audioInterval = glitchBurstActive ? (lowPerformanceMode ? 170 : 125) : (lowPerformanceMode ? 360 : 240);
 
       if (shouldEmitAudio && now - lastAudioSpray > audioInterval) {
         lastAudioSpray = now;
         const normalizedPunch = visualPunch;
-        const emissionPunch = glitchBurstActive ? Math.max(normalizedPunch, 0.88) : normalizedPunch;
+        const emissionPunch = glitchBurstActive ? Math.max(normalizedPunch, 0.88) : Math.max(normalizedPunch, hardBassEmission);
 
         const cloudRadius = (lowPerformanceMode ? 0.055 : 0.07) + (emissionPunch * 0.11) + (glitchBurstActive ? 0.025 : 0);
         const cloudBrightness = (lowPerformanceMode ? 0.10 : 0.12) + (emissionPunch * 0.22) + (glitchBurstActive ? 0.08 : 0);
@@ -168,8 +169,8 @@ if (host && !prefersReducedMotion) {
 
         const emitX = isLeft ? emitters.leftX : emitters.rightX;
         const emitY = emitters.y + Math.cos(now * 0.003) * 4;
-        const forceX = (isLeft ? -1 : 1) * (4 + bassPunch * 31 + levelPunch * 20 + volumePulse * 5 + (glitchBurstActive ? 11 : 0));
-        const forceY = -2 - (bassPunch * 18 + levelPunch * 11 + volumePulse * 3 + (glitchBurstActive ? 8 : 0));
+        const forceX = (isLeft ? -1 : 1) * (4 + bassPunch * 31 + levelPunch * 20 + volumePulse * 5 + hardBassEmission * 18 + (glitchBurstActive ? 11 : 0));
+        const forceY = -2 - (bassPunch * 18 + levelPunch * 11 + volumePulse * 3 + hardBassEmission * 10 + (glitchBurstActive ? 8 : 0));
 
         fluid.splatAtLocation(emitX, emitY, forceX, forceY);
         if (glitchBurstActive) glitchEmissionBursts -= 1;
