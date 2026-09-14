@@ -205,7 +205,7 @@ if (host && !prefersReducedMotion) {
         sprayX += (pointerX - sprayX) * (lowPerformanceMode ? 0.24 : 0.34);
         sprayY += (pointerY - sprayY) * (lowPerformanceMode ? 0.24 : 0.34);
 
-        if (now - lastPointerSpray > (lowPerformanceMode ? 110 : 75)) {
+        if (now - lastPointerSpray > (lowPerformanceMode ? 180 : 140)) {
           lastPointerSpray = now;
           const movementX = sprayX - previousSprayX;
           const movementY = sprayY - previousSprayY;
@@ -217,8 +217,8 @@ if (host && !prefersReducedMotion) {
 
           fluid.setConfig({
             colorPalette: [mouseColor(now)],
-            brightness: 0.11,
-            splatRadius: 0.12
+            brightness: 0.045,
+            splatRadius: 0.08
           });
           fluid.splatAtLocation(
             (sprayX + orbitX) * (window.devicePixelRatio || 1),
