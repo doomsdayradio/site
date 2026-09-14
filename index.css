@@ -75,10 +75,7 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   width:min(520px,94vw);
   aspect-ratio:1;
   border-radius:50%;
-  background:
-    radial-gradient(ellipse at 25% 72%,rgba(243,108,4,calc(0.16 + var(--audio-bass,0) * 0.3)) 0 16%,transparent 48%),
-    radial-gradient(ellipse at 78% 74%,rgba(131,255,171,calc(0.22 + var(--audio-mid,0) * 0.38)) 0 17%,transparent 46%),
-    radial-gradient(ellipse at 50% 25%,rgba(245,239,228,calc(0.14 + var(--audio-treble,0) * 0.3)) 0 14%,transparent 45%);
+  background:radial-gradient(circle,var(--audio-glow-color,rgba(243,108,4,0.28)) 0 18%,transparent 68%);
   filter:blur(15px) saturate(1.55);
   transform:scale(calc(0.88 + var(--audio-level,0) * 0.14));
   opacity:calc(0.6 + var(--audio-level,0) * 0.4);
@@ -91,10 +88,7 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   width:min(420px,72vw);
   max-width:100%;
   height:auto;
-  filter:
-    drop-shadow(calc(-4px - var(--audio-bass,0) * 5px) 7px calc(5px + var(--audio-bass,0) * 18px) rgba(243,108,4,calc(0.42 + var(--audio-bass,0) * 0.5)))
-    drop-shadow(calc(7px + var(--audio-mid,0) * 7px) 8px calc(4px + var(--audio-mid,0) * 18px) rgba(131,255,171,calc(0.62 + var(--audio-mid,0) * 0.34)))
-    drop-shadow(0 calc(-4px - var(--audio-treble,0) * 4px) calc(4px + var(--audio-treble,0) * 16px) rgba(245,239,228,calc(0.44 + var(--audio-treble,0) * 0.46)));
+  filter:drop-shadow(0 0 calc(7px + var(--audio-level,0) * 22px) var(--audio-glow-color,rgba(243,108,4,0.42)));
   animation:logo-float 7s ease-in-out infinite;
   transform:scale(calc(1 + var(--audio-level,0) * 0.018));
   transition:filter 60ms linear;
