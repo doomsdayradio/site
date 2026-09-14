@@ -38,6 +38,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
   let audioContext=null;
   let analyser=null;
   let frequencyData=null;
+  let meydaAnalyzer=null;
+  let meydaFeatures=null;
+  let previousMeydaRms=0;
   let visualizerFrame=0;
   let fallbackFrame=0;
   let isPlaying=false;
@@ -72,8 +75,50 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     analyser.fftSize=256;
     analyser.smoothingTimeConstant=0.78;
     frequencyData=new Uint8Array(analyser.frequencyBinCount);
-    audioContext.createMediaElementSource(audio).connect(analyser).connect(audioContext.destination);
+    const source=audioContext.createMediaElementSource(audio);
+    source.connect(analyser).connect(audioContext.destination);
+    if(window.Meyda){
+      meydaAnalyzer=window.Meyda.createMeydaAnalyzer({
+        audioContext:audioContext,
+        source:source,
+        bufferSize:512,
+        featureExtractors:['rms','spectralFlux','amplitudeSpectrum'],
+        callback:updateMeydaFeatures
+      });
+    }
     bars.forEach(function(bar){bar.classList.remove('is-fallback')});
+  }
+
+  function updateMeydaFeatures(features){
+    const spectrum=features.amplitudeSpectrum||[];
+    if(!spectrum.length || !audioContext) return;
+    const binWidth=audioContext.sampleRate/(2*spectrum.length);
+    function bandEnergy(startHz,endHz){
+      const start=Math.max(1,Math.floor(startHz/binWidth));
+      const end=Math.min(spectrum.length,Math.ceil(endHz/binWidth));
+      let total=0;
+      for(let index=start;index<end;index++) total+=spectrum[index];
+      return total/Math.max(1,end-start);
+    }
+    let totalEnergy=0;
+    for(let index=1;index<spectrum.length;index++) totalEnergy+=spectrum[index];
+    const bassRatio=bandEnergy(35,180)/Math.max(0.001,totalEnergy/spectrum.length);
+    const midRatio=bandEnergy(180,2200)/Math.max(0.001,totalEnergy/spectrum.length);
+    const trebleRatio=bandEnergy(2200,10000)/Math.max(0.001,totalEnergy/spectrum.length);
+    const rms=Math.max(0,Math.min(1,(features.rms||0)*4));
+    const rmsRise=Math.max(0,rms-previousMeydaRms);
+    previousMeydaRms=rms;
+    const flux=Math.max(0,Math.min(1,(features.spectralFlux||0)*3));
+    const bassContrast=Math.max(0,Math.min(1,(bassRatio-midRatio*1.25-0.12)/0.28));
+    meydaFeatures={
+      bass:Math.max(0,Math.min(1,bassRatio*0.72)),
+      mid:Math.max(0,Math.min(1,midRatio*0.22)),
+      treble:Math.max(0,Math.min(1,trebleRatio*0.12)),
+      level:rms,
+      transient:Math.max(flux,rmsRise*4),
+      hardBass:bassContrast*flux,
+      hardBassConfirmed:bassContrast>=0.72&&flux>=0.32
+    };
   }
 
   function startFallbackSignal(){
@@ -89,10 +134,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     let treble=0;
     for(let index=0;index<frequencyData.length;index++){
       const value=frequencyData[index]/255;
-      if(index<8){
-        bass+=value/8;
-        if(index<3) lowBass+=value/3;
-      }else if(index<28) mid+=value/20;
+      if(index<8){bass+=value/8;if(index<3) lowBass+=value/3}
+      else if(index<28) mid+=value/20;
       else treble+=value/(frequencyData.length-28);
     }
     const signal=window.doomsdayAudioSignal;
@@ -110,6 +153,15 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     signal.treble+=(treble-signal.treble)*0.16;
     signal.level+=(rawLevel-signal.level)*0.32;
     signal.transient=Math.max(0,Math.min(1,levelRise/0.08));
+    if(meydaFeatures){
+      bass=meydaFeatures.bass;
+      mid=meydaFeatures.mid;
+      treble=meydaFeatures.treble;
+      signal.level=meydaFeatures.level;
+      signal.transient=meydaFeatures.transient;
+      signal.hardBass=meydaFeatures.hardBass;
+      signal.hardBassConfirmed=meydaFeatures.hardBassConfirmed;
+    }
     signal.playing=true;
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     updateSignalVisualization(signal);
@@ -257,6 +309,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     try{
       try{setupAnalyser()}catch(error){analyser=null;frequencyData=null}
       if(audioContext && audioContext.state==='suspended') await audioContext.resume();
+      if(meydaAnalyzer) meydaAnalyzer.start();
       await audio.play();
     }catch(error){
       status.textContent='SIGNAL NICHT ERREICHBAR';
@@ -286,6 +339,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
 
   audio.addEventListener('pause',function(){
     isPlaying=false;
+    if(meydaAnalyzer) meydaAnalyzer.stop();
+    meydaFeatures=null;
+    previousMeydaRms=0;
     if(fallbackFrame) cancelAnimationFrame(fallbackFrame);
     fallbackFrame=0;
     window.doomsdayAudioSignal.playing=false;
@@ -296,6 +352,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
 
   audio.addEventListener('waiting',function(){status.textContent='PUFFERE SIGNAL...'});
   audio.addEventListener('error',function(){
+    if(meydaAnalyzer) meydaAnalyzer.stop();
     window.doomsdayAudioSignal.playing=false;
     setActive(false);
     status.textContent='SIGNAL NICHT ERREICHBAR';
