@@ -105,17 +105,21 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     }
     let totalEnergy=0;
     for(let index=1;index<spectrum.length;index++) totalEnergy+=spectrum[index]*spectrum[index];
+    const bassEnergy=bandEnergy(35,160);
+    const midEnergy=bandEnergy(160,2200);
+    const trebleEnergy=bandEnergy(2200,10000);
+    const bassMidEnergy=Math.max(0.001,bassEnergy+midEnergy);
     const totalBandEnergy=Math.max(0.001,totalEnergy);
-    const bassRatio=bandEnergy(35,160)/totalBandEnergy;
-    const midRatio=bandEnergy(160,2200)/totalBandEnergy;
-    const trebleRatio=bandEnergy(2200,10000)/totalBandEnergy;
+    const bassRatio=bassEnergy/bassMidEnergy;
+    const midRatio=midEnergy/bassMidEnergy;
+    const trebleRatio=trebleEnergy/totalBandEnergy;
     const rms=Math.max(0,Math.min(1,(features.rms||0)*4));
     const rmsRise=Math.max(0,rms-previousMeydaRms);
     previousMeydaRms=rms;
     const flux=Math.max(0,Math.min(1,(features.spectralFlux||0)*3));
-    const bassContrast=Math.max(0,Math.min(1,(bassRatio-midRatio*1.25-0.12)/0.28));
+    const bassContrast=Math.max(0,Math.min(1,(bassRatio-midRatio*0.75-0.08)/0.32));
     meydaFeatures={
-      bass:Math.max(0,Math.min(1,(bassRatio-0.02)/0.16)),
+      bass:Math.max(0,Math.min(1,(bassRatio-0.08)/0.52)),
       mid:Math.max(0,Math.min(1,midRatio*0.22)),
       treble:Math.max(0,Math.min(1,trebleRatio*0.12)),
       level:rms,
