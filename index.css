@@ -320,17 +320,28 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
 .freq{
   margin-top:1rem;
   margin-inline:auto;
-  font-family:'Share Tech Mono',monospace;
+  font-family:var(--ddd-font-mono,'Share Tech Mono',monospace);
   font-size:clamp(0.72rem,1.25vw,0.96rem);
   letter-spacing:0.08em;
   line-height:1.5;
-  color:rgba(223,255,120,0.6);
+  color:rgba(223,255,120,0.65);
   text-transform:none;
   text-align:center;
   max-width:min(58ch,72vw);
+  min-height:3.2em;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   overflow-wrap:anywhere;
   text-shadow:0 0 10px rgba(209,255,69,0.12);
   position:relative;z-index:2;
+  transition:opacity 0.35s ease, filter 0.35s ease, transform 0.35s ease;
+}
+
+.freq.is-transitioning{
+  opacity:0;
+  filter:blur(3px) brightness(1.6);
+  transform:scale(0.98);
 }
 
 .signal-dot{

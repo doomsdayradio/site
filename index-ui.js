@@ -441,3 +441,35 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
 
   scheduleNext(2000);
 })();
+
+/* dynamic station slogans */
+(function(){
+  const sloganEl=document.getElementById('station-slogan');
+  if(!sloganEl) return;
+
+  const slogans=[
+    'Eine Welt, die sich über Radio vermittelt, ordnet und erinnert.',
+    'Wir berichten, selbst wenn keiner mehr zuhört.',
+    'Das ewige Signal, das nicht verstummt.',
+    'Wer zuhört, lebt noch.',
+    'Aus der Asche der alten Welt – live auf 107.END.',
+    'Der letzte Kontaktpunkt der Menschheit.',
+    'Sendet auch, wenn alles andere schweigt.',
+    'Die Wasteland hat viele Stimmen. Wir haben die Frequenz.',
+    'Zwischen Rauschen und Ruinen: Dein Update aus dem Nichts.'
+  ];
+
+  let currentIndex=0;
+
+  function cycle(){
+    currentIndex=(currentIndex+1)%slogans.length;
+    sloganEl.classList.add('is-transitioning');
+    setTimeout(function(){
+      sloganEl.textContent=slogans[currentIndex];
+      sloganEl.classList.remove('is-transitioning');
+    },360);
+  }
+
+  window.cycleStationSlogan=cycle;
+  setInterval(cycle,7500);
+})();
