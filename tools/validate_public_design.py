@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_DESIGN_STYLESHEET = "/design-system.css"
+PUBLIC_DESIGN_STYLESHEET_FILE = ROOT / "design-system.css"
 STYLESHEET_LINK_RX = re.compile(
     r"<link\b(?=[^>]*\brel=[\"']stylesheet[\"'])[^>]*>", re.IGNORECASE
 )
@@ -53,7 +54,8 @@ def validate_public_page(path: Path) -> None:
         fail(path, "page-owned font loading is forbidden")
     stylesheet_links = STYLESHEET_LINK_RX.findall(html)
     expected_href = re.compile(
-        rf'\bhref=["\']{re.escape(PUBLIC_DESIGN_STYLESHEET)}["\']', re.IGNORECASE
+        rf'\bhref=["\']{re.escape(PUBLIC_DESIGN_STYLESHEET)}(?:\?[^"\']*)?["\']',
+        re.IGNORECASE,
     )
     if not any(expected_href.search(link) for link in stylesheet_links):
         fail(path, "must load the central design-system stylesheet")
@@ -66,7 +68,19 @@ def validate_public_page(path: Path) -> None:
         require(html, 'class="hardware-button ddd-focus', path)
 
 
+def validate_public_stylesheet() -> None:
+    css = PUBLIC_DESIGN_STYLESHEET_FILE.read_text(encoding="utf-8")
+    required_rules = {
+        ".module-copy h1": "color: var(--ddd-color-heading-3",
+        ".hardware-button": "text-decoration: none",
+    }
+    for selector, declaration in required_rules.items():
+        if selector not in css or declaration not in css:
+            fail(PUBLIC_DESIGN_STYLESHEET_FILE, f"missing central design rule: {selector}")
+
+
 def main() -> None:
+    validate_public_stylesheet()
     for path in (ROOT / "index.html", ROOT / "404.html", ROOT / "bunnycdn_errors" / "404.html"):
         validate_public_page(path)
     print("public site design contract valid")
