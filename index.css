@@ -626,10 +626,63 @@ html.reduced-motion .glitch-line{
   .equalizer-bar{width:3px}
   .stream-toggle{min-height:38px;padding:8px 16px;font-size:0.7rem}
   .freq{max-width:30ch;letter-spacing:0.04em}
-  .action-bar{bottom:124px;gap:0.4rem;width:calc(100vw - 12px)}
+  .action-bar{bottom:82px;gap:0.4rem;width:calc(100vw - 12px)}
   .action-link,.button,#toggle-paper{padding:0.42rem 0.7rem;letter-spacing:0.1em;font-size:0.62rem}
-  .status{padding:0.42rem 0.5rem;gap:4px;font-size:0.62rem;letter-spacing:0.09em}
-  .status > span{flex:1 1 100%;white-space:normal;line-height:1.18}
-  .status .led-meter-wrapper,.status .weather-status{flex:1 1 100%;min-width:0}
+  .status{
+    padding:6px 10px calc(6px + env(safe-area-inset-bottom, 0px));
+    display:grid;
+    grid-template-columns:minmax(0, 1.2fr) minmax(0, 1.3fr) minmax(0, 1.15fr);
+    grid-template-rows:auto auto;
+    align-items:center;
+    gap:4px 6px;
+    font-size:0.6rem;
+    letter-spacing:0.05em;
+    border-top:1px solid rgba(223,210,194,0.3);
+    background:rgba(43,33,24,0.92);
+  }
+  .status .led-meter-wrapper{
+    grid-column:1 / -1;
+    margin:0;
+    min-width:0;
+    width:100%;
+  }
+  .status .meter-meta{margin:0 0 2px;font-size:0.52rem;letter-spacing:0.1em}
+  .status .led-row{height:16px;padding:3px 4px;gap:2px;border-radius:3px}
+  .status .led-row .led-segment{height:8px}
+  .weather-status{
+    grid-column:1;
+    display:inline-flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:5px;
+    min-width:0;
+    flex:none;
+    text-align:left;
+    overflow:hidden;
+  }
+  .weather-icon{font-size:0.9rem;line-height:1;color:var(--ddd-color-logo-orange,#f36c04);flex-shrink:0}
+  .weather-copy{display:flex;flex-direction:column;gap:1px;min-width:0;overflow:hidden}
+  .weather-location{font-size:0.48rem;letter-spacing:0.1em;line-height:1;color:var(--ddd-color-logo-green,#83ffab);white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+  #weather-summary{font-size:0.54rem;letter-spacing:0.04em;line-height:1;color:rgba(223,210,194,0.9);white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+  .status #clock{
+    grid-column:2;
+    text-align:center;
+    white-space:nowrap;
+    font-size:0.54rem;
+    letter-spacing:0.04em;
+    color:var(--ddd-color-signal,#d1ff45);
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .status > span:last-child{
+    grid-column:3;
+    text-align:right;
+    white-space:nowrap;
+    font-size:0.52rem;
+    letter-spacing:0.03em;
+    color:rgba(223,210,194,0.85);
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
   .corner{display:none}
 }
