@@ -24,16 +24,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Checkout Showcase source
-        uses: actions/checkout@v5
-        with:
-          repository: doomsdayradio/svc-design
-          ref: main
-          path: _showcase
-          token: ${{ secrets.CROSS_REPO_READ_TOKEN }}
-
-      - name: Verify public Showcase stylesheet export
-        run: python3 _showcase/tools/build_public_design_system.py --output design-system.css --check
+      - name: Download public design stylesheet
+        run: |
+          curl --fail --location --retry 3 \
+            https://doomsday.radio/design-system/latest/design-system.css \
+            --output design-system.css
 
       - name: Validate public design contract
         run: python3 tools/validate_public_design.py
@@ -60,7 +55,8 @@ jobs:
           aws s3 sync . "s3://${BUNNY_STORAGE_ZONE}/" \
             --endpoint-url "${BUNNY_STORAGE_ENDPOINT}" \
             --exclude '.git/*' \
-            --exclude '.github/*'
+            --exclude '.github/*' \
+            --exclude 'design-system/*'
 
       - name: Publish deployment summary
         run: |
