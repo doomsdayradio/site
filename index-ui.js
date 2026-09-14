@@ -163,9 +163,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
         treble+=value;
       }
     }
-    const bassMidEnergy=Math.max(0.001,bassEnergy+midEnergy);
-    const directBassRatio=bassEnergy/bassMidEnergy;
-    const directBass=Math.max(0,Math.min(1,(directBassRatio-0.16)/0.42));
+    const bassBandRms=Math.sqrt(bassEnergy/Math.max(1,Math.ceil(145/binWidth)));
+    const directBass=Math.max(0,Math.min(1,(bassBandRms-0.008)/0.05));
     const signal=window.doomsdayAudioSignal;
     bass/=Math.max(1,Math.ceil(145/binWidth));
     lowBass/=Math.max(1,Math.ceil(85/binWidth));
@@ -173,14 +172,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     treble/=Math.max(1,frequencyData.length-Math.ceil(2200/binWidth));
     const rawLevel=Math.max(bass,mid,treble);
     const levelRise=Math.max(0,rawLevel-signal.level);
-    const competingSpectrum=Math.max(mid*1.22,treble*1.4,0.2);
-    const lowBassDominance=Math.max(0,Math.min(1,(lowBass-competingSpectrum)/0.2));
-    const lowBassRise=Math.max(0,lowBass-(signal.lowBass||0));
-    const hardBass=Math.max(0,Math.min(1,lowBassDominance*0.62+Math.min(1,lowBassRise/0.16)*0.38));
     signal.bass+=(directBass-signal.bass)*0.35;
     signal.lowBass=lowBass;
-    signal.hardBass=hardBass;
-    signal.hardBassConfirmed=lowBass >= 0.68 && lowBassRise >= 0.08 && hardBass >= 0.82;
+    signal.hardBass=signal.bass;
+    signal.hardBassConfirmed=signal.hardBass >= 0.88;
     signal.mid+=(mid-signal.mid)*0.16;
     signal.treble+=(treble-signal.treble)*0.16;
     signal.level+=(rawLevel-signal.level)*0.32;
