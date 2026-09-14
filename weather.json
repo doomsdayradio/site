@@ -1,0 +1,10 @@
+{
+  "source_weather": {
+    "name": "MAP SERVICE OFFLINE",
+    "timezone": "unknown"
+  },
+  "current": {
+    "temperature_c": null,
+    "status_code": "MAP_SERVICE_OFFLINE"
+  }
+}

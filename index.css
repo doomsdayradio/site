@@ -75,7 +75,10 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   width:min(520px,94vw);
   aspect-ratio:1;
   border-radius:50%;
-  background:radial-gradient(circle,var(--audio-glow-color,rgba(243,108,4,0.28)) 0 18%,transparent 68%);
+  background:
+    radial-gradient(circle at 34% 42%,rgba(243,108,4,0.46) 0 10%,transparent 40%),
+    radial-gradient(circle at 66% 44%,rgba(131,255,171,0.38) 0 9%,transparent 38%),
+    radial-gradient(circle at 50% 62%,rgba(245,239,228,0.3) 0 8%,transparent 42%);
   filter:blur(15px) saturate(1.55);
   transform:scale(calc(0.88 + var(--audio-level,0) * 0.14));
   opacity:calc(0.6 + var(--audio-level,0) * 0.4);
@@ -88,7 +91,10 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   width:min(420px,72vw);
   max-width:100%;
   height:auto;
-  filter:drop-shadow(0 0 calc(7px + var(--audio-level,0) * 22px) var(--audio-glow-color,rgba(243,108,4,0.42)));
+  filter:
+    drop-shadow(0 0 calc(5px + var(--audio-bass,0) * 18px) rgba(243,108,4,0.68))
+    drop-shadow(0 0 calc(4px + var(--audio-mid,0) * 16px) rgba(131,255,171,0.52))
+    drop-shadow(0 0 calc(3px + var(--audio-treble,0) * 14px) rgba(245,239,228,0.5));
   animation:logo-float 7s ease-in-out infinite;
   transform:scale(calc(1 + var(--audio-level,0) * 0.018));
   transition:filter 60ms linear;
@@ -128,41 +134,6 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   opacity:0.62;
   transition:transform 90ms linear,opacity 180ms ease;
 }
-
-.signal-peak-meter{
-  display:grid;
-  grid-template-columns:auto minmax(90px,1fr) auto;
-  align-items:center;
-  gap:9px;
-  width:min(100%,414px);
-  margin:0 auto 4px;
-  color:var(--ddd-color-logo-green,#83ffab);
-  font:0.58rem/1 var(--ddd-font-mono,"Share Tech Mono",monospace);
-  letter-spacing:0.12em;
-}
-.signal-peak-label{white-space:nowrap}
-.signal-peak-track{
-  position:relative;
-  height:5px;
-  overflow:hidden;
-  border:1px solid rgba(245,239,228,0.38);
-  background:transparent;
-}
-.signal-peak-track::after{
-  content:'';
-  position:absolute;
-  inset:1px;
-  background:repeating-linear-gradient(90deg,rgba(243,108,4,0.28) 0 8px,transparent 8px 10px);
-}
-#signal-peak-fill{
-  position:absolute;
-  inset:0 auto 0 0;
-  z-index:1;
-  width:0;
-  background:linear-gradient(90deg,var(--ddd-color-logo-orange,#f36c04),var(--ddd-color-logo-green,#83ffab) 72%,var(--ddd-color-logo-white,#f5efe4));
-  transition:width 90ms linear;
-}
-.signal-peak-meter output{min-width:2.2em;text-align:right;color:var(--ddd-color-logo-white,#f5efe4)}
 
 .player-controls{
   display:grid;
@@ -309,7 +280,7 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
 .action-bar{
   position:fixed;
   left:50%;
-  bottom:48px;
+  bottom:68px;
   transform:translateX(-50%);
   z-index:120;
   display:flex;
@@ -329,8 +300,32 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   margin-bottom:0;
 }
 
-.section-nav a.hardware-button,
-#toggle-paper.hardware-button{
+.section-nav a,
+.section-nav button{
+  appearance:none;
+  -webkit-appearance:none;
+  margin:0;
+  padding:6px 14px;
+  border-radius:4px;
+  border:1px solid rgba(209,255,69,0.24);
+  background:rgba(71,53,42,0.7);
+  color:var(--ddd-color-amber,#ffd166);
+  font-family:var(--ddd-font-mono,monospace);
+  font-size:0.72rem;
+  letter-spacing:0.12em;
+  text-decoration:none;
+  text-transform:uppercase;
+  transition:all 0.2s ease;
+}
+.section-nav a:hover,
+.section-nav button:hover{
+  background:var(--ddd-color-accent,#b44b2f);
+  color:var(--ddd-color-text,#e8e2d6);
+  box-shadow:0 0 14px rgba(209,255,69,0.3);
+  transform:translateY(-1px);
+}
+
+.hardware-button{
   display:inline-flex;
   align-items:center;
   justify-content:center;
@@ -341,8 +336,8 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   border:1px solid rgba(255,157,47,0.5);
   background:rgba(71,53,42,0.85);
   color:#d1ff45;
-  font-family:"Share Tech Mono",monospace;
-  font:700 0.75rem/1 "Share Tech Mono",monospace;
+  font-family:var(--ddd-font-mono,"Share Tech Mono",monospace);
+  font-size:0.72rem;
   letter-spacing:0.12em;
   text-decoration:none;
   text-transform:uppercase;
@@ -386,7 +381,16 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   border-top:1px solid rgba(223,210,194,0.3);
   background:rgba(80,65,53,0.78);
 }
-.status span{white-space:nowrap;flex:1 1 auto;text-align:center}
+.status > span{white-space:nowrap;flex:1 1 auto;text-align:center}
+.status .led-meter-wrapper{margin:0;flex:1 1 260px;min-width:220px}
+.status .meter-meta{margin:0 0 3px;font-size:0.58rem}
+.status .led-row{height:18px;padding:4px 5px;gap:3px;border-radius:3px}
+.status .led-row .led-segment{height:7px}
+.weather-status{display:flex;align-items:center;justify-content:center;gap:7px;flex:1 1 190px;min-width:170px;text-align:left}
+.weather-icon{font-size:1.1rem;line-height:1;color:var(--ddd-color-logo-orange,#f36c04)}
+.weather-copy{display:grid;gap:2px;white-space:nowrap!important;text-align:left!important}
+.weather-location{font-size:0.58rem;letter-spacing:0.16em;color:var(--ddd-color-logo-green,#83ffab)}
+#weather-summary{font-size:0.62rem;letter-spacing:0.08em}
 
 .glitch-line{
   position:fixed;left:0;right:0;height:1px;z-index:90;
@@ -493,16 +497,6 @@ html.reduced-motion .glitch-line{
   transition:opacity 340ms ease;
 }
 
-#toggle-paper{
-  position:relative;
-  z-index:120;
-  cursor:pointer;
-}
-
-#toggle-paper:active{
-  transform:translateY(1px);
-}
-
 .winbox.ddd-winbox{
   border-radius:8px 8px 0 0;
   box-shadow:0 10px 28px rgba(0,0,0,0.6),0 0 24px rgba(180,75,47,0.3);
@@ -558,9 +552,10 @@ html.reduced-motion .glitch-line{
   .equalizer-bar{width:3px}
   .stream-toggle{width:38px;height:38px}
   .freq{max-width:30ch;letter-spacing:0.04em}
-  .action-bar{bottom:96px;gap:0.4rem;width:calc(100vw - 12px)}
+  .action-bar{bottom:124px;gap:0.4rem;width:calc(100vw - 12px)}
   .action-link,.button,#toggle-paper{padding:0.42rem 0.7rem;letter-spacing:0.1em;font-size:0.62rem}
   .status{padding:0.42rem 0.5rem;gap:4px;font-size:0.62rem;letter-spacing:0.09em}
-  .status span{flex:1 1 100%;white-space:normal;line-height:1.18}
+  .status > span{flex:1 1 100%;white-space:normal;line-height:1.18}
+  .status .led-meter-wrapper,.status .weather-status{flex:1 1 100%;min-width:0}
   .corner{display:none}
 }

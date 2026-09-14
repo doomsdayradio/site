@@ -23,7 +23,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
   <link rel="stylesheet" href="/design-system.css">
-  <link rel="stylesheet" href="./index.css?v=20260914-home-audio-visual1">
+  <link rel="stylesheet" href="./index.css?v=20260914-home-audio-visual2">
 </head>
 <body>
 
@@ -68,11 +68,6 @@
       <section class="radio-player module-card" aria-label="Doomsday Radio Livestream">
         <audio id="radio-stream" preload="none" data-src="https://stream.doomsday.radio/live"></audio>
         <div id="equalizer" class="equalizer" aria-hidden="true"></div>
-        <div class="signal-peak-meter" role="meter" aria-label="Signalintensität" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-          <span class="signal-peak-label">SIGNAL INTENSITY</span>
-          <span class="signal-peak-track"><span id="signal-peak-fill"></span></span>
-          <output id="signal-peak-readout">00%</output>
-        </div>
         <div class="player-controls">
           <div class="stream-action">
             <button id="stream-toggle" class="stream-toggle" type="button" aria-label="Livestream abspielen" aria-pressed="false">
@@ -98,21 +93,28 @@
   </main>
 
   <nav class="action-bar section-nav" aria-label="Doomsday Radio Bereiche">
-    <a class="hardware-button ddd-focus" href="/lore/">Lore</a>
-    <a class="hardware-button ddd-focus" href="/signaldecoder/">Spiele</a>
-    <a class="hardware-button ddd-focus" href="/wetter/">Dienste</a>
+    <a class="ddd-focus" href="/lore/">Lore</a>
+    <a class="ddd-focus" href="/signaldecoder/">Spiele</a>
+    <a class="ddd-focus" href="/wetter/">Dienste</a>
     <button id="toggle-paper" class="hardware-button ddd-focus" type="button" aria-pressed="false" data-start-visible="false">Impressum</button>
   </nav>
 
   <div class="status">
-    <span>SIG:▮▮▮▯▯ &nbsp; SNR:-42dB</span>
+    <div class="led-meter-wrapper" role="meter" aria-label="Signalpegel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div class="meter-meta"><span class="sample-label">SIGNAL</span><output id="signal-led-readout" class="meter-readout">00%</output></div>
+      <div id="signal-led-row" class="led-row" aria-hidden="true"></div>
+    </div>
+    <div id="weather-status" class="weather-status" role="status" aria-live="polite">
+      <span class="weather-icon" aria-hidden="true">☁</span>
+      <span class="weather-copy"><span class="weather-location">STANDORT</span><span id="weather-summary">MAP SERVICE OFFLINE</span></span>
+    </div>
     <span id="clock">00:00:00</span>
     <span>FREQ:107.END &nbsp; PWR:LOW</span>
   </div>
 
   <script src="./story/map/libs/three.min.js"></script>
   <script src="./script.js"></script>
-  <script src="./index-ui.js?v=20260914-home-audio-visual1"></script>
+  <script src="./index-ui.js?v=20260914-home-audio-visual2"></script>
   <script type="module" src="./fluid-background.js?v=20260913-resonance3"></script>
   <script defer src="/analytics-loader.js"></script>
 </body>

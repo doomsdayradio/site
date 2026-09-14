@@ -25,9 +25,10 @@ document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,
   const status=document.getElementById('stream-status');
   const volume=document.getElementById('stream-volume');
   const equalizer=document.getElementById('equalizer');
-  const peakMeter=document.querySelector('.signal-peak-meter');
-  const peakFill=document.getElementById('signal-peak-fill');
-  const peakReadout=document.getElementById('signal-peak-readout');
+  const ledMeter=document.querySelector('.led-meter-wrapper');
+  const ledRow=document.getElementById('signal-led-row');
+  const ledReadout=document.getElementById('signal-led-readout');
+  const ledSegments=[];
   const bars=[];
   let audioContext=null;
   let analyser=null;
@@ -36,6 +37,13 @@ document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,
   let fallbackFrame=0;
   let isPlaying=false;
   let hasStarted=false;
+
+  for(let index=0;index<20;index++){
+    const segment=document.createElement('span');
+    segment.className='led-segment';
+    ledRow.appendChild(segment);
+    ledSegments.push(segment);
+  }
 
   for(let index=0;index<32;index++){
     const bar=document.createElement('span');
@@ -124,7 +132,7 @@ document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,
 
   function updateSignalVisualization(signal){
     const peak=Math.max(signal.bass,signal.mid,signal.treble,signal.level);
-    const percent=Math.round(Math.max(0,Math.min(1,peak))*100);
+    const percent=Math.round(Math.max(0,Math.min(1,signal.level))*100);
     const orange=[243,108,4];
     const green=[131,255,171];
     const white=[245,239,228];
@@ -137,10 +145,23 @@ document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,
     document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
     document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
     document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
-    peakFill.style.width=percent+'%';
-    peakReadout.value=String(percent).padStart(2,'0')+'%';
-    peakReadout.textContent=String(percent).padStart(2,'0')+'%';
-    peakMeter.setAttribute('aria-valuenow',String(percent));
+    const litCount=Math.round(Math.max(0,Math.min(1,signal.level))*ledSegments.length);
+    const flickerSeed=performance.now()*0.007;
+    ledSegments.forEach(function(segment,index){
+      const ratio=index/(ledSegments.length-1);
+      const wobble=Math.sin(flickerSeed+index*0.91)*0.5
+        +Math.sin(flickerSeed*1.73+index*1.87)*0.35
+        +(Math.random()-0.5)*0.45;
+      const edge=Math.abs(index-(litCount-1));
+      const spark=index>=litCount && index<=litCount+1 && wobble>0.48;
+      const dropout=index<litCount && edge<=2 && wobble<-0.62;
+      const isActive=(index<litCount && !dropout)||spark;
+      segment.className='led-segment';
+      if(isActive) segment.classList.add('active',ratio>0.75?'high':ratio>0.45?'mid':'low');
+    });
+    ledReadout.value=String(percent).padStart(2,'0')+'%';
+    ledReadout.textContent=String(percent).padStart(2,'0')+'%';
+    ledMeter.setAttribute('aria-valuenow',String(percent));
   }
 
   function setActive(isActive){
@@ -193,10 +214,12 @@ document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,
     document.documentElement.style.setProperty('--audio-mid','0');
     document.documentElement.style.setProperty('--audio-treble','0');
     document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,0.42)');
-    peakFill.style.width='0%';
-    peakReadout.value='00%';
-    peakReadout.textContent='00%';
-    peakMeter.setAttribute('aria-valuenow','0');
+    ledSegments.forEach(function(segment){
+      segment.classList.remove('active','low','mid','high');
+    });
+    ledReadout.value='00%';
+    ledReadout.textContent='00%';
+    ledMeter.setAttribute('aria-valuenow','0');
     setActive(false);
     status.textContent=hasStarted?'SIGNAL PAUSIERT':'SIGNAL BEREIT';
   });
@@ -207,6 +230,27 @@ document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,
     setActive(false);
     status.textContent='SIGNAL NICHT ERREICHBAR';
   });
+})();
+
+/* Map-service weather summary */
+(function(){
+  const summary=document.getElementById('weather-summary');
+  const weatherUrl='./weather.json';
+  const fallback={temperature:null,status:'MAP SERVICE OFFLINE'};
+
+  function render(weather){
+    summary.textContent=weather.temperature===null?weather.status:weather.temperature.toFixed(1)+' °C · '+weather.status;
+  }
+
+  render(fallback);
+  fetch(weatherUrl,{cache:'no-store'})
+    .then(function(response){if(!response.ok) throw new Error('weather unavailable');return response.json()})
+    .then(function(data){
+      const current=data.current||{};
+      const temperature=Number(current.temperature_c);
+      if(current.temperature_c!==null && Number.isFinite(temperature) && data.source_weather?.name) render({temperature:temperature,status:String(current.status_code||fallback.status).replace('_',' ')});
+    })
+    .catch(function(){summary.dataset.state='offline'});
 })();
 
 /* frequency dial ticks */
