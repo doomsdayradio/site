@@ -24,6 +24,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Checkout archive
+        uses: actions/checkout@v5
+        with:
+          repository: doomsdayradio/archiv
+          ref: main
+          path: .archive-source
+
+      - name: Stage archive route
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p archiv
+          cp -R .archive-source/index.html .archive-source/script.js \
+            .archive-source/style.css .archive-source/books.json \
+            .archive-source/audio .archive-source/books .archive-source/vendor archiv/
+          rm -rf archiv/.git
+
       - name: Download public design stylesheet
         run: |
           if ! curl --fail --location --retry 3 \
