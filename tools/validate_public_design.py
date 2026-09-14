@@ -61,7 +61,9 @@ def validate_public_page(path: Path) -> None:
         require(html, required, path)
     for required in ("specimen", "specimen-header", "wordmark", "module-card"):
         require_class(html, required, path)
-    require(html, 'class="hardware-button ddd-focus', path)
+    require_class(html, "ddd-focus", path)
+    if path.name == "404.html":
+        require(html, 'class="hardware-button ddd-focus', path)
 
 
 def main() -> None:

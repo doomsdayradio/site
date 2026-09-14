@@ -10,12 +10,12 @@ const lowPerformanceMode = prefersReducedMotion
 
 document.documentElement.classList.toggle('fx-lite', lowPerformanceMode);
 document.documentElement.classList.toggle('reduced-motion', prefersReducedMotion);
-window.doomsdayAudioSignal={bass:0,mid:0,treble:0,level:0,playing:false};
-document.documentElement.style.setProperty('--audio-level','0');
-document.documentElement.style.setProperty('--audio-bass','0');
-document.documentElement.style.setProperty('--audio-mid','0');
-document.documentElement.style.setProperty('--audio-treble','0');
-document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,0.42)');
+window.doomsdayAudioSignal={bass:0.55,mid:0.6,treble:0.45,level:0.74,playing:false};
+document.documentElement.style.setProperty('--audio-level','0.74');
+document.documentElement.style.setProperty('--audio-bass','0.55');
+document.documentElement.style.setProperty('--audio-mid','0.60');
+document.documentElement.style.setProperty('--audio-treble','0.45');
+document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,0.65)');
 
 /* livestream player and audio-reactive equalizer */
 (function(){
@@ -37,6 +37,7 @@ document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,
   let fallbackFrame=0;
   let isPlaying=false;
   let hasStarted=false;
+  const baseSignalLevel=0.74;
 
   for(let index=0;index<20;index++){
     const segment=document.createElement('span');
@@ -141,7 +142,7 @@ document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,
     const color=orange.map(function(channel,index){
       return Math.round(channel*weights[0]+green[index]*weights[1]+white[index]*weights[2]);
     });
-    document.documentElement.style.setProperty('--audio-glow-color','rgba('+color.join(',')+','+(0.38+peak*0.5).toFixed(3)+')');
+    document.documentElement.style.setProperty('--audio-glow-color','rgba('+color.join(',')+','+(0.45+peak*0.45).toFixed(3)+')');
     document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
     document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
     document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
@@ -163,6 +164,28 @@ document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,
     ledReadout.textContent=String(percent).padStart(2,'0')+'%';
     ledMeter.setAttribute('aria-valuenow',String(percent));
   }
+
+  function updateAmbientMeter(){
+    if(isPlaying && (analyser || fallbackFrame)) return;
+    const now=performance.now();
+    const jitter=Math.sin(now*0.002)*0.12+(Math.random()-0.5)*0.08;
+    const level=Math.max(0.15,Math.min(0.98,baseSignalLevel+jitter));
+    const bass=Math.max(0.15,Math.min(0.95,0.52+Math.sin(now*0.0023)*0.24));
+    const mid=Math.max(0.15,Math.min(0.95,0.58+Math.sin(now*0.0031+1.4)*0.24));
+    const treble=Math.max(0.12,Math.min(0.85,0.42+Math.cos(now*0.0041+2.2)*0.22));
+    window.doomsdayAudioSignal={
+      bass:bass,
+      mid:mid,
+      treble:treble,
+      level:level,
+      playing:false
+    };
+    document.documentElement.style.setProperty('--audio-level',level.toFixed(3));
+    updateSignalVisualization(window.doomsdayAudioSignal);
+  }
+
+  setInterval(updateAmbientMeter,85);
+  updateAmbientMeter();
 
   function setActive(isActive){
     player.classList.toggle('is-playing',isActive);
@@ -209,17 +232,7 @@ document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,
     if(fallbackFrame) cancelAnimationFrame(fallbackFrame);
     fallbackFrame=0;
     window.doomsdayAudioSignal.playing=false;
-    document.documentElement.style.setProperty('--audio-level','0');
-    document.documentElement.style.setProperty('--audio-bass','0');
-    document.documentElement.style.setProperty('--audio-mid','0');
-    document.documentElement.style.setProperty('--audio-treble','0');
-    document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,0.42)');
-    ledSegments.forEach(function(segment){
-      segment.classList.remove('active','low','mid','high');
-    });
-    ledReadout.value='00%';
-    ledReadout.textContent='00%';
-    ledMeter.setAttribute('aria-valuenow','0');
+    updateAmbientMeter();
     setActive(false);
     status.textContent=hasStarted?'SIGNAL PAUSIERT':'SIGNAL BEREIT';
   });
