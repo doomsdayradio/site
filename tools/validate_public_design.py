@@ -102,6 +102,7 @@ def main() -> None:
     validate_public_stylesheet()
     for path in (ROOT / "index.html", ROOT / "404.html", ROOT / "bunnycdn_errors" / "404.html"):
         validate_public_page(path)
+    validate_public_page(ROOT / "archiv" / "index.html")
     validate_map_page(ROOT / "story" / "map" / "index.html")
     print("public site design contract valid")
 

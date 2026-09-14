@@ -37,7 +37,10 @@
     <loc>https://doomsday.radio/services/werbung/web/</loc>
   </url>
   <url>
-    <loc>https://doomsday.radio/story/archiv/</loc>
+    <loc>https://doomsday.radio/archiv/</loc>
+  </url>
+  <url>
+    <loc>https://doomsday.radio/archiv/kraterarchiv/</loc>
   </url>
   <url>
     <loc>https://doomsday.radio/story/</loc>
