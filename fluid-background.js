@@ -178,7 +178,8 @@ if (host && !prefersReducedMotion) {
         fluid.setConfig({
           colorPalette: [cloudColor],
           brightness: Math.min(0.5, cloudBrightness),
-          splatRadius: Math.min(0.22, cloudRadius)
+          splatRadius: Math.min(0.22, cloudRadius),
+          splatForce: 520
         });
 
         // Emitter alternates between left and right broadcast arches with gentle drift
@@ -218,7 +219,8 @@ if (host && !prefersReducedMotion) {
           fluid.setConfig({
             colorPalette: [mouseColor(now)],
             brightness: 0.015,
-            splatRadius: 0.05
+            splatRadius: 0.05,
+            splatForce: 24
           });
           fluid.splatAtLocation(
             (sprayX + orbitX) * (window.devicePixelRatio || 1),
