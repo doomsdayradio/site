@@ -36,6 +36,12 @@
   --ddd-color-amber: var(--ddd-amber-300);
   --ddd-color-danger: var(--ddd-danger-500);
   --ddd-color-good: var(--ddd-good-500);
+  --ddd-color-heading-1: var(--ddd-amber-300);
+  --ddd-color-heading-2: var(--ddd-orange-500);
+  --ddd-color-heading-3: var(--ddd-signal-300);
+  --ddd-color-heading-4: var(--ddd-rust-400);
+  --ddd-color-heading-5: var(--ddd-active-400);
+  --ddd-color-heading-6: var(--ddd-color-muted);
   --ddd-color-line: rgba(180, 75, 47, 0.35);
   --ddd-color-line-signal: rgba(255, 157, 47, 0.36);
   --ddd-color-line-subtle: rgba(240, 186, 146, 0.18);
@@ -1340,8 +1346,16 @@ canvas#dust {
 .archive-detail h2,
 .archive-detail h3 {
   font-family: var(--ddd-font-display, "Orbitron", sans-serif);
-  color: var(--ddd-color-text, #e8e2d6);
 }
+
+.archive-card h3 { color: var(--ddd-color-heading-3, #dfff78); }
+
+.archive-detail h1 { color: var(--ddd-color-heading-1, #ffd166); }
+.archive-detail h2 { color: var(--ddd-color-heading-2, #f36c04); }
+.archive-detail h3 { color: var(--ddd-color-heading-3, #dfff78); }
+.archive-detail h4 { color: var(--ddd-color-heading-4, #d95e3a); }
+.archive-detail h5 { color: var(--ddd-color-heading-5, #83ffab); }
+.archive-detail h6 { color: var(--ddd-color-heading-6, rgba(240, 186, 146, 0.8)); }
 
 .archive-card h3 {
   font-size: 1rem;
@@ -1387,7 +1401,7 @@ canvas#dust {
 
 .archive-section .subsubsection h4 {
   font-family: var(--ddd-font-display, "Orbitron", sans-serif);
-  color: var(--ddd-color-text, #e8e2d6);
+  color: var(--ddd-color-heading-4, #d95e3a);
   letter-spacing: 0.04em;
 }
 .archive-section .subsubsection h4 { font-size: 0.9rem; }
