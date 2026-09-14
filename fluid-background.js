@@ -66,6 +66,7 @@ if (host && !prefersReducedMotion) {
     let previousSprayY = null;
     let lastPointerSpray = 0;
     let lastAudioSpray = 0;
+    let audioSideToggle = 0;
     let pointerActive = false;
 
     window.addEventListener('pointermove', function(event) {
@@ -77,24 +78,47 @@ if (host && !prefersReducedMotion) {
 
     function sprayAtPointer(now) {
       const signal = window.doomsdayAudioSignal;
-      if (signal && signal.playing && now - lastAudioSpray > (lowPerformanceMode ? 420 : 240)) {
+      const isAudioActive = signal && (signal.playing || signal.level > 0.1);
+      const audioInterval = isAudioActive
+        ? (lowPerformanceMode ? 280 : 160) / Math.max(0.6, Math.min(1.8, 0.7 + (signal.level || 0) * 1.1))
+        : (lowPerformanceMode ? 650 : 450);
+
+      if (signal && now - lastAudioSpray > audioInterval) {
         lastAudioSpray = now;
-        const rect = logo ? logo.getBoundingClientRect() : null;
-        const centerX = rect ? rect.left + rect.width * 0.5 : window.innerWidth * 0.5;
-        const centerY = rect ? rect.top + rect.height * 0.55 : window.innerHeight * 0.42;
-        const level = Math.max(0.08, Math.min(1, signal.level || 0));
-        const phase = now * 0.0014;
+        const level = Math.max(0.05, Math.min(1, signal.level || 0));
+        const bass = Math.max(0.05, Math.min(1, signal.bass || level));
+        const mid = Math.max(0.05, Math.min(1, signal.mid || level));
+        const treble = Math.max(0.05, Math.min(1, signal.treble || level));
+
+        // Scale cloud puff size, density, and impulse velocity directly from sound wave intensity
+        const cloudRadius = (lowPerformanceMode ? 0.11 : 0.13) + (bass * 0.11) + (level * 0.07);
+        const cloudBrightness = (lowPerformanceMode ? 0.24 : 0.28) + (level * 0.38) + (mid * 0.18);
+        const cloudColor = soundWaveColor(now, bass, mid, treble, level);
+
         fluid.setConfig({
-          colorPalette: [ambientPalette[Math.floor((phase % ambientPalette.length + ambientPalette.length) % ambientPalette.length)]],
-          brightness: lowPerformanceMode ? 0.32 : 0.42,
-          splatRadius: lowPerformanceMode ? 0.13 : 0.17
+          colorPalette: [cloudColor],
+          brightness: Math.min(0.85, cloudBrightness),
+          splatRadius: Math.min(0.32, cloudRadius)
         });
-        fluid.splatAtLocation(
-          (centerX + Math.sin(phase) * (8 + level * 14)) * (window.devicePixelRatio || 1),
-          centerY + Math.cos(phase * 0.7) * (5 + level * 10),
-          Math.cos(phase) * (8 + level * 18),
-          -10 - level * 26
-        );
+
+        // Emitter alternates between left and right broadcast arches with bass/mid punch
+        const emitters = logoEmitters(0.44 + Math.sin(now * 0.002) * 0.08);
+        audioSideToggle = (audioSideToggle + 1) % 2;
+        const isLeft = audioSideToggle === 0;
+
+        const emitX = isLeft ? emitters.leftX : emitters.rightX;
+        const emitY = emitters.y + Math.cos(now * 0.003) * 6;
+        const forceX = (isLeft ? -1 : 1) * (18 + bass * 55 + level * 25);
+        const forceY = -8 - (mid * 32 + treble * 18);
+
+        fluid.splatAtLocation(emitX, emitY, forceX, forceY);
+
+        // On strong bass/beat peaks, emit a secondary complementary puff on the other side
+        if (bass > 0.62 || level > 0.75) {
+          const secondaryX = isLeft ? emitters.rightX : emitters.leftX;
+          const secondaryForceX = (isLeft ? 1 : -1) * (12 + bass * 35);
+          fluid.splatAtLocation(secondaryX, emitY + 4, secondaryForceX, forceY * 0.8);
+        }
       }
       if (pointerActive && pointerX !== null && pointerY !== null) {
         if (sprayX === null || sprayY === null) {
@@ -143,6 +167,33 @@ if (host && !prefersReducedMotion) {
     window.doomsdayFluidReady = false;
     console.warn('Fluid background unavailable:', error);
   }
+}
+
+function soundWaveColor(now, bass, mid, treble, level) {
+  // Sound-reactive harmonic color blending:
+  // Strong bass -> warm rust / orange smoke (#b84f18, #cf6930)
+  // Strong mids -> signal amber / golden dust (#d97824, #f0bd64)
+  // Strong highs/transients -> phosphor lime / light ash (#d6ae86, #e0c09b)
+  const basePhase = (Math.sin(now * 0.0006) + 1) * 0.5 * (ambientPalette.length - 1);
+  const baseIndex = Math.floor(basePhase);
+  const baseColor = mixHex(ambientPalette[baseIndex], ambientPalette[Math.min(ambientPalette.length - 1, baseIndex + 1)], basePhase - baseIndex);
+
+  const bassWeight = bass * 1.5;
+  const midWeight = mid * 1.2;
+  const trebleWeight = treble * 0.9;
+  const totalWeight = bassWeight + midWeight + trebleWeight + 0.001;
+
+  // Primary accent colors for sound bursts
+  const orange = [184, 79, 24];
+  const amber = [217, 120, 36];
+  const ash = [224, 192, 155];
+
+  const soundR = Math.round((orange[0] * bassWeight + amber[0] * midWeight + ash[0] * trebleWeight) / totalWeight);
+  const soundG = Math.round((orange[1] * bassWeight + amber[1] * midWeight + ash[1] * trebleWeight) / totalWeight);
+  const soundB = Math.round((orange[2] * bassWeight + amber[2] * midWeight + ash[2] * trebleWeight) / totalWeight);
+  const soundHex = rgbToHex(soundR, soundG, soundB);
+
+  return mixHex(baseColor, soundHex, Math.min(0.85, level * 0.9 + 0.15));
 }
 
 function mouseColor(now) {
