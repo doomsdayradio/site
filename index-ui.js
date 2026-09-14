@@ -222,15 +222,19 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
   function setActive(isActive){
     player.classList.toggle('is-playing',isActive);
     if(toggle){
+      if(hasStarted) toggle.classList.add('has-interacted');
       toggle.classList.toggle('is-active',isActive);
       toggle.setAttribute('aria-label',isActive?'Livestream pausieren':'Livestream abspielen');
       toggle.setAttribute('aria-pressed',String(isActive));
+      toggle.title=isActive?'Livestream pausieren':'Livestream abspielen';
     }
     if(btnIcon) btnIcon.textContent=isActive?'❚❚':'▶';
-    if(btnText) btnText.textContent=isActive?'SIGNAL PAUSIEREN':'SIGNAL EMPFANGEN';
+    if(btnText && !hasStarted) btnText.textContent='SIGNAL EMPFANGEN';
   }
 
   async function playStream(){
+    hasStarted=true;
+    if(toggle) toggle.classList.add('has-interacted');
     status.textContent='VERBINDE...';
     setActive(true);
     toggle.disabled=true;

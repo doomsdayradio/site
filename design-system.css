@@ -1167,7 +1167,7 @@ h6 { font-size: clamp(0.78rem, 1.2vw, 0.92rem); color: var(--ddd-color-heading-6
 
 .transport-cluster {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
   align-items: center;
 }
@@ -1178,64 +1178,65 @@ h6 { font-size: clamp(0.78rem, 1.2vw, 0.92rem); color: var(--ddd-color-heading-6
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  min-height: 38px;
-  padding: 8px 14px;
-  border-radius: var(--ddd-radius-control, 4px);
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  padding: 0;
+  border-radius: 50%;
   border: 1px solid rgba(255, 157, 47, 0.45);
-  background: linear-gradient(180deg, rgba(62, 46, 36, 0.92), rgba(38, 28, 22, 0.96));
+  background: radial-gradient(circle at 35% 30%, rgba(72, 54, 42, 0.95), rgba(30, 22, 18, 0.98));
   color: var(--ddd-color-amber, #ffd166);
   font-family: var(--ddd-font-mono, monospace);
-  font-size: 0.72rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  line-height: 1;
   text-decoration: none;
   cursor: pointer;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.6),
-    0 2px 5px rgba(0, 0, 0, 0.35);
+    inset 0 1px 1px rgba(255, 255, 255, 0.16),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.65),
+    0 2px 6px rgba(0, 0, 0, 0.4);
   transition: all 0.2s ease;
 }
 
 .transport-btn:hover {
   border-color: var(--ddd-color-signal, #d1ff45);
   color: var(--ddd-color-signal, #d1ff45);
-  background: linear-gradient(180deg, rgba(78, 58, 44, 0.95), rgba(48, 35, 27, 0.98));
+  background: radial-gradient(circle at 35% 30%, rgba(88, 66, 52, 0.98), rgba(42, 30, 24, 0.99));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    0 0 14px rgba(209, 255, 69, 0.35),
-    0 2px 6px rgba(0, 0, 0, 0.4);
-  transform: translateY(-1px);
+    inset 0 1px 1px rgba(255, 255, 255, 0.25),
+    0 0 16px rgba(209, 255, 69, 0.35),
+    0 3px 8px rgba(0, 0, 0, 0.45);
+  transform: translateY(-1px) scale(1.04);
 }
 
 .transport-btn:active,
 .transport-btn.is-active,
 .transport-btn[aria-pressed="true"] {
   border-color: var(--ddd-color-active, #83ffab);
-  background: linear-gradient(180deg, rgba(38, 52, 28, 0.96), rgba(24, 34, 18, 0.98));
+  background: radial-gradient(circle at 50% 50%, rgba(30, 48, 24, 0.98), rgba(18, 28, 14, 0.99));
   color: var(--ddd-color-active, #83ffab);
   box-shadow:
-    inset 0 0 10px rgba(131, 255, 171, 0.3),
-    inset 0 2px 4px rgba(0, 0, 0, 0.8),
-    0 0 12px rgba(131, 255, 171, 0.25);
-  transform: translateY(0);
+    inset 0 0 12px rgba(131, 255, 171, 0.35),
+    inset 0 2px 5px rgba(0, 0, 0, 0.85),
+    0 0 14px rgba(131, 255, 171, 0.3);
+  transform: translateY(0) scale(1);
 }
 
 .transport-icon {
-  font-size: 0.75rem;
+  font-size: 0.95rem;
   line-height: 1;
   display: inline-block;
   transition: transform 0.15s ease, text-shadow 0.2s ease;
 }
 
 .transport-btn:hover .transport-icon {
-  text-shadow: 0 0 8px rgba(255, 157, 47, 0.6);
+  text-shadow: 0 0 8px rgba(209, 255, 69, 0.6);
 }
 
 .transport-btn.is-active .transport-icon {
-  text-shadow: 0 0 8px rgba(131, 255, 171, 0.7);
+  text-shadow: 0 0 8px rgba(131, 255, 171, 0.75);
 }
 
 .transport-btn--skip:hover .transport-icon {
