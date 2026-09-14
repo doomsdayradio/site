@@ -134,15 +134,19 @@ document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,
   function updateSignalVisualization(signal){
     const peak=Math.max(signal.bass,signal.mid,signal.treble,signal.level);
     const percent=Math.round(Math.max(0,Math.min(1,signal.level))*100);
-    const orange=[243,108,4];
-    const green=[131,255,171];
-    const white=[245,239,228];
-    const total=Math.max(0.001,signal.bass+signal.mid+signal.treble);
-    const weights=[signal.bass/total,signal.mid/total,signal.treble/total];
-    const color=orange.map(function(channel,index){
-      return Math.round(channel*weights[0]+green[index]*weights[1]+white[index]*weights[2]);
-    });
-    document.documentElement.style.setProperty('--audio-glow-color','rgba('+color.join(',')+','+(0.45+peak*0.45).toFixed(3)+')');
+    const orangeAlpha=(0.4+signal.bass*0.55).toFixed(2);
+    const greenAlpha=(0.35+signal.mid*0.55).toFixed(2);
+    const whiteAlpha=(0.3+signal.treble*0.55).toFixed(2);
+    const orangeRadius=(signal.bass*18).toFixed(1)+'px';
+    const greenRadius=(signal.mid*14).toFixed(1)+'px';
+    const whiteRadius=(signal.treble*10).toFixed(1)+'px';
+
+    document.documentElement.style.setProperty('--audio-glow-orange','rgba(243,108,4,'+orangeAlpha+')');
+    document.documentElement.style.setProperty('--audio-glow-green','rgba(131,255,171,'+greenAlpha+')');
+    document.documentElement.style.setProperty('--audio-glow-white','rgba(245,239,228,'+whiteAlpha+')');
+    document.documentElement.style.setProperty('--audio-glow-orange-r',orangeRadius);
+    document.documentElement.style.setProperty('--audio-glow-green-r',greenRadius);
+    document.documentElement.style.setProperty('--audio-glow-white-r',whiteRadius);
     document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
     document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
     document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
