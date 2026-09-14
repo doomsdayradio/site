@@ -100,21 +100,22 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
       const start=Math.max(1,Math.floor(startHz/binWidth));
       const end=Math.min(spectrum.length,Math.ceil(endHz/binWidth));
       let total=0;
-      for(let index=start;index<end;index++) total+=spectrum[index];
+      for(let index=start;index<end;index++) total+=spectrum[index]*spectrum[index];
       return total/Math.max(1,end-start);
     }
     let totalEnergy=0;
-    for(let index=1;index<spectrum.length;index++) totalEnergy+=spectrum[index];
-    const bassRatio=bandEnergy(35,180)/Math.max(0.001,totalEnergy/spectrum.length);
-    const midRatio=bandEnergy(180,2200)/Math.max(0.001,totalEnergy/spectrum.length);
-    const trebleRatio=bandEnergy(2200,10000)/Math.max(0.001,totalEnergy/spectrum.length);
+    for(let index=1;index<spectrum.length;index++) totalEnergy+=spectrum[index]*spectrum[index];
+    const totalBandEnergy=Math.max(0.001,totalEnergy/spectrum.length);
+    const bassRatio=bandEnergy(35,160)/totalBandEnergy;
+    const midRatio=bandEnergy(160,2200)/totalBandEnergy;
+    const trebleRatio=bandEnergy(2200,10000)/totalBandEnergy;
     const rms=Math.max(0,Math.min(1,(features.rms||0)*4));
     const rmsRise=Math.max(0,rms-previousMeydaRms);
     previousMeydaRms=rms;
     const flux=Math.max(0,Math.min(1,(features.spectralFlux||0)*3));
     const bassContrast=Math.max(0,Math.min(1,(bassRatio-midRatio*1.25-0.12)/0.28));
     meydaFeatures={
-      bass:Math.max(0,Math.min(1,bassRatio*0.72)),
+      bass:Math.max(0,Math.min(1,(bassRatio-0.015)/0.18)),
       mid:Math.max(0,Math.min(1,midRatio*0.22)),
       treble:Math.max(0,Math.min(1,trebleRatio*0.12)),
       level:rms,
@@ -160,9 +161,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
       bass=meydaFeatures.bass;
       mid=meydaFeatures.mid;
       treble=meydaFeatures.treble;
-      signal.bass+=(bass-signal.bass)*0.28;
-      signal.mid+=(mid-signal.mid)*0.28;
-      signal.treble+=(treble-signal.treble)*0.28;
+      signal.bass=bass;
+      signal.mid=mid;
+      signal.treble=treble;
       signal.level=meydaFeatures.level;
       signal.transient=meydaFeatures.transient;
       signal.hardBass=meydaFeatures.hardBass;
