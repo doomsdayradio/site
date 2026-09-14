@@ -32,6 +32,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
   const ledMeter=document.querySelector('.led-meter-wrapper');
   const ledRow=document.getElementById('signal-led-row');
   const ledReadout=document.getElementById('signal-led-readout');
+  const btnText=document.getElementById('stream-btn-text');
+  const btnIcon=toggle?toggle.querySelector('.stream-icon'):null;
   const ledSegments=[];
   const bars=[];
   let audioContext=null;
@@ -219,8 +221,13 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
 
   function setActive(isActive){
     player.classList.toggle('is-playing',isActive);
-    toggle.setAttribute('aria-label',isActive?'Livestream pausieren':'Livestream abspielen');
-    toggle.setAttribute('aria-pressed',String(isActive));
+    if(toggle){
+      toggle.classList.toggle('is-active',isActive);
+      toggle.setAttribute('aria-label',isActive?'Livestream pausieren':'Livestream abspielen');
+      toggle.setAttribute('aria-pressed',String(isActive));
+    }
+    if(btnIcon) btnIcon.textContent=isActive?'❚❚':'▶';
+    if(btnText) btnText.textContent=isActive?'SIGNAL PAUSIEREN':'SIGNAL EMPFANGEN';
   }
 
   async function playStream(){
