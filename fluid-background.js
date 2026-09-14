@@ -67,6 +67,7 @@ if (host && !prefersReducedMotion) {
     let lastPointerSpray = 0;
     let lastAudioSpray = 0;
     let lastLogoGlitch = 0;
+    let previousBass = null;
     let audioSideToggle = 0;
     let pointerActive = false;
 
@@ -87,6 +88,20 @@ if (host && !prefersReducedMotion) {
       const bassEmissionThreshold = 0.3;
       const bassActivity = Math.max(0, Math.min(1, (bass - bassEmissionThreshold) / (1 - bassEmissionThreshold)));
       const bassPunch = bassActivity * bassActivity;
+      const bassPeakThreshold = 0.5;
+      const bassRise = previousBass === null ? 0 : bass - previousBass;
+      const hasBassPeak = isPlaying && bass >= bassPeakThreshold && bassRise >= 0.006;
+      previousBass = bass;
+
+      if (logo && hasBassPeak && now - lastLogoGlitch > 700) {
+        lastLogoGlitch = now;
+        logo.classList.remove('logo-bass-hit');
+        void logo.offsetWidth;
+        logo.classList.add('logo-bass-hit');
+        window.setTimeout(function() {
+          logo.classList.remove('logo-bass-hit');
+        }, 240);
+      }
 
       // Keep ordinary signal activity nearly still; bass is the only strong driver.
       const shouldEmitAudio = isPlaying && bass >= bassEmissionThreshold;
@@ -95,16 +110,6 @@ if (host && !prefersReducedMotion) {
       if (shouldEmitAudio && now - lastAudioSpray > audioInterval) {
         lastAudioSpray = now;
         const normalizedPunch = bassPunch;
-
-        if (logo && bass >= 0.72 && normalizedPunch >= 0.35 && now - lastLogoGlitch > 700) {
-          lastLogoGlitch = now;
-          logo.classList.remove('logo-bass-hit');
-          void logo.offsetWidth;
-          logo.classList.add('logo-bass-hit');
-          window.setTimeout(function() {
-            logo.classList.remove('logo-bass-hit');
-          }, 240);
-        }
 
         // Keep the ambient puff small; only a strong bass hit should noticeably grow it.
         const cloudRadius = (lowPerformanceMode ? 0.055 : 0.07) + (normalizedPunch * 0.055);
