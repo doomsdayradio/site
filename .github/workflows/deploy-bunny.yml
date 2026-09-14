@@ -35,10 +35,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p archiv/kraterarchiv
+          mkdir -p archiv
           cp -R .archive-source/index.html .archive-source/script.js \
             .archive-source/style.css .archive-source/books.json \
-            .archive-source/audio .archive-source/books .archive-source/vendor archiv/kraterarchiv/
+            .archive-source/audio .archive-source/books .archive-source/vendor archiv/
           rm -rf archiv/.git
 
       - name: Download public design stylesheet
