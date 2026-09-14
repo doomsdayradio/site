@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;700&family=VT323&display=swap');
 
 
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;700&family=Orbitron:wght@400;600;800&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;700&family=VT323&display=swap');
+
 :root {
   /* Core palette - aligned with Startseite & Hardware */
   --ddd-ink-950: #0e0b09;
@@ -78,6 +80,8 @@
   --ddd-radius-control: 4px;
   --ddd-radius-panel: 6px;
   --ddd-radius-chassis: 10px;
+  /* Echte Fenster, Dialoge und Gerätegehäuse (z. B. CRT-Kartenrahmen) */
+  --ddd-radius-window: 18px;
   --ddd-border-thin: 1px;
   --ddd-border-heavy: 2px;
 
@@ -85,6 +89,10 @@
   --ddd-shadow-signal: 0 0 6px rgba(209, 255, 69, 0.4);
   --ddd-shadow-rust: 0 2px 8px rgba(0, 0, 0, 0.4);
   --ddd-shadow-depth: 0 4px 16px rgba(0, 0, 0, 0.5);
+
+  /* CRT display: dunkler Phosphor-Bildschirm, abgeleitet aus der Vektorkarten-Ästhetik */
+  --ddd-color-screen: #0a1114;
+  --ddd-color-screen-glow: #8df0ca;
 
   /* Motion */
   --ddd-motion-fast: 160ms;

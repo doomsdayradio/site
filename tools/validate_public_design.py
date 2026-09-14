@@ -68,6 +68,25 @@ def validate_public_page(path: Path) -> None:
         require(html, 'class="hardware-button ddd-focus', path)
 
 
+def validate_map_page(path: Path) -> None:
+    html = path.read_text(encoding="utf-8")
+    if "<style" in html.lower():
+        fail(path, "inline CSS is forbidden")
+    if re.search(r"\sstyle\s*=", html, re.IGNORECASE):
+        fail(path, "inline presentation attributes are forbidden")
+    if "fonts.googleapis.com" in html or "fonts.gstatic.com" in html:
+        fail(path, "page-owned font loading is forbidden")
+    stylesheet_links = STYLESHEET_LINK_RX.findall(html)
+    expected_href = re.compile(
+        rf'\bhref=["\']{re.escape(PUBLIC_DESIGN_STYLESHEET)}(?:\?[^"\']*)?["\']',
+        re.IGNORECASE,
+    )
+    if not any(expected_href.search(link) for link in stylesheet_links):
+        fail(path, "must load the central design-system stylesheet")
+    for required in SHOWCASE_AMBIENCE:
+        require(html, required, path)
+
+
 def validate_public_stylesheet() -> None:
     css = PUBLIC_DESIGN_STYLESHEET_FILE.read_text(encoding="utf-8")
     required_rules = {
@@ -83,6 +102,7 @@ def main() -> None:
     validate_public_stylesheet()
     for path in (ROOT / "index.html", ROOT / "404.html", ROOT / "bunnycdn_errors" / "404.html"):
         validate_public_page(path)
+    validate_map_page(ROOT / "story" / "map" / "index.html")
     print("public site design contract valid")
 
 
