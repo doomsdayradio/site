@@ -741,6 +741,10 @@ html.reduced-motion .hero-logo-stage.logo-bass-hit::after{display:none}
   filter:saturate(0.9);
 }
 
+@media (max-height:600px){
+  .hero-mark{transform:translateY(-88px) scale(0.78);transform-origin:center top}
+}
+
 @media (max-width:640px){
   .center{padding:0 10px 170px}
   .hero-mark{top:max(10px, env(safe-area-inset-top, 0px))}
@@ -751,7 +755,9 @@ html.reduced-motion .hero-logo-stage.logo-bass-hit::after{display:none}
   .stream-toggle{min-height:38px;padding:8px 16px;font-size:0.7rem}
   .freq{max-width:30ch;letter-spacing:0.04em}
   .action-bar{bottom:82px;gap:0.4rem;width:calc(100vw - 12px)}
-  .action-link,.button,#toggle-paper{padding:0.42rem 0.7rem;letter-spacing:0.1em;font-size:0.62rem}
+  .section-nav{gap:4px;padding:6px 0;flex-wrap:nowrap}
+  .section-nav a,
+  .section-nav button{height:28px;padding:5px 8px;letter-spacing:0.08em;font-size:0.56rem;white-space:nowrap}
   .status{
     padding:6px 10px calc(6px + env(safe-area-inset-bottom, 0px));
     display:grid;
