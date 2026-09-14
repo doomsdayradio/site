@@ -713,6 +713,8 @@ h4 { color: var(--ddd-color-heading-4, #d95e3a); }
 h5 { color: var(--ddd-color-heading-5, #83ffab); }
 h6 { color: var(--ddd-color-heading-6, rgba(240, 186, 146, 0.8)); }
 
+.module-copy h1,
+.module-copy h2,
 .module-copy h3 {
   margin: 8px 0 12px;
   font-family: var(--ddd-font-display, "Orbitron", sans-serif);
@@ -1103,7 +1105,9 @@ h6 { color: var(--ddd-color-heading-6, rgba(240, 186, 146, 0.8)); }
   color: var(--ddd-color-signal, #d1ff45);
   font-family: var(--ddd-font-mono, monospace);
   font-size: 0.75rem;
+  font-weight: 700;
   letter-spacing: 0.12em;
+  text-decoration: none;
   text-transform: uppercase;
   cursor: pointer;
   transition: all 0.2s ease;
