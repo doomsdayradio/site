@@ -26,7 +26,7 @@ if (host && !prefersReducedMotion) {
       curl: 3,
       splatRadius: 0.2,
       splatForce: 520,
-      shading: !lowPerformanceMode,
+      shading: false,
       colorful: false,
       colorPalette: ambientPalette,
       hover: false,
