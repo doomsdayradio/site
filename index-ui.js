@@ -160,6 +160,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
       bass=meydaFeatures.bass;
       mid=meydaFeatures.mid;
       treble=meydaFeatures.treble;
+      signal.bass+=(bass-signal.bass)*0.28;
+      signal.mid+=(mid-signal.mid)*0.28;
+      signal.treble+=(treble-signal.treble)*0.28;
       signal.level=meydaFeatures.level;
       signal.transient=meydaFeatures.transient;
       signal.hardBass=meydaFeatures.hardBass;
@@ -273,12 +276,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
 
   function updateAmbientMeter(){
     if(isPlaying && (analyser || fallbackFrame)) return;
-    const now=performance.now();
-    const jitter=Math.sin(now*0.002)*0.12+(Math.random()-0.5)*0.08;
-    const level=Math.max(0.15,Math.min(0.98,baseSignalLevel+jitter));
-    const bass=Math.max(0.15,Math.min(0.95,0.52+Math.sin(now*0.0023)*0.24));
-    const mid=Math.max(0.15,Math.min(0.95,0.58+Math.sin(now*0.0031+1.4)*0.24));
-    const treble=Math.max(0.12,Math.min(0.85,0.42+Math.cos(now*0.0041+2.2)*0.22));
+    const level=baseSignalLevel;
+    const bass=0.55;
+    const mid=0.6;
+    const treble=0.45;
     window.doomsdayAudioSignal={
       bass:bass,
       mid:mid,
