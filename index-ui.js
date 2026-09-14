@@ -76,7 +76,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     if(!AudioContext) return;
     audioContext=new AudioContext();
     analyser=audioContext.createAnalyser();
-    analyser.fftSize=256;
+    analyser.fftSize=1024;
     analyser.smoothingTimeConstant=0.78;
     frequencyData=new Uint8Array(analyser.frequencyBinCount);
     const source=audioContext.createMediaElementSource(audio);
@@ -145,20 +145,37 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     let lowBass=0;
     let mid=0;
     let treble=0;
+    let bassEnergy=0;
+    let midEnergy=0;
+    const binWidth=audioContext.sampleRate/analyser.fftSize;
     for(let index=0;index<frequencyData.length;index++){
       const value=frequencyData[index]/255;
-      if(index<8){bass+=value/8;if(index<3) lowBass+=value/3}
-      else if(index<28) mid+=value/20;
-      else treble+=value/(frequencyData.length-28);
+      const frequency=index*binWidth;
+      if(frequency>=35&&frequency<180){
+        bass+=value;
+        bassEnergy+=value*value;
+        if(frequency<120) lowBass+=value;
+      }else if(frequency>=180&&frequency<2200){
+        mid+=value;
+        midEnergy+=value*value;
+      }else if(frequency>=2200){
+        treble+=value;
+      }
     }
+    const bassMidEnergy=Math.max(0.001,bassEnergy+midEnergy);
+    const directBassRatio=bassEnergy/bassMidEnergy;
+    const directBass=Math.max(0,Math.min(1,(directBassRatio-0.16)/0.42));
     const signal=window.doomsdayAudioSignal;
+    bass/=Math.max(1,Math.ceil(145/binWidth));
+    mid/=Math.max(1,Math.ceil(2020/binWidth));
+    treble/=Math.max(1,frequencyData.length-Math.ceil(2200/binWidth));
     const rawLevel=Math.max(bass,mid,treble);
     const levelRise=Math.max(0,rawLevel-signal.level);
     const competingSpectrum=Math.max(mid*1.22,treble*1.4,0.2);
     const lowBassDominance=Math.max(0,Math.min(1,(lowBass-competingSpectrum)/0.2));
     const lowBassRise=Math.max(0,lowBass-(signal.lowBass||0));
     const hardBass=Math.max(0,Math.min(1,lowBassDominance*0.62+Math.min(1,lowBassRise/0.16)*0.38));
-    signal.bass+=(bass-signal.bass)*0.16;
+    signal.bass+=(directBass-signal.bass)*0.16;
     signal.lowBass=lowBass;
     signal.hardBass=hardBass;
     signal.hardBassConfirmed=lowBass >= 0.68 && lowBassRise >= 0.08 && hardBass >= 0.82;
@@ -167,10 +184,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     signal.level+=(rawLevel-signal.level)*0.32;
     signal.transient=Math.max(0,Math.min(1,levelRise/0.08));
     if(meydaFeatures){
-      bass=meydaFeatures.bass;
       mid=meydaFeatures.mid;
       treble=meydaFeatures.treble;
-      signal.bass=bass;
       signal.mid=mid;
       signal.treble=treble;
       signal.level=meydaFeatures.level;
