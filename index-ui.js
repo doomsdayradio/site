@@ -103,6 +103,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     signal.bass+=(bass-signal.bass)*0.16;
     signal.lowBass=lowBass;
     signal.hardBass=hardBass;
+    signal.hardBassConfirmed=hardBass >= 0.72;
     signal.mid+=(mid-signal.mid)*0.16;
     signal.treble+=(treble-signal.treble)*0.16;
     signal.level+=(Math.max(bass,mid,treble)-signal.level)*0.32;
@@ -133,6 +134,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     signal.treble+=(pulse*0.62-signal.treble)*0.18;
     signal.lowBass=signal.bass;
     signal.hardBass=0;
+    signal.hardBassConfirmed=false;
     document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
     document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
     document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
@@ -221,6 +223,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
       treble:treble,
       level:level,
       hardBass:0,
+      hardBassConfirmed:false,
       playing:false
     };
     document.documentElement.style.setProperty('--audio-level',level.toFixed(3));

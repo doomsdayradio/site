@@ -68,6 +68,8 @@ if (host && !prefersReducedMotion) {
     let lastPointerSpray = 0;
     let lastAudioSpray = 0;
     let lastLogoGlitch = 0;
+    let hardBassFrames = 0;
+    let hardBassTriggered = false;
     let audioSideToggle = 0;
     let pointerActive = false;
 
@@ -90,14 +92,25 @@ if (host && !prefersReducedMotion) {
       const bassActivity = Math.max(0, Math.min(1, (bass - bassEmissionThreshold) / (1 - bassEmissionThreshold)));
       const bassHardThreshold = 0.42;
       const bassHardActivity = Math.max(0, Math.min(1, (bass - bassHardThreshold) / 0.38));
-      const bassPunch = Math.max(bassActivity * bassActivity, bassHardActivity * bassHardActivity);
+      const hardBassActivity = signal && signal.hardBassConfirmed ? hardBass : 0;
+      const bassPunch = Math.max(
+        bassActivity * bassActivity,
+        bassHardActivity * bassHardActivity,
+        hardBassActivity * hardBassActivity
+      );
       const volumeActivity = Math.max(0, Math.min(1, (level - 0.3) / 0.7));
       const volumePulse = volumeActivity * (0.045 + Math.max(0, Math.sin(now * 0.0037 + 0.8)) * 0.075);
       const visualPunch = Math.min(1, Math.max(bassPunch, volumePulse));
-      const hasBassPeak = isPlaying && hardBass >= 0.72;
+      if (isPlaying && hardBassActivity >= 0.72) hardBassFrames += 1;
+      else {
+        hardBassFrames = 0;
+        hardBassTriggered = false;
+      }
+      const hasBassPeak = hardBassFrames >= 3 && !hardBassTriggered;
 
       if (logoStage && hasBassPeak && now - lastLogoGlitch > 1200) {
         lastLogoGlitch = now;
+        hardBassTriggered = true;
         logoStage.classList.remove('logo-bass-hit');
         void logoStage.offsetWidth;
         logoStage.classList.add('logo-bass-hit');
