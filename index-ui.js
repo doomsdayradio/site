@@ -42,6 +42,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
   let audioContext=null;
   let analyser=null;
   let frequencyData=null;
+  let floatFrequencyData=null;
   let meydaAnalyzer=null;
   let outputGain=null;
   let meydaFeatures=null;
@@ -80,6 +81,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     analyser.fftSize=1024;
     analyser.smoothingTimeConstant=0.55;
     frequencyData=new Uint8Array(analyser.frequencyBinCount);
+    floatFrequencyData=new Float32Array(analyser.frequencyBinCount);
     const source=audioContext.createMediaElementSource(audio);
     outputGain=audioContext.createGain();
     outputGain.gain.value=Number(volume.value);
@@ -142,6 +144,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
   function drawEqualizer(){
     if(!analyser || audio.paused){visualizerFrame=0;return}
     analyser.getByteFrequencyData(frequencyData);
+    analyser.getFloatFrequencyData(floatFrequencyData);
     let bass=0;
     let lowBass=0;
     let mid=0;
@@ -151,10 +154,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     const binWidth=audioContext.sampleRate/analyser.fftSize;
     for(let index=0;index<frequencyData.length;index++){
       const value=frequencyData[index]/255;
+      const amplitude=Math.pow(10,floatFrequencyData[index]/20);
       const frequency=index*binWidth;
       if(frequency>=35&&frequency<180){
         bass+=value;
-        bassEnergy+=value*value;
+        bassEnergy+=amplitude*amplitude;
         if(frequency<120) lowBass+=value;
       }else if(frequency>=180&&frequency<2200){
         mid+=value;
@@ -165,7 +169,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
     }
     const bassBandRms=Math.sqrt(bassEnergy/Math.max(1,Math.ceil(145/binWidth)));
     const bassDb=20*Math.log10(Math.max(0.00001,bassBandRms));
-    const directBass=Math.max(0,Math.min(1,(bassDb+60)/54));
+    const directBass=Math.max(0,Math.min(1,(bassDb+65)/45));
     const signal=window.doomsdayAudioSignal;
     bass/=Math.max(1,Math.ceil(145/binWidth));
     lowBass/=Math.max(1,Math.ceil(85/binWidth));
