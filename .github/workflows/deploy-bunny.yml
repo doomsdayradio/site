@@ -26,9 +26,13 @@ jobs:
 
       - name: Download public design stylesheet
         run: |
-          curl --fail --location --retry 3 \
+          if ! curl --fail --location --retry 3 \
             https://doomsday.radio/design-system/latest/design-system.css \
-            --output design-system.css
+            --output /tmp/design-system.css; then
+            echo "CDN snapshot is not published yet; using the committed snapshot."
+          else
+            cp /tmp/design-system.css design-system.css
+          fi
 
       - name: Validate public design contract
         run: python3 tools/validate_public_design.py
