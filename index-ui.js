@@ -11,7 +11,7 @@ const lowPerformanceMode = prefersReducedMotion
 document.documentElement.classList.toggle('fx-lite', lowPerformanceMode);
 document.documentElement.classList.toggle('reduced-motion', prefersReducedMotion);
 document.documentElement.classList.toggle('bass-debug', new URLSearchParams(location.search).has('bass-debug'));
-window.doomsdayAudioSignal={bass:0.55,mid:0.6,treble:0.45,level:0.74,transient:0,hardBass:0,playing:false};
+window.doomsdayAudioSignal={bass:0,mid:0.6,treble:0.45,level:0.74,transient:0,hardBass:0,playing:false};
 document.documentElement.style.setProperty('--audio-level','0.74');
 document.documentElement.style.setProperty('--audio-bass','0.55');
 document.documentElement.style.setProperty('--audio-mid','0.60');
@@ -277,7 +277,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','8px');
   function updateAmbientMeter(){
     if(isPlaying && (analyser || fallbackFrame)) return;
     const level=baseSignalLevel;
-    const bass=0.55;
+    const bass=0;
     const mid=0.6;
     const treble=0.45;
     window.doomsdayAudioSignal={
