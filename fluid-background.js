@@ -33,7 +33,7 @@ if (host && !prefersReducedMotion) {
       transparent: true,
       brightness: 0.28,
       bloom: false,
-      sunrays: true
+      sunrays: false
     });
 
     fluid.start();
