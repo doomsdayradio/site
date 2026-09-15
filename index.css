@@ -484,7 +484,7 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   margin-bottom:0;
 }
 
-.section-menu-toggle{display:none}
+.section-nav .section-menu-toggle{display:none}
 .section-menu{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
 
 .section-nav a,
@@ -766,7 +766,7 @@ html.reduced-motion .hero-logo-stage.logo-bass-hit::after{display:none}
   .freq{max-width:30ch;letter-spacing:0.04em}
   .action-bar{top:calc(12px + env(safe-area-inset-top, 0px));left:14px;bottom:auto;transform:none;gap:0;width:auto}
   .section-nav{gap:0;padding:0;flex-wrap:nowrap;border:0;background:transparent}
-  .section-menu-toggle{display:inline-flex;flex:0 0 36px;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:36px;height:32px;padding:0;border:0;border-radius:0;background:transparent;color:var(--ddd-color-amber,#ffd166);cursor:pointer}
+  .section-nav .section-menu-toggle{display:inline-flex;flex:0 0 36px;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:36px;height:32px;padding:0;border:0;border-radius:0;background:transparent;color:var(--ddd-color-amber,#ffd166);cursor:pointer}
   .section-menu-toggle span{display:block;width:16px;height:1px;background:currentColor;transition:transform 0.2s ease,opacity 0.2s ease}
   .section-nav .section-menu-toggle{border:0;background:transparent;box-shadow:none}
   .section-menu-toggle[aria-expanded="true"] span:nth-child(1){transform:translateY(5px) rotate(45deg)}
