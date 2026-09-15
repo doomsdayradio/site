@@ -21,6 +21,28 @@ document.documentElement.style.setProperty('--audio-glow-outer','rgba(243,108,4,
 document.documentElement.style.setProperty('--audio-glow-inner-r','0px');
 document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
+/* Mobile navigation stays collapsed until the user asks for it. */
+(function(){
+  const menuToggle=document.getElementById('section-menu-toggle');
+  const menu=document.getElementById('section-menu');
+  if(!menuToggle || !menu) return;
+  function setMenuOpen(isOpen){
+    document.documentElement.classList.toggle('section-menu-open',isOpen);
+    menuToggle.setAttribute('aria-expanded',String(isOpen));
+    menuToggle.setAttribute('aria-label',isOpen?'Menü schließen':'Menü öffnen');
+    menuToggle.title=isOpen?'Menü schließen':'Menü öffnen';
+  }
+  menuToggle.addEventListener('click',function(){
+    setMenuOpen(menuToggle.getAttribute('aria-expanded')!=='true');
+  });
+  menu.addEventListener('click',function(event){
+    if(event.target.closest('a')) setMenuOpen(false);
+  });
+  document.addEventListener('keydown',function(event){
+    if(event.key==='Escape') setMenuOpen(false);
+  });
+})();
+
 /* livestream player and audio-reactive equalizer */
 (function(){
   const player=document.querySelector('.radio-player');
@@ -68,12 +90,12 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     bars.push(bar);
   }
 
-  if(location.origin==='https://doomsday.radio') audio.crossOrigin='anonymous';
+  audio.crossOrigin='anonymous';
   audio.src=audio.dataset.src;
   audio.volume=Number(volume.value);
 
   function setupAnalyser(){
-    if(analyser || location.origin!=='https://doomsday.radio') return;
+    if(analyser) return;
     const AudioContext=window.AudioContext||window.webkitAudioContext;
     if(!AudioContext) return;
     audioContext=new AudioContext();
@@ -348,8 +370,13 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       try{setupAnalyser()}catch(error){analyser=null;frequencyData=null}
       if(audioContext && audioContext.state==='suspended') await audioContext.resume();
       if(meydaAnalyzer) meydaAnalyzer.start();
+      isPlaying=true;
+      if(!analyser) startFallbackSignal();
       await audio.play();
     }catch(error){
+      isPlaying=false;
+      if(fallbackFrame) cancelAnimationFrame(fallbackFrame);
+      fallbackFrame=0;
       status.textContent='SIGNAL NICHT ERREICHBAR';
       setActive(false);
     }finally{

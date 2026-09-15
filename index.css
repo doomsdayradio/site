@@ -11,7 +11,7 @@ html,body{
 #fluid-background{
   position:fixed;inset:0;z-index:0;
   pointer-events:none;
-  opacity:0.28;
+  opacity:0.4;
   mix-blend-mode:normal;
 }
 
@@ -484,6 +484,9 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   margin-bottom:0;
 }
 
+.section-menu-toggle{display:none}
+.section-menu{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+
 .section-nav a,
 .section-nav button{
   display:inline-flex;
@@ -496,6 +499,8 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   border-radius:4px;
   border:1px solid rgba(209,255,69,0.24);
   background:rgba(71,53,42,0.7);
+  -webkit-backdrop-filter:blur(6px);
+  backdrop-filter:blur(6px);
   color:var(--ddd-color-amber,#ffd166);
   font-family:var(--ddd-font-mono,monospace);
   font-size:0.72rem;
@@ -515,6 +520,11 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   color:var(--ddd-color-text,#e8e2d6);
   box-shadow:0 0 14px rgba(209,255,69,0.3);
   transform:translateY(-1px);
+}
+
+@keyframes section-menu-in{
+  from{opacity:0;transform:translateX(-12px) scaleX(0.94);filter:blur(4px)}
+  to{opacity:1;transform:none;filter:none}
 }
 
 .status{
@@ -746,7 +756,7 @@ html.reduced-motion .hero-logo-stage.logo-bass-hit::after{display:none}
 }
 
 @media (max-width:640px){
-  .center{padding:0 10px 170px}
+  .center{padding:0 10px 92px}
   .hero-mark{top:max(10px, env(safe-area-inset-top, 0px))}
   .hero-logo-stage{width:min(290px,72vw)}
   .radio-player{width:min(380px,88vw);margin-top:0.5rem}
@@ -754,10 +764,26 @@ html.reduced-motion .hero-logo-stage.logo-bass-hit::after{display:none}
   .equalizer-bar{width:3px}
   .stream-toggle{min-height:38px;padding:8px 16px;font-size:0.7rem}
   .freq{max-width:30ch;letter-spacing:0.04em}
-  .action-bar{bottom:82px;gap:0.4rem;width:calc(100vw - 12px)}
-  .section-nav{gap:4px;padding:6px 0;flex-wrap:nowrap}
+  .action-bar{top:calc(12px + env(safe-area-inset-top, 0px));left:14px;bottom:auto;transform:none;gap:0;width:auto}
+  .section-nav{gap:0;padding:0;flex-wrap:nowrap;border:0;background:transparent}
+  .section-menu-toggle{display:inline-flex;flex:0 0 36px;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:36px;height:32px;padding:0;border:0;border-radius:0;background:transparent;color:var(--ddd-color-amber,#ffd166);cursor:pointer}
+  .section-menu-toggle span{display:block;width:16px;height:1px;background:currentColor;transition:transform 0.2s ease,opacity 0.2s ease}
+  .section-nav .section-menu-toggle{border:0;background:transparent;box-shadow:none}
+  .section-menu-toggle[aria-expanded="true"] span:nth-child(1){transform:translateY(5px) rotate(45deg)}
+  .section-menu-toggle[aria-expanded="true"] span:nth-child(2){opacity:0}
+  .section-menu-toggle[aria-expanded="true"] span:nth-child(3){transform:translateY(-5px) rotate(-45deg)}
+  .section-menu{display:none;position:absolute;left:0;top:calc(100% + 6px);width:min(190px,calc(100vw - 30px));padding:0;flex-direction:column;align-items:stretch;gap:4px;border:0;background:transparent;box-shadow:none}
+  .section-menu-toggle[aria-expanded="true"] + .section-menu{display:flex}
   .section-nav a,
   .section-nav button{height:28px;padding:5px 8px;letter-spacing:0.08em;font-size:0.56rem;white-space:nowrap}
+  .section-menu a,.section-menu button{width:100%}
+  .section-menu-toggle[aria-expanded="true"] + .section-menu > *{animation:section-menu-in 360ms cubic-bezier(0.22,0.8,0.24,1) both}
+  .section-menu-toggle[aria-expanded="true"] + .section-menu > :nth-child(1){animation-delay:0ms}
+  .section-menu-toggle[aria-expanded="true"] + .section-menu > :nth-child(2){animation-delay:45ms}
+  .section-menu-toggle[aria-expanded="true"] + .section-menu > :nth-child(3){animation-delay:90ms}
+  .section-menu-toggle[aria-expanded="true"] + .section-menu > :nth-child(4){animation-delay:135ms}
+  .section-menu-toggle[aria-expanded="true"] + .section-menu > :nth-child(5){animation-delay:180ms}
+  #fluid-background{opacity:0.52}
   .status{
     padding:6px 10px calc(6px + env(safe-area-inset-bottom, 0px));
     display:grid;
@@ -815,4 +841,8 @@ html.reduced-motion .hero-logo-stage.logo-bass-hit::after{display:none}
     text-overflow:ellipsis;
   }
   .corner{display:none}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .section-menu-toggle[aria-expanded="true"] + .section-menu > *{animation:none}
 }

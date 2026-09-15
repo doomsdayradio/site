@@ -3,6 +3,8 @@ import WebGLFluidEnhanced from 'https://cdn.jsdelivr.net/npm/webgl-fluid-enhance
 const host = document.getElementById('fluid-background');
 const logo = document.querySelector('.hero-logo');
 const logoStage = document.querySelector('.hero-logo-stage') || logo;
+const equalizer = document.getElementById('equalizer');
+const streamToggle = document.getElementById('stream-toggle');
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const lowPerformanceMode = document.documentElement.classList.contains('fx-lite');
 const ambientPalette = ['#b9855f', '#c99a72', '#d6ae86', '#e0c09b'];
@@ -54,6 +56,17 @@ if (host && !prefersReducedMotion) {
         rightX: (rect.right - edgeInset) * pixelRatio,
         y: rect.top + rect.height * verticalRatio
       };
+    }
+
+    function uiEmitters() {
+      const pixelRatio = window.devicePixelRatio || 1;
+      return [equalizer, streamToggle].filter(Boolean).map(function(element) {
+        const rect = element.getBoundingClientRect();
+        return {
+          x: (rect.left + rect.width * 0.5) * pixelRatio,
+          y: rect.top + rect.height * 0.5
+        };
+      });
     }
 
     let pointerX = null;
@@ -210,6 +223,16 @@ if (host && !prefersReducedMotion) {
         const forceY = -2 - (bassPunch * 18 + levelPunch * 11 + volumePulse * 3 + hardBassEmission * 10 + (glitchBurstActive ? 8 : 0));
 
         fluid.splatAtLocation(emitX, emitY, forceX, forceY);
+        uiEmitters().forEach(function(uiEmitter, index) {
+          const direction = index === 0 ? -1 : 1;
+          const uiForce = 8 + bassPunch * 12 + volumePulse * 4 + (glitchBurstActive ? 7 : 0);
+          fluid.splatAtLocation(
+            uiEmitter.x,
+            uiEmitter.y,
+            direction * uiForce,
+            -3 - bassPunch * 8 - (glitchBurstActive ? 4 : 0)
+          );
+        });
         if (glitchBurstActive) glitchEmissionBursts -= 1;
       }
       if (pointerActive && pointerX !== null && pointerY !== null) {
@@ -255,10 +278,56 @@ if (host && !prefersReducedMotion) {
 
     requestAnimationFrame(sprayAtPointer);
   } catch (error) {
-    host.hidden = true;
     window.doomsdayFluidReady = false;
     console.warn('Fluid background unavailable:', error);
+    startCanvasFallback(host);
   }
+}
+
+function startCanvasFallback(container) {
+  const canvas = container.querySelector('canvas') || document.createElement('canvas');
+  if (!canvas.parentNode) container.appendChild(canvas);
+  const context = canvas.getContext('2d');
+  if (!context) return;
+
+  let width = 0;
+  let height = 0;
+  let frame = 0;
+  function resize() {
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = Math.round(width * ratio);
+    canvas.height = Math.round(height * ratio);
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+  }
+  function draw(now) {
+    context.clearRect(0, 0, width, height);
+    const phase = now * 0.00018;
+    const gradient = context.createLinearGradient(0, 0, width, height);
+    gradient.addColorStop(0, 'rgba(184,79,24,0.18)');
+    gradient.addColorStop(0.48, 'rgba(217,120,36,0.08)');
+    gradient.addColorStop(1, 'rgba(131,255,171,0.12)');
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, width, height);
+    context.strokeStyle = 'rgba(209,255,69,0.18)';
+    context.lineWidth = 1;
+    for (let index = 0; index < 5; index += 1) {
+      const y = ((height / 5) * index + Math.sin(phase * 3 + index) * 34 + now * 0.012) % (height + 80) - 40;
+      context.beginPath();
+      context.moveTo(0, y);
+      context.bezierCurveTo(width * 0.28, y - 24, width * 0.72, y + 24, width, y);
+      context.stroke();
+    }
+    frame = requestAnimationFrame(draw);
+  }
+  resize();
+  window.addEventListener('resize', resize, { passive: true });
+  cancelAnimationFrame(frame);
+  frame = requestAnimationFrame(draw);
+  window.doomsdayFluidFallbackReady = true;
 }
 
 function soundWaveColor(now, bass, mid, treble, level) {

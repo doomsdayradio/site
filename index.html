@@ -103,11 +103,16 @@
   </main>
 
   <nav class="action-bar section-nav" aria-label="Doomsday Radio Bereiche">
-    <a class="ddd-focus" href="/lore/">Lore</a>
-    <a class="ddd-focus" href="/archiv/">Archiv</a>
-    <a class="ddd-focus" href="/signaldecoder/">Spiele</a>
-    <a class="ddd-focus" href="/story/map/">Karte</a>
-    <button id="toggle-paper" class="ddd-focus" type="button" aria-pressed="false" data-start-visible="false">Impressum</button>
+    <button id="section-menu-toggle" class="section-menu-toggle ddd-focus" type="button" aria-expanded="false" aria-controls="section-menu" aria-label="Menü öffnen" title="Menü öffnen">
+      <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+    </button>
+    <div id="section-menu" class="section-menu">
+      <a class="ddd-focus" href="/lore/">Lore</a>
+      <a class="ddd-focus" href="/archiv/">Archiv</a>
+      <a class="ddd-focus" href="/signaldecoder/">Spiele</a>
+      <a class="ddd-focus" href="/story/map/">Karte</a>
+      <button id="toggle-paper" class="ddd-focus" type="button" aria-pressed="false" data-start-visible="false">Impressum</button>
+    </div>
   </nav>
 
   <div class="status">
