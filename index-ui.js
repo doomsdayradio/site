@@ -71,9 +71,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let previousMeydaRms=0;
   let visualizerFrame=0;
   let fallbackFrame=0;
+  let fallbackTimer=0;
   let isPlaying=false;
   let hasStarted=false;
   const baseSignalLevel=0.74;
+  const canAnalyzeAudio=location.hostname==='doomsday.radio';
 
   for(let index=0;index<20;index++){
     const segment=document.createElement('span');
@@ -90,7 +92,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     bars.push(bar);
   }
 
-  audio.crossOrigin='anonymous';
+  if(canAnalyzeAudio) audio.crossOrigin='anonymous';
   audio.src=audio.dataset.src;
   audio.volume=Number(volume.value);
 
@@ -162,7 +164,15 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   }
 
   function startFallbackSignal(){
-    if(!fallbackFrame) fallbackFrame=requestAnimationFrame(drawFallbackSignal);
+    if(fallbackTimer) return;
+    fallbackFrame=1;
+    fallbackTimer=window.setInterval(function(){drawFallbackSignal(performance.now())},50);
+  }
+
+  function stopFallbackSignal(){
+    if(fallbackTimer) window.clearInterval(fallbackTimer);
+    fallbackTimer=0;
+    fallbackFrame=0;
   }
 
   function drawEqualizer(){
@@ -231,10 +241,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   }
 
   function drawFallbackSignal(now){
-    if(!isPlaying){
-      fallbackFrame=0;
+    if(!isPlaying && audio.paused){
+      stopFallbackSignal();
       return;
     }
+    isPlaying=true;
     const signal=window.doomsdayAudioSignal;
     const pulse=0.24+Math.max(0,Math.sin(now*0.008))*0.28+Math.max(0,Math.sin(now*0.013+1.8))*0.16;
     signal.level+=(pulse-signal.level)*0.32;
@@ -258,7 +269,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       bar.style.transform='scaleY('+level.toFixed(2)+')';
       bar.style.opacity=String(0.5+level*0.5);
     });
-    fallbackFrame=requestAnimationFrame(drawFallbackSignal);
   }
 
   function updateSignalVisualization(signal){
@@ -328,6 +338,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   }
 
   function updateAmbientMeter(){
+    if(!analyser && audio && !audio.paused){
+      isPlaying=true;
+      startFallbackSignal();
+      return;
+    }
     if(isPlaying && (analyser || fallbackFrame)) return;
     const level=baseSignalLevel;
     const bass=0;
@@ -367,7 +382,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     setActive(true);
     toggle.disabled=true;
     try{
-      try{setupAnalyser()}catch(error){analyser=null;frequencyData=null}
+      if(canAnalyzeAudio){
+        try{setupAnalyser()}catch(error){analyser=null;frequencyData=null}
+      }
       if(audioContext && audioContext.state==='suspended') await audioContext.resume();
       if(meydaAnalyzer) meydaAnalyzer.start();
       isPlaying=true;
@@ -376,8 +393,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       if(analyser && !visualizerFrame) visualizerFrame=requestAnimationFrame(drawEqualizer);
     }catch(error){
       isPlaying=false;
-      if(fallbackFrame) cancelAnimationFrame(fallbackFrame);
-      fallbackFrame=0;
+      stopFallbackSignal();
       status.textContent='SIGNAL NICHT ERREICHBAR';
       setActive(false);
     }finally{
@@ -409,8 +425,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     if(meydaAnalyzer) meydaAnalyzer.stop();
     meydaFeatures=null;
     previousMeydaRms=0;
-    if(fallbackFrame) cancelAnimationFrame(fallbackFrame);
-    fallbackFrame=0;
+    stopFallbackSignal();
     window.doomsdayAudioSignal.playing=false;
     updateAmbientMeter();
     setActive(false);
