@@ -60,7 +60,7 @@ if (host && !prefersReducedMotion) {
 
     function uiEmitters() {
       const pixelRatio = window.devicePixelRatio || 1;
-      return [equalizer, streamToggle].filter(Boolean).map(function(element) {
+      return [equalizer].filter(Boolean).map(function(element) {
         const rect = element.getBoundingClientRect();
         return {
           x: (rect.left + rect.width * 0.5) * pixelRatio,
