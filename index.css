@@ -8,6 +8,19 @@ html,body{
   font-family:"Share Tech Mono",monospace;
 }
 
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  opacity:0.4;
+  background:
+    linear-gradient(rgba(120, 102, 86, 0.6),rgba(207, 186, 168, 0.55)),
+    url("./doomsday-landkarte-stylized.jpg") top / cover no-repeat;
+
+}
+
 #fluid-background{
   position:fixed;inset:0;z-index:0;
   pointer-events:none;
@@ -756,6 +769,7 @@ html.reduced-motion .hero-logo-stage.logo-bass-hit::after{display:none}
 }
 
 @media (max-width:640px){
+  body::before{opacity:0.22}
   .center{padding:0 10px 92px}
   .hero-mark{top:max(10px, env(safe-area-inset-top, 0px))}
   .hero-logo-stage{width:min(290px,72vw)}
