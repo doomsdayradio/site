@@ -16,7 +16,7 @@ body::before{
   pointer-events:none;
   opacity:0.4;
   background:
-    linear-gradient(rgba(120, 102, 86, 0.6),rgba(207, 186, 168, 0.55)),
+    linear-gradient(rgba(42, 36, 31, 0.6),rgba(207, 186, 168, 0.55)),
     url("./doomsday-landkarte-stylized.jpg") top / cover no-repeat;
 
 }
