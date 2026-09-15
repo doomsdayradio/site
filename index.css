@@ -317,7 +317,7 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
 .radio-player.is-playing .stream-icon,
 .stream-toggle.is-active .stream-icon{
   padding-left:0;
-  text-shadow:0 0 10px rgba(131,255,171,0.8);
+  text-shadow:none;
 }
 
 /* Subtle holographic terminal glitch effect on hover */
@@ -332,6 +332,12 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
 
 .stream-toggle:hover .stream-icon{
   animation:none;
+}
+
+.radio-player button.stream-toggle.transport-btn.is-active .stream-icon,
+.radio-player button.stream-toggle.transport-btn.is-active:hover .stream-icon{
+  animation:none;
+  text-shadow:none;
 }
 
 .stream-copy{display:none}
@@ -359,7 +365,7 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
 
 .radio-player.is-playing .stream-icon,
 .stream-toggle.is-active .stream-icon{
-  text-shadow:0 0 12px rgba(131,255,171,0.85);
+  text-shadow:none;
 }
 
 .stream-copy{display:none}
