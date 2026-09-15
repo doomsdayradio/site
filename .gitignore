@@ -1,6 +1,20 @@
 # Local Python tooling artifacts
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
 
-# OS artifacts
+# Local configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# OS and editor artifacts
 .DS_Store
+Thumbs.db
+.vscode/
+.idea/
