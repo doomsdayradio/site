@@ -246,7 +246,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     signal.lowBass=signal.bass;
     signal.hardBass=0;
     signal.hardBassConfirmed=false;
-    signal.transient=0;
+    signal.transient=Math.max(0,Math.min(1,(pulse-0.24)/0.44));
     document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
     document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
     document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
@@ -373,6 +373,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       isPlaying=true;
       if(!analyser) startFallbackSignal();
       await audio.play();
+      if(analyser && !visualizerFrame) visualizerFrame=requestAnimationFrame(drawEqualizer);
     }catch(error){
       isPlaying=false;
       if(fallbackFrame) cancelAnimationFrame(fallbackFrame);

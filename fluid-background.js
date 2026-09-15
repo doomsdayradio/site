@@ -88,7 +88,7 @@ if (host && !prefersReducedMotion) {
     let pointerActive = false;
 
     function isInteractiveTarget(target) {
-      return Boolean(target && target.closest('button,a,input,label,select,textarea,.radio-player,.action-bar,.status'));
+      return Boolean(target && target.closest('button,a,input,label,select,textarea,.action-bar,.status'));
     }
 
     function updatePointer(event) {
