@@ -271,7 +271,7 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   border-color:var(--ddd-color-signal,#d1ff45);
   color:var(--ddd-color-signal,#d1ff45);
   background:rgba(58,44,32,0.95);
-  box-shadow:0 0 16px rgba(209,255,69,0.35);
+  box-shadow:0 0 0 1px rgba(209,255,69,0.2);
   transform:none;
 }
 
@@ -289,14 +289,14 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   border-color:var(--ddd-color-active,#83ffab);
   background:rgba(30,48,24,0.92);
   color:var(--ddd-color-active,#83ffab);
-  box-shadow:0 0 16px rgba(131,255,171,0.4);
+  box-shadow:0 0 0 1px rgba(131,255,171,0.25);
   transform:none;
 }
 
 .radio-player.is-playing .stream-toggle:hover,
 .stream-toggle.is-active:hover{
   background:rgba(38,60,30,0.96);
-  box-shadow:0 0 20px rgba(131,255,171,0.55);
+  box-shadow:0 0 0 1px rgba(131,255,171,0.3);
 }
 
 .stream-icon{
@@ -331,7 +331,7 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
 }
 
 .stream-toggle:hover .stream-icon{
-  animation:glyph-glitch 0.35s ease infinite alternate;
+  animation:none;
 }
 
 .stream-copy{display:none}
