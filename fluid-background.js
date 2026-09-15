@@ -3,8 +3,6 @@ import WebGLFluidEnhanced from 'https://cdn.jsdelivr.net/npm/webgl-fluid-enhance
 const host = document.getElementById('fluid-background');
 const logo = document.querySelector('.hero-logo');
 const logoStage = document.querySelector('.hero-logo-stage') || logo;
-const equalizer = document.getElementById('equalizer');
-const streamToggle = document.getElementById('stream-toggle');
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const lowPerformanceMode = document.documentElement.classList.contains('fx-lite');
 const ambientPalette = ['#b9855f', '#c99a72', '#d6ae86', '#e0c09b'];
@@ -56,17 +54,6 @@ if (host && !prefersReducedMotion) {
         rightX: (rect.right - edgeInset) * pixelRatio,
         y: rect.top + rect.height * verticalRatio
       };
-    }
-
-    function uiEmitters() {
-      const pixelRatio = window.devicePixelRatio || 1;
-      return [equalizer].filter(Boolean).map(function(element) {
-        const rect = element.getBoundingClientRect();
-        return {
-          x: (rect.left + rect.width * 0.5) * pixelRatio,
-          y: rect.top + rect.height * 0.5
-        };
-      });
     }
 
     let pointerX = null;
@@ -223,16 +210,6 @@ if (host && !prefersReducedMotion) {
         const forceY = -2 - (bassPunch * 18 + levelPunch * 11 + volumePulse * 3 + hardBassEmission * 10 + (glitchBurstActive ? 8 : 0));
 
         fluid.splatAtLocation(emitX, emitY, forceX, forceY);
-        uiEmitters().forEach(function(uiEmitter, index) {
-          const direction = index === 0 ? -1 : 1;
-          const uiForce = 8 + bassPunch * 12 + volumePulse * 4 + (glitchBurstActive ? 7 : 0);
-          fluid.splatAtLocation(
-            uiEmitter.x,
-            uiEmitter.y,
-            direction * uiForce,
-            -3 - bassPunch * 8 - (glitchBurstActive ? 4 : 0)
-          );
-        });
         if (glitchBurstActive) glitchEmissionBursts -= 1;
       }
       if (pointerActive && pointerX !== null && pointerY !== null) {
