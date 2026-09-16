@@ -74,8 +74,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let fallbackTimer=0;
   let isPlaying=false;
   let hasStarted=false;
+  let silentFrames=0;
+  let analyserBroken=false;
   const baseSignalLevel=0.74;
   const canAnalyzeAudio=location.hostname==='doomsday.radio';
+  const vizDebug=new URLSearchParams(location.search).has('viz-debug');
 
   for(let index=0;index<20;index++){
     const segment=document.createElement('span');
@@ -175,6 +178,20 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     fallbackFrame=0;
   }
 
+  function teardownAnalyser(){
+    if(meydaAnalyzer){try{meydaAnalyzer.stop()}catch(error){}}
+    meydaAnalyzer=null;
+    /* Keep outputGain connected: once createMediaElementSource() routed the
+       element through the WebAudio graph, disconnecting would mute the stream. */
+    try{if(analyser)analyser.disconnect()}catch(error){}
+    analyser=null;
+    frequencyData=null;
+    floatFrequencyData=null;
+    analyserBroken=true;
+    visualizerFrame=0;
+    bars.forEach(function(bar){bar.classList.add('is-fallback')});
+  }
+
   function drawEqualizer(){
     if(!analyser || audio.paused){visualizerFrame=0;return}
     analyser.getByteFrequencyData(frequencyData);
@@ -185,9 +202,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     let treble=0;
     let bassEnergy=0;
     let midEnergy=0;
+    let spectrumSum=0;
     const binWidth=audioContext.sampleRate/analyser.fftSize;
     for(let index=0;index<frequencyData.length;index++){
       const value=frequencyData[index]/255;
+      spectrumSum+=frequencyData[index];
       const amplitude=Math.pow(10,floatFrequencyData[index]/20);
       const frequency=index*binWidth;
       if(frequency>=35&&frequency<180){
@@ -229,6 +248,21 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       signal.transient=meydaFeatures.transient;
     }
     signal.playing=true;
+    /* Silence watchdog: some mobile browsers report playback but feed the
+       analyser only zeros. If the spectrum stays flat, fall back to the
+       simulated visualizer instead of showing a dead equalizer. */
+    if(spectrumSum<=1){
+      silentFrames++;
+      if(vizDebug)console.warn('[viz] silent frame',silentFrames,'ctx:',audioContext.state);
+      if(silentFrames>=150){
+        teardownAnalyser();
+        startFallbackSignal();
+        return;
+      }
+    }else{
+      if(silentFrames>0&&vizDebug)console.warn('[viz] spectrum alive, was silent for',silentFrames,'frames');
+      silentFrames=0;
+    }
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     updateSignalVisualization(signal);
     bars.forEach(function(bar,index){
@@ -382,11 +416,15 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     setActive(true);
     toggle.disabled=true;
     try{
-      if(canAnalyzeAudio){
-        try{setupAnalyser()}catch(error){analyser=null;frequencyData=null}
+      if(canAnalyzeAudio && !analyserBroken){
+        try{setupAnalyser()}catch(error){
+          analyser=null;frequencyData=null;floatFrequencyData=null;
+          if(vizDebug)console.warn('[viz] setupAnalyser failed',error);
+        }
       }
       if(audioContext && audioContext.state==='suspended') await audioContext.resume();
-      if(meydaAnalyzer) meydaAnalyzer.start();
+      if(meydaAnalyzer){try{meydaAnalyzer.start()}catch(error){meydaAnalyzer=null}}
+      silentFrames=0;
       isPlaying=true;
       if(!analyser) startFallbackSignal();
       await audio.play();
@@ -416,7 +454,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     isPlaying=true;
     setActive(true);
     status.textContent='ON AIR';
-    if(analyser && !visualizerFrame) visualizerFrame=requestAnimationFrame(drawEqualizer);
+    /* iOS Safari keeps the AudioContext suspended even after a user gesture;
+       resume it whenever playback actually starts. */
+    if(audioContext && audioContext.state==='suspended'){audioContext.resume().catch(function(){})}
+    if(analyser && !visualizerFrame){silentFrames=0;visualizerFrame=requestAnimationFrame(drawEqualizer)}
     if(!analyser) startFallbackSignal();
   });
 
