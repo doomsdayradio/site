@@ -248,12 +248,14 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       signal.transient=meydaFeatures.transient;
     }
     signal.playing=true;
-    /* Silence watchdog: some mobile browsers report playback but feed the
-       analyser only zeros. If the spectrum stays flat, fall back to the
-       simulated visualizer instead of showing a dead equalizer. */
-    if(spectrumSum<=1){
+    /* Silence watchdog: some mobile browsers feed the analyser only zeros
+       (or sub-audible dither) while the time-domain level still moves.
+       Treat the spectrum as silent when its average bin value stays near
+       zero, then fall back to the simulated visualizer. */
+    const spectrumAvg=spectrumSum/frequencyData.length;
+    if(spectrumAvg<2){
       silentFrames++;
-      if(vizDebug)console.warn('[viz] silent frame',silentFrames,'ctx:',audioContext.state);
+      if(vizDebug)console.warn('[viz] silent frame',silentFrames,'avg:',spectrumAvg.toFixed(2),'ctx:',audioContext.state);
       if(silentFrames>=150){
         teardownAnalyser();
         startFallbackSignal();
