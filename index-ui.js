@@ -76,6 +76,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let hasStarted=false;
   let silentFrames=0;
   let analyserBroken=false;
+  let vizMode='off';
+  let captureStream=null;
+  let captureSource=null;
   let vizFrameCount=0;
   const baseSignalLevel=0.74;
   const canAnalyzeAudio=location.hostname==='doomsday.radio';
@@ -143,6 +146,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       });
     }
     bars.forEach(function(bar){bar.classList.remove('is-fallback')});
+    vizMode='element';
+    vizLog('element tap active');
   }
 
   function updateMeydaFeatures(features){
@@ -195,18 +200,63 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     fallbackFrame=0;
   }
 
-  function teardownAnalyser(){
+  function teardownElementTap(){
     if(meydaAnalyzer){try{meydaAnalyzer.stop()}catch(error){}}
     meydaAnalyzer=null;
+    meydaFeatures=null;
     /* Keep outputGain connected: once createMediaElementSource() routed the
        element through the WebAudio graph, disconnecting would mute the stream. */
     try{if(analyser)analyser.disconnect()}catch(error){}
     analyser=null;
     frequencyData=null;
     floatFrequencyData=null;
-    analyserBroken=true;
     visualizerFrame=0;
+  }
+
+  function teardownCaptureTap(){
+    try{if(captureSource)captureSource.disconnect()}catch(error){}
+    captureSource=null;
+    captureStream=null;
+    try{if(analyser)analyser.disconnect()}catch(error){}
+    analyser=null;
+    frequencyData=null;
+    floatFrequencyData=null;
+    visualizerFrame=0;
+  }
+
+  function enterFallbackMode(){
+    vizMode='fallback';
+    analyserBroken=true;
     bars.forEach(function(bar){bar.classList.add('is-fallback')});
+  }
+
+  function setupCaptureAnalyser(){
+    const AudioContextCtor=window.AudioContext||window.webkitAudioContext;
+    if(!AudioContextCtor) return false;
+    if(!audio.captureStream && !audio.mozCaptureStream) return false;
+    try{
+      if(!audioContext) audioContext=new AudioContextCtor();
+      analyser=audioContext.createAnalyser();
+      analyser.fftSize=1024;
+      analyser.minDecibels=-100;
+      analyser.maxDecibels=0;
+      analyser.smoothingTimeConstant=0.55;
+      frequencyData=new Uint8Array(analyser.frequencyBinCount);
+      floatFrequencyData=new Float32Array(analyser.frequencyBinCount);
+      captureStream=audio.captureStream?audio.captureStream():audio.mozCaptureStream();
+      captureSource=audioContext.createMediaStreamSource(captureStream);
+      captureSource.connect(analyser);
+      vizMode='capture';
+      silentFrames=0;
+      vizLog('captureStream tap active');
+      return true;
+    }catch(error){
+      vizLog('captureStream failed: '+(error&&error.message?error.message:String(error)));
+      captureStream=null;
+      captureSource=null;
+      analyser=null;
+      return false;
+    }
   }
 
   function drawEqualizer(){
@@ -272,19 +322,34 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const spectrumAvg=spectrumSum/frequencyData.length;
     if(spectrumAvg<2){
       silentFrames++;
-      if(silentFrames===1||silentFrames%50===0)vizLog('silent '+silentFrames+' avg:'+spectrumAvg.toFixed(2)+' ctx:'+audioContext.state);
+      if(silentFrames===1||silentFrames%50===0)vizLog('['+vizMode+'] silent '+silentFrames+' avg:'+spectrumAvg.toFixed(2)+' ctx:'+audioContext.state);
       if(silentFrames>=150){
-        vizLog('TEARDOWN -> fallback');
-        teardownAnalyser();
+        if(vizMode==='element'){
+          /* iOS WebKit routes cross-origin media elements silently through
+             createMediaElementSource. The MediaStream-level tap (captureStream)
+             is unaffected on many builds, so try it before simulating. */
+          vizLog('element tap silent -> trying captureStream');
+          teardownElementTap();
+          if(setupCaptureAnalyser()){
+            visualizerFrame=requestAnimationFrame(drawEqualizer);
+            return;
+          }
+          enterFallbackMode();
+          startFallbackSignal();
+          return;
+        }
+        vizLog('['+vizMode+'] tap silent -> fallback');
+        teardownCaptureTap();
+        enterFallbackMode();
         startFallbackSignal();
         return;
       }
     }else{
-      if(silentFrames>0)vizLog('alive again after '+silentFrames+' frames, avg:'+spectrumAvg.toFixed(2));
+      if(silentFrames>0)vizLog('['+vizMode+'] alive again after '+silentFrames+' frames, avg:'+spectrumAvg.toFixed(2));
       silentFrames=0;
     }
     vizFrameCount++;
-    if(vizDebug && vizFrameCount%300===0)vizLog('analyser avg:'+spectrumAvg.toFixed(1)+' lvl:'+signal.level.toFixed(2)+' bass:'+signal.bass.toFixed(2)+' ctx:'+audioContext.state);
+    if(vizDebug && vizFrameCount%300===0)vizLog('['+vizMode+'] avg:'+spectrumAvg.toFixed(1)+' lvl:'+signal.level.toFixed(2)+' bass:'+signal.bass.toFixed(2)+' ctx:'+audioContext.state);
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     updateSignalVisualization(signal);
     bars.forEach(function(bar,index){
