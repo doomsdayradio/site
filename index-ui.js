@@ -80,6 +80,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let captureStream=null;
   let captureSource=null;
   let vizFrameCount=0;
+  let wsSocket=null;
+  let wsReconnectTimer=0;
+  let wsReconnectDelay=1000;
+  let wsRawLevel=0;
+  const levelsUrl='wss://stream.doomsday.radio/levels';
   const baseSignalLevel=0.74;
   const canAnalyzeAudio=location.hostname==='doomsday.radio';
   const vizDebug=new URLSearchParams(location.search).has('viz-debug');
@@ -187,8 +192,114 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     };
   }
 
+  /* Server-driven visualization: liquidsoap analyzes the on-air signal and
+     broadcasts band levels over wss://stream.doomsday.radio/levels. This is
+     the top tier because iOS WebKit feeds local analysers only zeros for
+     cross-origin media. */
+  function scheduleWsReconnect(){
+    if(wsReconnectTimer) return;
+    wsReconnectTimer=window.setTimeout(function(){
+      wsReconnectTimer=0;
+      ensureWebSocketViz();
+    },wsReconnectDelay);
+    wsReconnectDelay=Math.min(wsReconnectDelay*2,30000);
+  }
+
+  function stopLocalVisualizer(){
+    if(visualizerFrame){cancelAnimationFrame(visualizerFrame);visualizerFrame=0}
+    stopFallbackSignal();
+  }
+
+  function resumeLocalVisualizer(){
+    if(analyser && vizMode!=='fallback'){
+      vizMode='element';
+      silentFrames=0;
+      if(!visualizerFrame) visualizerFrame=requestAnimationFrame(drawEqualizer);
+    }else if(!analyser){
+      if(vizMode==='ws'||vizMode==='off') vizMode='fallback';
+      startFallbackSignal();
+    }
+  }
+
+  function ensureWebSocketViz(){
+    if(wsSocket || wsReconnectTimer || !canAnalyzeAudio) return;
+    let socket;
+    try{socket=new WebSocket(levelsUrl)}
+    catch(error){
+      vizLog('[ws] connect failed: '+(error&&error.message?error.message:String(error)));
+      scheduleWsReconnect();
+      return;
+    }
+    wsSocket=socket;
+    socket.addEventListener('open',function(){
+      vizLog('[ws] connected');
+      wsReconnectDelay=1000;
+      vizMode='ws';
+      stopLocalVisualizer();
+    });
+    socket.addEventListener('message',function(event){handleLevelsMessage(event.data)});
+    socket.addEventListener('close',function(){
+      vizLog('[ws] close');
+      if(wsSocket===socket) wsSocket=null;
+      if(vizMode==='ws'){vizLog('[ws] -> local chain');resumeLocalVisualizer()}
+      scheduleWsReconnect();
+    });
+    socket.addEventListener('error',function(){
+      vizLog('[ws] error');
+      try{socket.close()}catch(error){}
+    });
+  }
+
+  function handleLevelsMessage(raw){
+    if(audio.paused) return;
+    let payload;
+    try{payload=JSON.parse(raw)}
+    catch(error){return}
+    const bands=payload.bands;
+    if(!Array.isArray(bands) || bands.length<8) return;
+    /* Levels arrive as integers 0..1000 (milli-units) because liquidsoap
+       cannot reliably format decimal floats into JSON. */
+    const milli=function(value){
+      const number=Number(value);
+      if(!Number.isFinite(number)) return 0;
+      return Math.max(0,Math.min(1,number/1000));
+    };
+    const signal=window.doomsdayAudioSignal;
+    const avg=function(from,to){
+      let total=0;
+      for(let index=from;index<to;index++) total+=milli(bands[index]);
+      return total/(to-from);
+    };
+    const rawLevel=milli(payload.level);
+    const bass=avg(0,2);
+    const mid=avg(2,6);
+    const treble=avg(6,8);
+    const levelRise=Math.max(0,rawLevel-wsRawLevel);
+    wsRawLevel=rawLevel;
+    signal.bass+=(bass-signal.bass)*0.35;
+    signal.mid+=(mid-signal.mid)*0.20;
+    signal.treble+=(treble-signal.treble)*0.20;
+    signal.level+=(rawLevel-signal.level)*0.32;
+    signal.transient=Math.max(0,Math.min(1,levelRise/0.08));
+    signal.hardBass=signal.bass;
+    signal.hardBassConfirmed=signal.hardBass>=0.88;
+    signal.playing=true;
+    document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
+    updateSignalVisualization(signal);
+    bars.forEach(function(bar,index){
+      const position=index*(bands.length-1)/bars.length;
+      const lower=Math.min(bands.length-1,Math.floor(position));
+      const upper=Math.min(bands.length-1,lower+1);
+      const fraction=position-lower;
+      const value=milli(bands[lower])*(1-fraction)+milli(bands[upper])*fraction;
+      const level=Math.max(0.08,Math.min(1,value));
+      bar.style.transform='scaleY('+level.toFixed(2)+')';
+      bar.style.opacity=String(0.5+level*0.5);
+    });
+  }
+
   function startFallbackSignal(){
-    if(fallbackTimer) return;
+    if(fallbackTimer || vizMode==='ws') return;
     vizLog('fallback START');
     fallbackFrame=1;
     fallbackTimer=window.setInterval(function(){drawFallbackSignal(performance.now())},50);
@@ -260,6 +371,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   }
 
   function drawEqualizer(){
+    if(vizMode==='ws'){visualizerFrame=0;return}
     if(!analyser || audio.paused){visualizerFrame=0;return}
     analyser.getByteFrequencyData(frequencyData);
     analyser.getFloatFrequencyData(floatFrequencyData);
@@ -362,6 +474,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   }
 
   function drawFallbackSignal(now){
+    if(vizMode==='ws') return;
     if(!isPlaying && audio.paused){
       stopFallbackSignal();
       return;
@@ -504,6 +617,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     toggle.disabled=true;
     try{
       if(canAnalyzeAudio && !analyserBroken){
+        ensureWebSocketViz();
         try{setupAnalyser()}catch(error){
           analyser=null;frequencyData=null;floatFrequencyData=null;
           vizLog('setup FAILED: '+(error&&error.message?error.message:String(error)));
