@@ -76,9 +76,25 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let hasStarted=false;
   let silentFrames=0;
   let analyserBroken=false;
+  let vizFrameCount=0;
   const baseSignalLevel=0.74;
   const canAnalyzeAudio=location.hostname==='doomsday.radio';
   const vizDebug=new URLSearchParams(location.search).has('viz-debug');
+
+  let vizDebugPanel=null;
+  if(vizDebug){
+    vizDebugPanel=document.createElement('pre');
+    vizDebugPanel.style.cssText='position:fixed;left:8px;bottom:8px;z-index:9999;background:rgba(0,0,0,0.8);color:#83ffab;font:11px/1.4 monospace;padding:8px;max-width:92vw;white-space:pre-wrap;word-break:break-all;margin:0;';
+    document.body.appendChild(vizDebugPanel);
+  }
+  let vizDebugLines=[];
+  function vizLog(message){
+    if(!vizDebug)return;
+    vizDebugLines.push(new Date().toTimeString().slice(0,8)+' '+message);
+    if(vizDebugLines.length>6)vizDebugLines.shift();
+    if(vizDebugPanel)vizDebugPanel.textContent=vizDebugLines.join('\n');
+    console.warn('[viz]',message);
+  }
 
   for(let index=0;index<20;index++){
     const segment=document.createElement('span');
@@ -168,6 +184,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   function startFallbackSignal(){
     if(fallbackTimer) return;
+    vizLog('fallback START');
     fallbackFrame=1;
     fallbackTimer=window.setInterval(function(){drawFallbackSignal(performance.now())},50);
   }
@@ -255,16 +272,19 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const spectrumAvg=spectrumSum/frequencyData.length;
     if(spectrumAvg<2){
       silentFrames++;
-      if(vizDebug)console.warn('[viz] silent frame',silentFrames,'avg:',spectrumAvg.toFixed(2),'ctx:',audioContext.state);
+      if(silentFrames===1||silentFrames%50===0)vizLog('silent '+silentFrames+' avg:'+spectrumAvg.toFixed(2)+' ctx:'+audioContext.state);
       if(silentFrames>=150){
+        vizLog('TEARDOWN -> fallback');
         teardownAnalyser();
         startFallbackSignal();
         return;
       }
     }else{
-      if(silentFrames>0&&vizDebug)console.warn('[viz] spectrum alive, was silent for',silentFrames,'frames');
+      if(silentFrames>0)vizLog('alive again after '+silentFrames+' frames, avg:'+spectrumAvg.toFixed(2));
       silentFrames=0;
     }
+    vizFrameCount++;
+    if(vizDebug && vizFrameCount%300===0)vizLog('analyser avg:'+spectrumAvg.toFixed(1)+' lvl:'+signal.level.toFixed(2)+' bass:'+signal.bass.toFixed(2)+' ctx:'+audioContext.state);
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     updateSignalVisualization(signal);
     bars.forEach(function(bar,index){
@@ -421,10 +441,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       if(canAnalyzeAudio && !analyserBroken){
         try{setupAnalyser()}catch(error){
           analyser=null;frequencyData=null;floatFrequencyData=null;
-          if(vizDebug)console.warn('[viz] setupAnalyser failed',error);
+          vizLog('setup FAILED: '+(error&&error.message?error.message:String(error)));
         }
       }
       if(audioContext && audioContext.state==='suspended') await audioContext.resume();
+      vizLog('play ctx:'+(audioContext?audioContext.state:'none')+' analyser:'+!!analyser+' meyda:'+!!meydaAnalyzer);
       if(meydaAnalyzer){try{meydaAnalyzer.start()}catch(error){meydaAnalyzer=null}}
       silentFrames=0;
       isPlaying=true;
