@@ -96,7 +96,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const levelsUrl='wss://stream.doomsday.radio/levels';
   const baseSignalLevel=0.74;
   const canAnalyzeAudio=location.hostname==='doomsday.radio';
-  const vizDebug=new URLSearchParams(location.search).has('viz-debug');
+  const urlParams=new URLSearchParams(location.search);
+  /* ?debug shows the full player debug panel; ?viz-debug stays supported and
+     behaves like ?debug (log lines included). */
+  const debugMode=urlParams.has('debug')||urlParams.has('viz-debug');
+  const vizDebug=debugMode;
 
   let vizDebugPanel=null;
   if(vizDebug){
@@ -109,9 +113,39 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     if(!vizDebug)return;
     vizDebugLines.push(new Date().toTimeString().slice(0,8)+' '+message);
     if(vizDebugLines.length>6)vizDebugLines.shift();
-    if(vizDebugPanel)vizDebugPanel.textContent=vizDebugLines.join('\n');
     console.warn('[viz]',message);
+    renderDebugPanel();
   }
+
+  /* Full debug panel (?debug): player state, signal, FX thresholds and live
+     FX state (fluid module publishes window.doomsdayFxState). */
+  let debugPanel=null;
+  function pct(value){return Math.round(Math.max(0,Math.min(1,value||0))*100)+'%'}
+  function renderDebugPanel(){
+    if(!debugMode) return;
+    if(!debugPanel){
+      debugPanel=document.createElement('pre');
+      debugPanel.style.cssText='position:fixed;right:8px;top:8px;z-index:9999;background:rgba(0,0,0,0.82);color:#f5efe4;font:11px/1.45 monospace;padding:8px 10px;max-width:60vw;white-space:pre-wrap;word-break:break-all;margin:0;pointer-events:none;';
+      document.body.appendChild(debugPanel);
+    }
+    const s=window.doomsdayAudioSignal||{};
+    const fx=window.doomsdayFxState||{};
+    const cfg=(window.doomsdayFxConfig&&window.doomsdayFxConfig.triggers)||{};
+    const hb=cfg.heavyBass||{}, ts=cfg.trebleSpike||{}, hl=cfg.highLevel||{}, nz=cfg.noise||{};
+    const lines=[
+      '== doomsday debug ==',
+      'status    '+status.textContent+(isPlaying?' [playing]':' [idle]')+' viz:'+vizMode,
+      'audioctx  '+(audioContext?audioContext.state:'none')+' analyser:'+(analyser?'yes':'no')+' meyda:'+(meydaAnalyzer?'yes':'no'),
+      'ws        '+(wsSocket?'connected':'-')+' '+levelsUrl,
+      'signal    lvl:'+pct(s.level)+' bass:'+pct(s.bass)+' mid:'+pct(s.mid)+' treble:'+pct(s.treble)+' transient:'+pct(s.transient),
+      'hardBass  '+pct(s.hardBass)+(s.hardBassConfirmed?' CONFIRMED':'')+' (on '+pct(hb.on)+')',
+      'fx        bassFrames:'+(fx.hardBassFrames||0)+(fx.hardBassTriggered?' T':'')+' spikeFrames:'+(fx.trebleSpikeFrames||0)+(fx.trebleSpikeReady===false?' cool':'')+' glitch:'+(fx.glitchEmissionBursts||0)+' lastSpray:'+((fx.lastAudioSprayAge!=null?fx.lastAudioSprayAge+'ms':'-')),
+      'thresh    heavyBass:'+pct(hb.on)+'/'+pct(hb.off)+' highLevel:'+pct(hl.on)+' spike:'+pct(ts.on)+' +transient:'+pct(ts.transientOn)+' noiseMax:'+(nz.maxOpacity!=null?nz.maxOpacity:'-'),
+    ];
+    if(vizDebugLines.length) lines.push('-- log --', vizDebugLines.join('\n'));
+    debugPanel.textContent=lines.join('\n');
+  }
+  window.setInterval(renderDebugPanel,200);
 
   for(let index=0;index<20;index++){
     const segment=document.createElement('span');

@@ -309,6 +309,16 @@ if (host && !prefersReducedMotion) {
       }
 
       requestAnimationFrame(sprayAtPointer);
+      /* Publish live FX state for the ?debug panel. */
+      window.doomsdayFxState={
+        hardBassFrames: hardBassFrames,
+        hardBassTriggered: hardBassTriggered,
+        trebleSpikeFrames: trebleSpikeFrames,
+        trebleSpikeReady: trebleSpikeReady,
+        glitchEmissionBursts: glitchEmissionBursts,
+        lastAudioSprayAge: lastAudioSpray ? Math.round(now - lastAudioSpray) : null,
+        lastTrebleSprayAge: lastTrebleSpray ? Math.round(now - lastTrebleSpray) : null
+      };
     }
 
     requestAnimationFrame(sprayAtPointer);
