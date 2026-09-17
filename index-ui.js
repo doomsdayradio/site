@@ -692,13 +692,13 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     }
     const bassBandRms=Math.sqrt(bassEnergy/Math.max(1,Math.ceil(145/binWidth)));
     const bassDb=20*Math.log10(Math.max(0.00001,bassBandRms));
-    const bassFloor=Math.max(0.34,mid*0.9);
-    const directBass=Math.max(0,Math.min(1,(bass-bassFloor-0.04)/0.30));
     const signal=window.doomsdayAudioSignal;
     bass/=Math.max(1,Math.ceil(145/binWidth));
     lowBass/=Math.max(1,Math.ceil(85/binWidth));
     mid/=Math.max(1,Math.ceil(2020/binWidth));
     treble/=Math.max(1,frequencyData.length-Math.ceil(10000/binWidth));
+    const bassFloor=Math.max(0.18,mid*0.55);
+    const directBass=Math.max(0,Math.min(1,(bass-bassFloor-0.04)/0.42));
     const rawLevel=Math.max(bass,mid,treble);
     let spectrumAvg=spectrumSum/frequencyData.length;
     const levelRise=Math.max(0,rawLevel-signal.level);
