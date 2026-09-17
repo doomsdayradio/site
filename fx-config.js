@@ -107,8 +107,11 @@ window.doomsdayFxConfig = {
      * basslines don't. Emission parameters interpolate from that onset.
      * enabled:      turn the test mode on/off (off = zone logic as before)
      * onsetBoost:   gain on the onset before clamping (higher = more kicks)
-     * levelFloorMix: portion of the raw bass level always mixed in, so a
-     *               dense bassline still breathes a little
+     * levelFloorMix: portion of the raw bass level always mixed in; keep at 0
+     *               so hard emissions fire ONLY on kick hits, not on sustain
+     * subGateOn/subGateScale: absolute sub (0-120 Hz) gate — below subGateOn
+     *               nothing fires, full gate at subGateOn+subGateScale
+     * onsetScale:   sub level above its envelope that counts as a full hit
      * minIntervalMs/maxIntervalMs: emission delay at full/near-zero activity
      * intensityExponent: steepness of the exponential strength curve
      *               (higher = quieter mid-range, more explosive top end)
@@ -116,7 +119,10 @@ window.doomsdayFxConfig = {
     bassCoupled: {
       enabled: true,
       onsetBoost: 3.0,
-      levelFloorMix: 0.15,
+      levelFloorMix: 0.0,
+      subGateOn: 0.3,
+      subGateScale: 0.15,
+      onsetScale: 0.2,
       minIntervalMs: 90,
       maxIntervalMs: 460,
       intensityExponent: 2.5
