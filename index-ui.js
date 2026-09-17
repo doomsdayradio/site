@@ -485,12 +485,12 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
        beats the mids and treble outright. Absolute floors keep quiet
        passages at zero. */
     const clamp01=function(value){return Math.max(0,Math.min(1,value))};
-    const rawBass=avg(0,2);
+    const rawBass=avg(1,3);
     const rawMid=avg(2,6);
     const rawTreble=avg(6,8);
-    const bass=rawBass<0.10?0:clamp01((rawBass/Math.max(rawMid,rawTreble,0.12)-0.8)/1.2);
-    const mid=clamp01((rawMid/Math.max(rawBass,rawTreble,0.10)-0.8)/1.2);
-    const treble=rawTreble<0.06?0:clamp01((rawTreble/Math.max(rawBass,rawMid,0.10)-0.5)/1.5);
+    const bass=clamp01((rawBass-0.10)/0.45);
+    const mid=clamp01((rawMid-0.08)/0.38);
+    const treble=clamp01((rawTreble-0.02)/0.12);
     wsRawLevel=rawLevel;
     /* Transient: rise above a FAST follower of the level, so it fires on
      * attacks and decays smoothly instead of pegging at 100%. */
@@ -534,12 +534,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     if(!isDebugPage) updateSignalVisualization(signal);
     pushDebugSample();
     bars.forEach(function(bar,index){
-      const position=index*(bands.length-1)/bars.length;
-      const lower=Math.min(bands.length-1,Math.floor(position));
-      const upper=Math.min(bands.length-1,lower+1);
-      const fraction=position-lower;
-      const value=milli(bands[lower])*(1-fraction)+milli(bands[upper])*fraction;
-      const level=Math.max(0.08,Math.min(1,value));
+      const target=index<bars.length*0.25?signal.bass:index<bars.length*0.65?signal.mid:signal.treble;
+      const previous=Number(bar.dataset.level||0.08);
+      const level=previous+(Math.max(0.08,target)-previous)*0.14;
+      bar.dataset.level=String(level);
       bar.style.transform='scaleY('+level.toFixed(2)+')';
       bar.style.opacity=String(0.5+level*0.5);
     });
@@ -809,10 +807,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const b=Math.round((4*wOrange + 171*wGreen + 228*wWhite)/totalWeight);
 
     const lvl=Math.max(0,Math.min(1,signal.level));
-     /* Logo glow follows mid/treble attacks; sub-only kicks stay on the
-       emission path and do not light the logo. */
-    const glowSpectrum=Math.max(0,Math.min(1,(((signal.mid||0)*cfgNum(fxGlowCfg,'midWeight',0.6)+(signal.treble||0)*cfgNum(fxGlowCfg,'trebleWeight',0.8))-cfgNum(fxGlowCfg,'floor',0.10))/cfgNum(fxGlowCfg,'range',0.70)));
-     const glowActivity=Math.max(0,Math.min(1,(signal.transient||0)*glowSpectrum));
+     const glowSpectrum=Math.max(0,Math.min(1,(((signal.bass||0)*0.45+(signal.mid||0)*0.65+(signal.treble||0)*0.85)-cfgNum(fxGlowCfg,'floor',0.10))/cfgNum(fxGlowCfg,'range',0.70)));
+      const glowActivity=Math.max(0,Math.min(1,((signal.transient||0)*0.7+(signal.level||0)*0.3)*glowSpectrum));
     const innerAlpha=(glowActivity*cfgNum(fxGlowCfg,'innerAlpha',0.50)).toFixed(2);
     const outerAlpha=(glowActivity*cfgNum(fxGlowCfg,'outerAlpha',0.22)).toFixed(2);
     const innerR=(glowActivity*cfgNum(fxGlowCfg,'innerRadius',15)).toFixed(1)+'px';
