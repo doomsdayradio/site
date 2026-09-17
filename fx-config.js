@@ -16,7 +16,11 @@ window.doomsdayFxConfig = {
   triggers: {
 
     /* Heavy bass zone: full logo glitch + strongest smoke emissions.
-     * on:           bass level that counts as "heavy bass"
+     * In the server-spectrum tier hardBass is measured RELATIVE to a slow
+     * bass baseline (spike ratio of the song), because RMS band values top
+     * out around 60%: `on` refers to that normalized spike value, not to the
+     * displayed bass percentage. In the local analyser tiers it is absolute.
+     * on:           trigger level (default: bass spike ~1.9x baseline)
      * off:          must drop below this to re-arm (hysteresis, < on)
      * confirmFrames: consecutive frames above `on` before the glitch fires
      *               (prevents flicker on single peaks)
@@ -71,9 +75,9 @@ window.doomsdayFxConfig = {
      * cooldownMs:   minimum time between spike phases
      */
     trebleSpike: {
-      on: 0.70,
-      off: 0.50,
-      transientOn: 0.30,
+      on: 0.45,
+      off: 0.32,
+      transientOn: 0.25,
       confirmFrames: 2,
       intervalMs: 160,
       intervalMsLite: 240,

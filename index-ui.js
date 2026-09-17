@@ -93,6 +93,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let wsReconnectTimer=0;
   let wsReconnectDelay=1000;
   let wsRawLevel=0;
+  let wsBassBaseline=0;
   const levelsUrl='wss://stream.doomsday.radio/levels';
   const baseSignalLevel=0.74;
   const canAnalyzeAudio=location.hostname==='doomsday.radio';
@@ -314,13 +315,19 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const treble=avg(6,8);
     const levelRise=Math.max(0,rawLevel-wsRawLevel);
     wsRawLevel=rawLevel;
+    /* WS bass values are RMS-based and top out around 60% of the 0..1 range,
+       so an absolute 0.88 threshold would never fire. Track a slow baseline
+       and measure bass as a spike ratio against it: "hardest hit of the
+       song". The absolute floor keeps quiet passages from glitching. */
+    wsBassBaseline+=(bass-wsBassBaseline)*0.008;
+    const bassSpikeRatio=bass/Math.max(0.15,wsBassBaseline*1.7);
     signal.bass+=(bass-signal.bass)*0.35;
     signal.mid+=(mid-signal.mid)*0.20;
     signal.treble+=(treble-signal.treble)*0.20;
     signal.level+=(rawLevel-signal.level)*0.32;
     signal.transient=Math.max(0,Math.min(1,levelRise/0.08));
-    signal.hardBass=signal.bass;
-    signal.hardBassConfirmed=signal.hardBass>=fxHardBassOn;
+    signal.hardBass=Math.max(0,Math.min(1,(bassSpikeRatio-1.2)/0.8));
+    signal.hardBassConfirmed=signal.hardBass>=fxHardBassOn&&bass>=0.3;
     signal.playing=true;
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     updateSignalVisualization(signal);
