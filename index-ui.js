@@ -803,7 +803,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
         energy+=displaySpectrum[bin]*displaySpectrum[bin];
         count++;
       }
-      const level=Math.max(0.03,spectrumLevelFromRms(count?Math.sqrt(energy/count):0));
+      /* frequencyData is already dB-normalized by AnalyserNode. Treating its
+       * 0..1 values as linear amplitudes makes quiet bands read near 80%. */
+      const normalized=count?Math.sqrt(energy/count):0;
+      const level=normalized<0.12?0:Math.max(0.03,(normalized-0.12)/0.68);
       bar.style.transform='scaleY('+level.toFixed(2)+')';
       bar.style.opacity=String(0.5+level*0.5);
     });
