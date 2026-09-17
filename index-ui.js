@@ -130,7 +130,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const urlParams=new URLSearchParams(location.search);
   const isDebugPage=/\/(?:ios-)?debug\.html$/.test(location.pathname);
   const forceServerLevelsDebug=isDebugPage&&location.pathname.endsWith('/ios-debug.html');
-  const canAnalyzeAudio=location.hostname==='doomsday.radio';
+    /* Debug pages are intentionally usable from localhost as well. The normal
+      page starts with the local analyser; only ios-debug.html forces levels. */
+    const canAnalyzeAudio=location.hostname==='doomsday.radio'||isDebugPage;
   const isAppleMobile=/iP(?:hone|ad|od)/.test(navigator.userAgent)
     || (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   const useServerLevelsFallback=isAppleMobile&&/AppleWebKit/.test(navigator.userAgent);
