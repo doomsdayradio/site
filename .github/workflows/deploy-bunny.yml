@@ -79,12 +79,12 @@ jobs:
       - name: Purge Bunny CDN cache
         env:
           BUNNY_PULL_ZONE_ID: ${{ vars.BUNNY_PULL_ZONE_ID }}
-          BUNNY_API_KEY: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
+          BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
         shell: bash
         run: |
           set -euo pipefail
-          if [ -z "${BUNNY_PULL_ZONE_ID:-}" ]; then
-            echo "BUNNY_PULL_ZONE_ID is not configured; skipping CDN purge."
+          if [ -z "${BUNNY_PULL_ZONE_ID:-}" ] || [ -z "${BUNNY_API_KEY:-}" ]; then
+            echo "BUNNY_PULL_ZONE_ID/BUNNY_API_KEY are not configured; skipping CDN purge."
             exit 0
           fi
           curl --fail --silent --show-error --request POST \
