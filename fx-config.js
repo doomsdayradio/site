@@ -99,8 +99,8 @@ window.doomsdayFxConfig = {
      * minBass:      below this bass level nothing emits
      * maxBass:      bass at/above this maps to full strength
      * minIntervalMs/maxIntervalMs: emission delay at full/near-zero bass
-     * curve:        exponent on the activity ramp (higher = later onset,
-     *               punchier top end)
+     * intensityExponent: steepness of the exponential strength curve
+     *               (higher = quieter mid-range, more explosive top end)
      */
     bassCoupled: {
       enabled: true,
@@ -108,7 +108,7 @@ window.doomsdayFxConfig = {
       maxBass: 0.85,
       minIntervalMs: 90,
       maxIntervalMs: 460,
-      curve: 1.6
+      intensityExponent: 2.5
     },
 
     /* Bass shaping: ramps that translate the raw bass value into punch.

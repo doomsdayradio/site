@@ -204,8 +204,11 @@ if (host && !prefersReducedMotion) {
         const bcMinBass = fxNum(fxBassCoupled, 'minBass', 0.15);
         const bcMaxBass = fxNum(fxBassCoupled, 'maxBass', 0.85);
         const bcActivity = Math.max(0, Math.min(1, (bass - bcMinBass) / (bcMaxBass - bcMinBass)));
-        const bcCurve = fxNum(fxBassCoupled, 'curve', 1.6);
-        const punch = Math.pow(bcActivity, bcCurve);
+        /* Exponential strength curve: quiet parts stay subtle, loud bass
+         * explodes. intensityExponent controls how aggressive the top end is. */
+        const bcK = fxNum(fxBassCoupled, 'intensityExponent', 2.5);
+        const bcExpK = Math.exp(bcK);
+        const punch = (Math.exp(bcK * bcActivity) - 1) / (bcExpK - 1);
         const bcMinInterval = fxNum(fxBassCoupled, 'minIntervalMs', 90);
         const bcMaxInterval = fxNum(fxBassCoupled, 'maxIntervalMs', 460);
         const emitInterval = bcMaxInterval + (bcMinInterval - bcMaxInterval) * bcActivity;
