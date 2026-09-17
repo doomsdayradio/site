@@ -111,8 +111,8 @@ window.doomsdayFxConfig = {
      *               so hard emissions fire ONLY on kick hits, not on sustain
      * subGateOn/subGateScale: absolute sub (0-120 Hz) gate — below subGateOn
      *               nothing fires, full gate at subGateOn+subGateScale
-     * onsetScale:   sub/envelope ratio above 1.0 that counts as a full hit
-     *               (0.5 = kick must double the sub level)
+     * onsetScale:   absolute sub peak (over the level ~3s ago) that counts
+     *               as a full hit
      * glitchOn:     kick value that triggers the logo glitch in this mode
      * minIntervalMs/maxIntervalMs: emission delay at full/near-zero activity
      * intensityExponent: steepness of the exponential strength curve
@@ -124,7 +124,7 @@ window.doomsdayFxConfig = {
       levelFloorMix: 0.0,
       subGateOn: 0.18,
       subGateScale: 0.12,
-      onsetScale: 0.5,
+      onsetScale: 0.15,
       glitchOn: 0.85,
       minIntervalMs: 90,
       maxIntervalMs: 460,
