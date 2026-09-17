@@ -660,6 +660,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     mid/=Math.max(1,Math.ceil(2020/binWidth));
     treble/=Math.max(1,frequencyData.length-Math.ceil(2200/binWidth));
     const rawLevel=Math.max(bass,mid,treble);
+    let spectrumAvg=spectrumSum/frequencyData.length;
     const levelRise=Math.max(0,rawLevel-signal.level);
     signal.bass+=(directBass-signal.bass)*0.35;
     signal.lowBass=lowBass;
@@ -696,6 +697,17 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       signal.level=meydaFeatures.level;
       signal.transient=meydaFeatures.transient;
     }
+    if(spectrumAvg<3){
+      signal.bass=0;
+      signal.mid=0;
+      signal.treble=0;
+      signal.level=0;
+      signal.transient=0;
+      signal.hardBass=0;
+      signal.hardBassConfirmed=false;
+      signal.bassOnset=0;
+      signal.sub=0;
+    }
     if(!lastKickDebug||lastKickDebug.seq!==localKickSequence){
       lastKickDebug={sub:localSub,fast:localSubFast,seq:localKickSequence,strength:signal.bassOnset};
     }
@@ -711,7 +723,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
        (or sub-audible dither) while the time-domain level still moves.
        Treat the spectrum as silent when its average bin value stays near
       zero, then use server levels on iOS WebKit or simulate elsewhere. */
-    const spectrumAvg=spectrumSum/frequencyData.length;
+    spectrumAvg=spectrumSum/frequencyData.length;
     if(spectrumAvg<2){
       silentFrames++;
       if(silentFrames===1||silentFrames%50===0)vizLog('['+vizMode+'] silent '+silentFrames+' avg:'+spectrumAvg.toFixed(2)+' ctx:'+audioContext.state);

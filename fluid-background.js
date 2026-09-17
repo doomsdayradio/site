@@ -100,6 +100,8 @@ if (host && !prefersReducedMotion) {
     let audioSideToggle = 0;
     let pointerActive = false;
     let lastPointerMove = 0;
+    let lastPointerEventX = null;
+    let lastPointerEventY = null;
 
     function isInteractiveTarget(target) {
       return Boolean(target && target.closest('button,a,input,label,select,textarea,.action-bar,.status'));
@@ -107,6 +109,11 @@ if (host && !prefersReducedMotion) {
 
     function updatePointer(event) {
       if (isInteractiveTarget(event.target)) return;
+      const moved = lastPointerEventX === null
+        || Math.hypot(event.clientX - lastPointerEventX, event.clientY - lastPointerEventY) >= 0.5;
+      lastPointerEventX = event.clientX;
+      lastPointerEventY = event.clientY;
+      if (!moved) return;
       pointerX = event.clientX;
       pointerY = event.clientY;
       pointerActive = true;
