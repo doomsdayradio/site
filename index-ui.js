@@ -302,11 +302,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   function updateSpectrumDisplay(features,spectrum){
     if(!spectrumChart || !spectrumContext) return;
-    const values={bass:features.bass||0,mid:features.mid||0,treble:features.treble||0,transient:features.transient||0};
+    const values={bass:features.bass||0,mid:features.mid||0,treble:features.treble||0,transient:Math.min(1,(features.transient||0)*0.35)};
     Object.keys(spectrumBands).forEach(function(name){
       const value=Math.max(0,Math.min(1,values[name]));
       const previous=Number(spectrumBands[name].fill.dataset.value||0);
-      const smoothing=name==='transient'?0.35:0.18;
+      const smoothing=name==='transient'?0.12:0.12;
       const smoothed=previous+(value-previous)*smoothing;
       spectrumBands[name].fill.dataset.value=String(smoothed);
       spectrumBands[name].fill.style.width=Math.round(smoothed*100)+'%';
@@ -327,7 +327,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       const end=Math.max(start+1,Math.floor(Math.pow(spectrum.length,(bar+1)/barCount)));
       let peak=0;
       for(let index=start;index<Math.min(end,spectrum.length);index++) peak=Math.max(peak,spectrum[index]||0);
-        const value=Math.max(0,Math.min(1,peak/255));
+        const visiblePeak=Math.max(0,(peak-0.012)/0.22);
+        const value=Math.max(0,Math.min(1,Math.pow(visiblePeak,0.55)));
       const barHeight=Math.max(2,value*height);
       const ratio=bar/(barCount-1);
       spectrumContext.fillStyle=ratio<0.3?'#ff9d2f':ratio<0.62?'#ffd166':'#83ffab';
