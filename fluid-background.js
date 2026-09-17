@@ -8,6 +8,24 @@ const lowPerformanceMode = document.documentElement.classList.contains('fx-lite'
 const ambientPalette = ['#b9855f', '#c99a72', '#d6ae86', '#e0c09b'];
 const mousePalette = ['#b84f18', '#d97824', '#e9a13a', '#f0bd64', '#cf6930'];
 
+/* FX trigger tuning lives in fx-config.js (window.doomsdayFxConfig). Values
+ * here mirror the config defaults so the background keeps working when the
+ * config script is missing or a key was renamed. */
+const fxTriggers = (window.doomsdayFxConfig && window.doomsdayFxConfig.triggers) || {};
+const fxNum = function(group, key, fallback) {
+  const value = group && Number(group[key]);
+  return Number.isFinite(value) ? value : fallback;
+};
+const fxHeavyBass = fxTriggers.heavyBass || {};
+const fxHeavyBassOn = fxNum(fxHeavyBass, 'on', 0.88);
+const fxHeavyBassOff = fxNum(fxHeavyBass, 'off', 0.72);
+const fxHighLevel = fxTriggers.highLevel || {};
+const fxHighLevelOn = fxNum(fxHighLevel, 'on', 0.88);
+const fxHighLevelOff = fxNum(fxHighLevel, 'off', 0.78);
+const fxSoftPulse = fxTriggers.softPulse || {};
+const fxBass = fxTriggers.bass || {};
+const fxColors = fxTriggers.colors || {};
+
 if (host && !prefersReducedMotion) {
   try {
     const fluid = new WebGLFluidEnhanced(host);
@@ -137,39 +155,40 @@ if (host && !prefersReducedMotion) {
       const hardBass = Math.max(0, Math.min(1, signal ? (signal.hardBass || 0) : 0));
       const mid = Math.max(0, Math.min(1, signal ? (signal.mid || level) : level));
       const treble = Math.max(0, Math.min(1, signal ? (signal.treble || level) : level));
-      const bassActivity = Math.max(0, Math.min(1, (bass - 0.25) / 0.75));
-      const bassHardThreshold = 0.38;
-      const bassHardActivity = Math.max(0, Math.min(1, (bass - bassHardThreshold) / 0.38));
+      const bassActivity = Math.max(0, Math.min(1, (bass - fxNum(fxBass, 'softFloor', 0.25)) / (1 - fxNum(fxBass, 'softFloor', 0.25))));
+      const bassHardThreshold = fxNum(fxBass, 'hardFloor', 0.38);
+      const bassHardActivity = Math.max(0, Math.min(1, (bass - bassHardThreshold) / (1 - bassHardThreshold)));
       const hardBassActivity = signal && signal.hardBassConfirmed ? hardBass : 0;
-      const hardBassEmission = Math.max(0, Math.min(1, (hardBassActivity - 0.88) / 0.12));
+      const hardBassEmission = Math.max(0, Math.min(1, (hardBassActivity - fxHeavyBassOn) / fxNum(fxHeavyBass, 'emissionScale', 0.12)));
       const bassPunch = Math.max(
         bassActivity * bassActivity,
         bassHardActivity * bassHardActivity,
         hardBassActivity * hardBassActivity
       );
-      const volumeActivity = Math.max(0, Math.min(1, (level - 0.3) / 0.7));
+      const levelFloor = fxNum(fxSoftPulse, 'levelFloor', 0.30);
+      const volumeActivity = Math.max(0, Math.min(1, (level - levelFloor) / (1 - levelFloor)));
       const volumePulse = transient * (0.08 + volumeActivity * 0.34);
-      const levelPunch = Math.max(0, Math.min(1, (level - 0.88) / 0.12));
+      const levelPunch = Math.max(0, Math.min(1, (level - fxHighLevelOn) / (1 - fxHighLevelOn)));
       const visualPunch = Math.min(1, Math.max(bassPunch, volumePulse, levelPunch * 0.82));
-      if (isPlaying && hardBassActivity >= 0.88) hardBassFrames += 1;
-      else if (hardBassActivity < 0.72) {
+      if (isPlaying && hardBassActivity >= fxHeavyBassOn) hardBassFrames += 1;
+      else if (hardBassActivity < fxHeavyBassOff) {
         hardBassFrames = 0;
         hardBassTriggered = false;
       }
-      if (isPlaying && level >= 0.88) highLevelFrames += 1;
-      else if (level < 0.78) {
+      if (isPlaying && level >= fxHighLevelOn) highLevelFrames += 1;
+      else if (level < fxHighLevelOff) {
         highLevelFrames = 0;
         highLevelTriggered = false;
       }
-      const hasBassPeak = hardBassFrames >= 3 && !hardBassTriggered;
-      const hasLevelPeak = highLevelFrames >= 2 && !highLevelTriggered;
+      const hasBassPeak = hardBassFrames >= fxNum(fxHeavyBass, 'confirmFrames', 3) && !hardBassTriggered;
+      const hasLevelPeak = highLevelFrames >= fxNum(fxHighLevel, 'confirmFrames', 2) && !highLevelTriggered;
 
-      if (logoStage && (hasBassPeak || hasLevelPeak) && now - lastLogoGlitch > 1200) {
+      if (logoStage && (hasBassPeak || hasLevelPeak) && now - lastLogoGlitch > fxNum(fxHeavyBass, 'glitchCooldownMs', 1200)) {
         lastLogoGlitch = now;
         if (hasBassPeak) hardBassTriggered = true;
         if (hasLevelPeak) highLevelTriggered = true;
-        glitchEmissionBursts = 3;
-        glitchEmissionUntil = now + 520;
+        glitchEmissionBursts = fxNum(fxHeavyBass, 'glitchBursts', 3);
+        glitchEmissionUntil = now + fxNum(fxHeavyBass, 'glitchMs', 520);
         logoStage.classList.remove('logo-bass-hit');
         void logoStage.offsetWidth;
         logoStage.classList.add('logo-bass-hit');
@@ -180,8 +199,11 @@ if (host && !prefersReducedMotion) {
 
       // Volume adds occasional light puffs; only bass can create a strong emission.
       const glitchBurstActive = glitchEmissionBursts > 0 && now < glitchEmissionUntil;
-      const shouldEmitAudio = isPlaying && (glitchBurstActive || transient >= 0.14 || hardBassActivity >= 0.88 || level >= 0.88);
-      const audioInterval = glitchBurstActive ? (lowPerformanceMode ? 170 : 125) : (lowPerformanceMode ? 360 : 240);
+      const transientOn = fxNum(fxSoftPulse, 'transientOn', 0.14);
+      const shouldEmitAudio = isPlaying && (glitchBurstActive || transient >= transientOn || hardBassActivity >= fxHeavyBassOn || level >= fxHighLevelOn);
+      const audioInterval = glitchBurstActive
+        ? (lowPerformanceMode ? fxNum(fxSoftPulse, 'burstIntervalMsLite', 170) : fxNum(fxSoftPulse, 'burstIntervalMs', 125))
+        : (lowPerformanceMode ? fxNum(fxSoftPulse, 'intervalMsLite', 360) : fxNum(fxSoftPulse, 'intervalMs', 240));
 
       if (shouldEmitAudio && now - lastAudioSpray > audioInterval) {
         lastAudioSpray = now;
@@ -316,9 +338,9 @@ function soundWaveColor(now, bass, mid, treble, level) {
   const baseIndex = Math.floor(basePhase);
   const baseColor = mixHex(ambientPalette[baseIndex], ambientPalette[Math.min(ambientPalette.length - 1, baseIndex + 1)], basePhase - baseIndex);
 
-  const bassWeight = bass * 1.5;
-  const midWeight = mid * 1.2;
-  const trebleWeight = treble * 0.9;
+  const bassWeight = bass * fxNum(fxColors, 'bassWeight', 1.5);
+  const midWeight = mid * fxNum(fxColors, 'midWeight', 1.2);
+  const trebleWeight = treble * fxNum(fxColors, 'trebleWeight', 0.9);
   const totalWeight = bassWeight + midWeight + trebleWeight + 0.001;
 
   // Primary accent colors for sound bursts

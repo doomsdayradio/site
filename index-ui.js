@@ -61,6 +61,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const btnIcon=toggle?toggle.querySelector('.stream-icon'):null;
   const ledSegments=[];
   const bars=[];
+  /* hardBass trigger thresholds come from fx-config.js; these defaults mirror
+   * the config so the signal pipeline works even without the config file. */
+  const fxHeavyBass=((window.doomsdayFxConfig||{}).triggers||{}).heavyBass||{};
+  const fxHardBassOn=Number.isFinite(Number(fxHeavyBass.on))?Number(fxHeavyBass.on):0.88;
   let audioContext=null;
   let analyser=null;
   let frequencyData=null;
@@ -282,7 +286,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     signal.level+=(rawLevel-signal.level)*0.32;
     signal.transient=Math.max(0,Math.min(1,levelRise/0.08));
     signal.hardBass=signal.bass;
-    signal.hardBassConfirmed=signal.hardBass>=0.88;
+    signal.hardBassConfirmed=signal.hardBass>=fxHardBassOn;
     signal.playing=true;
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     updateSignalVisualization(signal);
@@ -413,7 +417,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     signal.bass+=(directBass-signal.bass)*0.35;
     signal.lowBass=lowBass;
     signal.hardBass=signal.bass;
-    signal.hardBassConfirmed=signal.hardBass >= 0.88;
+    signal.hardBassConfirmed=signal.hardBass >= fxHardBassOn;
     signal.mid+=(mid-signal.mid)*0.16;
     signal.treble+=(treble-signal.treble)*0.16;
     signal.level+=(rawLevel-signal.level)*0.32;
@@ -551,7 +555,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     bassDebugReadout.textContent=String(bassPercent).padStart(2,'0')+'%';
     bassDebugFill.style.width=bassPercent+'%';
     const hardBassPercent=Math.round(Math.max(0,Math.min(1,signal.hardBass||0))*100);
-    bassDebugHardReadout.textContent=String(hardBassPercent).padStart(2,'0')+'% / 88%';
+    bassDebugHardReadout.textContent=String(hardBassPercent).padStart(2,'0')+'% / '+Math.round(fxHardBassOn*100)+'%';
     const litCount=Math.round(Math.max(0,Math.min(1,signal.level))*ledSegments.length);
     const flickerSeed=performance.now()*0.007;
     ledSegments.forEach(function(segment,index){
