@@ -60,6 +60,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const bassDebugHardReadout=document.getElementById('bass-debug-hard-readout');
   const spectrumChart=document.getElementById('audio-spectrum-chart');
   const spectrumContext=spectrumChart?spectrumChart.getContext('2d'):null;
+  const spectrumSource=document.getElementById('audio-spectrum-source');
   const spectrumBands={};
   document.querySelectorAll('[data-spectrum-band]').forEach(function(element){
     spectrumBands[element.dataset.spectrumBand]={fill:element.querySelector('em'),readout:element.querySelector('output')};
@@ -433,7 +434,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   }
 
   function handleLevelsMessage(raw){
-    if(audio.paused) return;
+    if(audio.paused && !isDebugPage) return;
     let payload;
     try{payload=JSON.parse(raw)}
     catch(error){return}
@@ -449,7 +450,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   }
 
   window.setInterval(function(){
-    if(!wsQueue.length || audio.paused) return;
+    if(!wsQueue.length || (audio.paused && !isDebugPage)) return;
     const now=performance.now();
     let due=null;
     while(wsQueue.length && wsQueue[0].due<=now) due=wsQueue.shift().payload;
@@ -518,6 +519,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
      signal.bassOnset*=0.62;
      if(hasNewKick) signal.bassOnset=Math.max(signal.bassOnset,kickStrength);
     signal.playing=true;
+    if(spectrumSource) spectrumSource.textContent='LEVELS / SERVER-FALLBACK';
+    updateSpectrumDisplay({bass:rawBass,mid:rawMid,treble:rawTreble,transient:transient},bands.map(milli));
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     updateSignalVisualization(signal);
     pushDebugSample();
@@ -704,8 +707,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
           }
           enterFallbackMode();
           startFallbackSignal();
-          if(useServerLevelsFallback){
-            vizLog('iOS WebKit tap silent -> server levels fallback');
+          if(useServerLevelsFallback||isDebugPage){
+            vizLog('silent tap -> server levels fallback');
             ensureWebSocketViz();
           }
           return;
@@ -714,8 +717,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
         teardownCaptureTap();
         enterFallbackMode();
         startFallbackSignal();
-        if(useServerLevelsFallback){
-          vizLog('iOS WebKit capture tap silent -> server levels fallback');
+        if(useServerLevelsFallback||isDebugPage){
+          vizLog('silent capture tap -> server levels fallback');
           ensureWebSocketViz();
         }
         return;
@@ -958,6 +961,14 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   audio.addEventListener('waiting',function(){status.textContent='PUFFERE SIGNAL...'});
   audio.addEventListener('error',function(){
     if(meydaAnalyzer) meydaAnalyzer.stop();
+    if(isDebugPage){
+      isPlaying=true;
+      window.doomsdayAudioSignal.playing=true;
+      status.textContent='LEVELS FALLBACK';
+      vizLog('audio unavailable -> server levels fallback');
+      ensureWebSocketViz();
+      return;
+    }
     window.doomsdayAudioSignal.playing=false;
     setActive(false);
     status.textContent='SIGNAL NICHT ERREICHBAR';
