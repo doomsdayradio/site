@@ -102,12 +102,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const debugMode=urlParams.has('debug')||urlParams.has('viz-debug');
   const vizDebug=debugMode;
 
-  let vizDebugPanel=null;
-  if(vizDebug){
-    vizDebugPanel=document.createElement('pre');
-    vizDebugPanel.style.cssText='position:fixed;left:8px;bottom:8px;z-index:9999;background:rgba(0,0,0,0.8);color:#83ffab;font:11px/1.4 monospace;padding:8px;max-width:92vw;white-space:pre-wrap;word-break:break-all;margin:0;';
-    document.body.appendChild(vizDebugPanel);
-  }
+  let vizDebugPanel=null; /* log lines render into the ?debug panel below */
   let vizDebugLines=[];
   function vizLog(message){
     if(!vizDebug)return;
