@@ -718,6 +718,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     signal.treble+=(treble-signal.treble)*0.16;
     signal.level+=(rawLevel-signal.level)*0.32;
     signal.transient=Math.max(0,Math.min(1,levelRise/0.08));
+    const displaySpectrum=Array.prototype.map.call(frequencyData,function(value){return value/255});
     if(meydaFeatures){
       signal.bass=spectrumBandLevel(displaySpectrum,35,160,binWidth);
       signal.mid=spectrumBandLevel(displaySpectrum,160,2200,binWidth);
@@ -740,7 +741,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       lastKickDebug={sub:localSub,fast:localSubFast,seq:localKickSequence,strength:signal.bassOnset};
     }
     signal.playing=true;
-    const displaySpectrum=Array.prototype.map.call(frequencyData,function(value){return value/255});
     updateSpectrumDisplay({
       bass:signal.bass,
       mid:signal.mid,
