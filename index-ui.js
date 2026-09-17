@@ -11,11 +11,11 @@ const lowPerformanceMode = prefersReducedMotion
 document.documentElement.classList.toggle('fx-lite', lowPerformanceMode);
 document.documentElement.classList.toggle('reduced-motion', prefersReducedMotion);
 document.documentElement.classList.toggle('bass-debug', new URLSearchParams(location.search).has('bass-debug'));
-window.doomsdayAudioSignal={bass:0,mid:0.6,treble:0.45,sub:0,level:0.74,transient:0,hardBass:0,bassOnset:0,playing:false};
-document.documentElement.style.setProperty('--audio-level','0.74');
-document.documentElement.style.setProperty('--audio-bass','0.55');
-document.documentElement.style.setProperty('--audio-mid','0.60');
-document.documentElement.style.setProperty('--audio-treble','0.45');
+window.doomsdayAudioSignal={bass:0,mid:0,treble:0,sub:0,level:0,transient:0,hardBass:0,bassOnset:0,playing:false};
+document.documentElement.style.setProperty('--audio-level','0');
+document.documentElement.style.setProperty('--audio-bass','0');
+document.documentElement.style.setProperty('--audio-mid','0');
+document.documentElement.style.setProperty('--audio-treble','0');
 document.documentElement.style.setProperty('--audio-glow-color','rgba(243,108,4,0)');
 document.documentElement.style.setProperty('--audio-glow-outer','rgba(243,108,4,0)');
 document.documentElement.style.setProperty('--audio-glow-inner-r','0px');
@@ -463,6 +463,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   },80);
 
   function applyLevelsPayload(payload){
+    if(audio.paused || !isPlaying) return;
     const bands=payload.bands;
     /* Levels arrive as integers 0..1000 (milli-units) because liquidsoap
        cannot reliably format decimal floats into JSON. */
@@ -869,10 +870,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       return;
     }
     if(isPlaying && (analyser || fallbackFrame)) return;
-    const level=baseSignalLevel;
+    const level=0;
     const bass=0;
-    const mid=0.6;
-    const treble=0.45;
+    const mid=0;
+    const treble=0;
     window.doomsdayAudioSignal={
       bass:bass,
       mid:mid,
