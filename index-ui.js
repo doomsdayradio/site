@@ -700,6 +700,13 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       lastKickDebug={sub:localSub,fast:localSubFast,seq:localKickSequence,strength:signal.bassOnset};
     }
     signal.playing=true;
+    const displaySpectrum=Array.prototype.map.call(frequencyData,function(value){return value/255});
+    updateSpectrumDisplay({
+      bass:signal.bass,
+      mid:signal.mid,
+      treble:signal.treble,
+      transient:signal.transient
+    },displaySpectrum);
     /* Silence watchdog: some mobile browsers feed the analyser only zeros
        (or sub-audible dither) while the time-domain level still moves.
        Treat the spectrum as silent when its average bin value stays near
