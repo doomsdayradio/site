@@ -533,10 +533,14 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     if(!isDebugPage) updateSignalVisualization(signal);
     pushDebugSample();
+    const visualSpectrum=(signal.bass||0)*0.45+(signal.mid||0)*0.65+(signal.treble||0)*0.85;
+    const visualEnergy=clamp01(visualSpectrum*0.7+(signal.level||0)*0.3);
     bars.forEach(function(bar,index){
-      const target=index<bars.length*0.25?signal.bass:index<bars.length*0.65?signal.mid:signal.treble;
+      const profile=0.62+0.38*Math.abs(Math.sin(index*0.46+0.7));
+      const target=Math.max(0.08,visualEnergy*profile);
       const previous=Number(bar.dataset.level||0.08);
-      const level=previous+(Math.max(0.08,target)-previous)*0.14;
+      const smoothing=target>previous?0.10:0.035;
+      const level=previous+(target-previous)*smoothing;
       bar.dataset.level=String(level);
       bar.style.transform='scaleY('+level.toFixed(2)+')';
       bar.style.opacity=String(0.5+level*0.5);
