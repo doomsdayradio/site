@@ -102,6 +102,8 @@ if (host && !prefersReducedMotion) {
     let lastPointerMove = 0;
     let lastPointerEventX = null;
     let lastPointerEventY = null;
+    let pendingPointerDeltaX = 0;
+    let pendingPointerDeltaY = 0;
 
     function isInteractiveTarget(target) {
       return Boolean(target && target.closest('button,a,input,label,select,textarea,.action-bar,.status'));
@@ -111,6 +113,10 @@ if (host && !prefersReducedMotion) {
       if (isInteractiveTarget(event.target)) return;
       const moved = lastPointerEventX === null
         || Math.hypot(event.clientX - lastPointerEventX, event.clientY - lastPointerEventY) >= 0.5;
+      if (lastPointerEventX !== null) {
+        pendingPointerDeltaX += event.clientX - lastPointerEventX;
+        pendingPointerDeltaY += event.clientY - lastPointerEventY;
+      }
       lastPointerEventX = event.clientX;
       lastPointerEventY = event.clientY;
       if (!moved) return;
@@ -154,6 +160,8 @@ if (host && !prefersReducedMotion) {
       sprayY = null;
       previousSprayX = null;
       previousSprayY = null;
+      pendingPointerDeltaX = 0;
+      pendingPointerDeltaY = 0;
     }, { passive: true });
     window.addEventListener('pointercancel', function(event) {
       pointerActive = false;
@@ -161,6 +169,8 @@ if (host && !prefersReducedMotion) {
       sprayY = null;
       previousSprayX = null;
       previousSprayY = null;
+      pendingPointerDeltaX = 0;
+      pendingPointerDeltaY = 0;
     }, { passive: true });
 
     function sprayAtPointer(now) {
@@ -322,8 +332,7 @@ if (host && !prefersReducedMotion) {
       const trebleSpikeInterval = lowPerformanceMode
         ? fxNum(fxTrebleSpike, 'intervalMsLite', 240)
         : fxNum(fxTrebleSpike, 'intervalMs', 160);
-      if (isPlaying && trebleSpikeFrames >= fxNum(fxTrebleSpike, 'confirmFrames', 2) && now - lastTrebleSpray > trebleSpikeInterval) {
-          if (isPlaying && trebleSpikeReady && trebleSpikeFrames >= fxNum(fxTrebleSpike, 'confirmFrames', 2) && now - lastTrebleSpray > trebleSpikeInterval) {
+        if (isPlaying && trebleSpikeReady && trebleSpikeFrames >= fxNum(fxTrebleSpike, 'confirmFrames', 2) && now - lastTrebleSpray > trebleSpikeInterval) {
         lastTrebleSpray = now;
         trebleSpikeReady = false;
         const sparkColor = trebleSparkPalette[Math.floor(Math.random() * trebleSparkPalette.length)];
@@ -360,14 +369,14 @@ if (host && !prefersReducedMotion) {
         sprayX += (pointerX - sprayX) * (lowPerformanceMode ? 0.24 : 0.34);
         sprayY += (pointerY - sprayY) * (lowPerformanceMode ? 0.24 : 0.34);
 
-        if (now - lastPointerSpray > (lowPerformanceMode ? 110 : 75)) {
+        if (now - lastPointerSpray > (lowPerformanceMode ? 90 : 60)) {
           lastPointerSpray = now;
-          const movementX = sprayX - previousSprayX;
-          const movementY = sprayY - previousSprayY;
+          const movementX = pendingPointerDeltaX;
+          const movementY = pendingPointerDeltaY;
           const movementDistance = Math.hypot(movementX, movementY);
 
-          previousSprayX = sprayX;
-          previousSprayY = sprayY;
+          pendingPointerDeltaX = 0;
+          pendingPointerDeltaY = 0;
           if (movementDistance >= 0.5) {
             fluid.setConfig({
               colorPalette: [mouseColor(now)],
