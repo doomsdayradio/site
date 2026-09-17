@@ -24,6 +24,9 @@ const fxHighLevelOn = fxNum(fxHighLevel, 'on', 0.88);
 const fxSoftPulse = fxTriggers.softPulse || {};
 const fxBass = fxTriggers.bass || {};
 const fxColors = fxTriggers.colors || {};
+const fxTrebleSpike = fxTriggers.trebleSpike || {};
+const fxNoise = fxTriggers.noise || {};
+const trebleSparkPalette = ['#d1ff45', '#e6f2b0', '#f4f0e6', '#e0c09b'];
 
 if (host && !prefersReducedMotion) {
   try {
@@ -84,6 +87,10 @@ if (host && !prefersReducedMotion) {
     let lastLogoGlitch = 0;
     let hardBassFrames = 0;
     let hardBassTriggered = false;
+    let trebleSpikeFrames = 0;
+    let trebleSpikeReady = true;
+    let lastTrebleSpray = 0;
+    let lastTrebleSpikeEnd = 0;
     let glitchEmissionBursts = 0;
     let glitchEmissionUntil = 0;
     let audioSideToggle = 0;
@@ -225,6 +232,43 @@ if (host && !prefersReducedMotion) {
 
         fluid.splatAtLocation(emitX, emitY, forceX, forceY);
         if (glitchBurstActive) glitchEmissionBursts -= 1;
+      }
+
+      /* Treble spikes: sharp, small, cool-colored splashes at the top of the
+       * logo. Gated on treble + transient so only real attacks fire. */
+      const trebleSpikeOn = fxNum(fxTrebleSpike, 'on', 0.70);
+      const trebleSpikeOff = fxNum(fxTrebleSpike, 'off', 0.50);
+      const trebleSpikeTransientOn = fxNum(fxTrebleSpike, 'transientOn', 0.30);
+      if (isPlaying && treble >= trebleSpikeOn && transient >= trebleSpikeTransientOn) {
+        trebleSpikeFrames += 1;
+      } else if (treble < trebleSpikeOff) {
+        if (trebleSpikeFrames > 0) lastTrebleSpikeEnd = now;
+        trebleSpikeFrames = 0;
+        if (now - lastTrebleSpikeEnd > fxNum(fxTrebleSpike, 'cooldownMs', 500)) trebleSpikeReady = true;
+      }
+      const trebleSpikeInterval = lowPerformanceMode
+        ? fxNum(fxTrebleSpike, 'intervalMsLite', 240)
+        : fxNum(fxTrebleSpike, 'intervalMs', 160);
+      if (isPlaying && trebleSpikeFrames >= fxNum(fxTrebleSpike, 'confirmFrames', 2) && now - lastTrebleSpray > trebleSpikeInterval) {
+        lastTrebleSpray = now;
+        trebleSpikeReady = false;
+        const sparkColor = trebleSparkPalette[Math.floor(Math.random() * trebleSparkPalette.length)];
+        fluid.setConfig({
+          colorPalette: [sparkColor],
+          brightness: 0.32,
+          splatRadius: 0.018 + treble * 0.02,
+          splatForce: 520
+        });
+        const sparkEmitters = logoEmitters(0.06 + Math.sin(now * 0.004) * 0.04);
+        audioSideToggle = (audioSideToggle + 1) % 2;
+        const sparkLeft = audioSideToggle === 0;
+        const sparkForce = 22 + treble * 34 + transient * 18;
+        fluid.splatAtLocation(
+          sparkLeft ? sparkEmitters.leftX : sparkEmitters.rightX,
+          sparkEmitters.y,
+          (sparkLeft ? -1 : 1) * sparkForce * 0.6,
+          -sparkForce
+        );
       }
       if (pointerActive && pointerX !== null && pointerY !== null) {
         if (sprayX === null || sprayY === null) {

@@ -65,6 +65,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
    * the config so the signal pipeline works even without the config file. */
   const fxHeavyBass=((window.doomsdayFxConfig||{}).triggers||{}).heavyBass||{};
   const fxHardBassOn=Number.isFinite(Number(fxHeavyBass.on))?Number(fxHeavyBass.on):0.88;
+  const fxNoiseCfg=((window.doomsdayFxConfig||{}).triggers||{}).noise||{};
+  const noiseLayer=document.querySelector('.noise');
+  const noiseBaseline=document.documentElement.classList.contains('fx-lite')?0.028:0.02;
+  const noiseMaxOpacity=Number.isFinite(Number(fxNoiseCfg.maxOpacity))?Number(fxNoiseCfg.maxOpacity):0.16;
+  const noiseBoost=Number.isFinite(Number(fxNoiseCfg.boost))?Number(fxNoiseCfg.boost):1.6;
   let audioContext=null;
   let analyser=null;
   let frequencyData=null;
@@ -499,6 +504,12 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
     document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
     document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
+    /* Static noise follows treble x transient: sharp attacks read as signal
+     * interference, sustained brightness stays calm. */
+    if(noiseLayer){
+      const noiseActivity=Math.max(0,Math.min(1,(signal.treble||0)*(signal.transient||0)*noiseBoost));
+      noiseLayer.style.opacity=(noiseBaseline+noiseActivity*noiseMaxOpacity).toFixed(3);
+    }
     updateSignalVisualization(signal);
     bars.forEach(function(bar,index){
       const profile=0.24+0.5*Math.abs(Math.sin(index*0.46+0.7));
@@ -551,6 +562,12 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
     document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
     document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
+    /* Static noise follows treble x transient: sharp attacks read as signal
+     * interference, sustained brightness stays calm. */
+    if(noiseLayer){
+      const noiseActivity=Math.max(0,Math.min(1,(signal.treble||0)*(signal.transient||0)*noiseBoost));
+      noiseLayer.style.opacity=(noiseBaseline+noiseActivity*noiseMaxOpacity).toFixed(3);
+    }
     const bassPercent=Math.round(Math.max(0,Math.min(1,signal.bass))*100);
     bassDebugReadout.textContent=String(bassPercent).padStart(2,'0')+'%';
     bassDebugFill.style.width=bassPercent+'%';
@@ -673,6 +690,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     meydaFeatures=null;
     previousMeydaRms=0;
     stopFallbackSignal();
+    if(noiseLayer) noiseLayer.style.opacity=String(noiseBaseline);
     window.doomsdayAudioSignal.playing=false;
     updateAmbientMeter();
     setActive(false);

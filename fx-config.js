@@ -60,6 +60,33 @@ window.doomsdayFxConfig = {
       levelFloor: 0.30
     },
 
+    /* Treble spike zone: sharp sparks at the top of the logo plus static
+     * noise. Requires both a high treble value AND a transient (a hat/crash
+     * attack), so sustained bright pads do not fire it.
+     * on/off:       treble enter/re-arm levels (hysteresis, off < on)
+     * transientOn:  minimum transient strength that counts as an attack
+     * confirmFrames: consecutive frames before the spike is accepted
+     * intervalMs:   delay between spark splashes while the spike is active
+     * intervalMsLite: interval in fx-lite mode
+     * cooldownMs:   minimum time between spike phases
+     */
+    trebleSpike: {
+      on: 0.70,
+      off: 0.50,
+      transientOn: 0.30,
+      confirmFrames: 2,
+      intervalMs: 160,
+      intervalMsLite: 240,
+      cooldownMs: 500
+    },
+
+    /* Static noise overlay: opacity = treble x transient, scaled by
+     * maxOpacity. Screen-blended, so it reads as signal interference. */
+    noise: {
+      maxOpacity: 0.16,
+      boost: 1.6
+    },
+
     /* Bass shaping: ramps that translate the raw bass value into punch.
      * softFloor: bass below this contributes nothing to the soft punch
      * hardFloor: bass above this starts feeding the hard punch ramp
