@@ -58,6 +58,12 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const bassDebugReadout=document.getElementById('bass-debug-readout');
   const bassDebugFill=document.getElementById('bass-debug-fill');
   const bassDebugHardReadout=document.getElementById('bass-debug-hard-readout');
+  const spectrumChart=document.getElementById('audio-spectrum-chart');
+  const spectrumContext=spectrumChart?spectrumChart.getContext('2d'):null;
+  const spectrumBands={};
+  document.querySelectorAll('[data-spectrum-band]').forEach(function(element){
+    spectrumBands[element.dataset.spectrumBand]={fill:element.querySelector('em'),readout:element.querySelector('output')};
+  });
   const btnIcon=toggle?toggle.querySelector('.stream-icon'):null;
   const ledSegments=[];
   const bars=[];
@@ -111,6 +117,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let outputGain=null;
   let meydaFeatures=null;
   let previousMeydaRms=0;
+  let previousMeydaSpectrum=null;
   let visualizerFrame=0;
   let fallbackFrame=0;
   let fallbackTimer=0;
@@ -282,13 +289,44 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
         audioContext:audioContext,
         source:source,
         bufferSize:512,
-        featureExtractors:['rms','spectralFlux','amplitudeSpectrum'],
+        featureExtractors:['rms','amplitudeSpectrum'],
         callback:updateMeydaFeatures
       });
     }
     bars.forEach(function(bar){bar.classList.remove('is-fallback')});
     vizMode='element';
     vizLog('element tap active');
+  }
+
+  function updateSpectrumDisplay(features,spectrum){
+    if(!spectrumChart || !spectrumContext) return;
+    const values={bass:features.bass||0,mid:features.mid||0,treble:features.treble||0,transient:features.transient||0};
+    Object.keys(spectrumBands).forEach(function(name){
+      const value=Math.max(0,Math.min(1,values[name]));
+      spectrumBands[name].fill.style.width=Math.round(value*100)+'%';
+      spectrumBands[name].readout.value=Math.round(value*100).toString().padStart(2,'0')+'%';
+    });
+    const width=spectrumChart.width;
+    const height=spectrumChart.height;
+    spectrumContext.clearRect(0,0,width,height);
+    spectrumContext.fillStyle='rgba(245,239,228,.08)';
+    for(let line=1;line<4;line++){
+      const y=Math.round(height-(height*line/4));
+      spectrumContext.fillRect(0,y,width,1);
+    }
+    const barCount=16;
+    const barWidth=width/barCount;
+    for(let bar=0;bar<barCount;bar++){
+      const start=Math.floor(Math.pow(spectrum.length,bar/barCount));
+      const end=Math.max(start+1,Math.floor(Math.pow(spectrum.length,(bar+1)/barCount)));
+      let peak=0;
+      for(let index=start;index<Math.min(end,spectrum.length);index++) peak=Math.max(peak,spectrum[index]||0);
+      const value=Math.max(0,Math.min(1,peak*5));
+      const barHeight=Math.max(2,value*height);
+      const ratio=bar/(barCount-1);
+      spectrumContext.fillStyle=ratio<0.3?'#ff9d2f':ratio<0.62?'#ffd166':'#83ffab';
+      spectrumContext.fillRect(Math.round(bar*barWidth+2),height-barHeight,Math.max(3,Math.round(barWidth-4)),barHeight);
+    }
   }
 
   function updateMeydaFeatures(features){
@@ -315,7 +353,16 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const rms=Math.max(0,Math.min(1,(features.rms||0)*4));
     const rmsRise=Math.max(0,rms-previousMeydaRms);
     previousMeydaRms=rms;
-    const flux=Math.max(0,Math.min(1,(features.spectralFlux||0)*3));
+    let fluxTotal=0;
+    let fluxDenominator=0.001;
+    if(previousMeydaSpectrum && previousMeydaSpectrum.length===spectrum.length){
+      for(let index=0;index<spectrum.length;index++){
+        fluxTotal+=Math.max(0,spectrum[index]-previousMeydaSpectrum[index]);
+        fluxDenominator+=spectrum[index];
+      }
+    }
+    previousMeydaSpectrum=Array.prototype.slice.call(spectrum);
+    const flux=Math.max(0,Math.min(1,(fluxTotal/fluxDenominator)*2.5));
     const bassContrast=Math.max(0,Math.min(1,(bassRatio-midRatio*0.75-0.08)/0.32));
     meydaFeatures={
       bass:Math.max(0,Math.min(1,(bassRatio-0.45)/0.25)),
@@ -326,6 +373,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       hardBass:bassContrast*flux,
       hardBassConfirmed:bassContrast>=0.68&&flux>=0.28
     };
+    updateSpectrumDisplay(meydaFeatures,spectrum);
   }
 
     /* iOS WebKit can feed a cross-origin MediaElementSource only zeros. The

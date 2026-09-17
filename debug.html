@@ -55,6 +55,32 @@
           </div>
         </div>
       </section>
+      <section class="audio-spectrum module-card" aria-label="Aufgetrenntes Audiospektrum">
+        <div class="audio-spectrum-head">
+          <strong>AUDIO SPECTRUM</strong>
+          <span>LOKAL / MEYDA</span>
+        </div>
+        <div class="audio-spectrum-bands">
+          <div class="audio-spectrum-band" data-spectrum-band="bass">
+            <span><b>BASS</b><small>35–160 Hz</small></span>
+            <i><em></em></i><output>00%</output>
+          </div>
+          <div class="audio-spectrum-band" data-spectrum-band="mid">
+            <span><b>MITTEN</b><small>160 Hz–2.2 kHz</small></span>
+            <i><em></em></i><output>00%</output>
+          </div>
+          <div class="audio-spectrum-band" data-spectrum-band="treble">
+            <span><b>HÖHEN</b><small>2.2–10 kHz</small></span>
+            <i><em></em></i><output>00%</output>
+          </div>
+          <div class="audio-spectrum-band" data-spectrum-band="transient">
+            <span><b>ATTACK</b><small>kurze Impulse</small></span>
+            <i><em></em></i><output>00%</output>
+          </div>
+        </div>
+        <canvas id="audio-spectrum-chart" width="640" height="112" aria-label="16 logarithmische Frequenzbänder"></canvas>
+        <div class="audio-spectrum-scale"><span>30 Hz</span><span>160 Hz</span><span>2.2 kHz</span><span>10 kHz</span><span>16 kHz</span></div>
+      </section>
     </header>
   </main>
 
