@@ -276,7 +276,7 @@ if (host && !prefersReducedMotion) {
        * logo. Gated on treble + transient so only real attacks fire. */
       const trebleSpikeOn = fxNum(fxTrebleSpike, 'on', 0.45);
       const trebleSpikeOff = fxNum(fxTrebleSpike, 'off', 0.32);
-      const trebleSpikeTransientOn = fxNum(fxTrebleSpike, 'transientOn', 0.25);
+      const trebleSpikeTransientOn = fxNum(fxTrebleSpike, 'transientOn', 0.15);
       if (isPlaying && treble >= trebleSpikeOn && transient >= trebleSpikeTransientOn) {
         trebleSpikeFrames += 1;
       } else if (treble < trebleSpikeOff) {
@@ -353,7 +353,7 @@ if (host && !prefersReducedMotion) {
         hardBassTriggered: hardBassTriggered,
         trebleSpikeFrames: trebleSpikeFrames,
         trebleSpikeReady: trebleSpikeReady,
-        glitchEmissionBursts: glitchEmissionBursts,
+        glitchEmissionBursts: bassCoupledEnabled ? 0 : glitchEmissionBursts,
         lastAudioSprayAge: lastAudioSpray ? Math.round(now - lastAudioSpray) : null,
         lastTrebleSprayAge: lastTrebleSpray ? Math.round(now - lastTrebleSpray) : null
       };

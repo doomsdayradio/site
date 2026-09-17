@@ -77,7 +77,7 @@ window.doomsdayFxConfig = {
     trebleSpike: {
       on: 0.45,
       off: 0.32,
-      transientOn: 0.25,
+      transientOn: 0.15,
       confirmFrames: 2,
       intervalMs: 160,
       intervalMsLite: 240,
