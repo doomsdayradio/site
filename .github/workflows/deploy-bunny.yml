@@ -76,6 +76,21 @@ jobs:
             --exclude '.github/*' \
             --exclude 'design-system/*'
 
+      - name: Purge Bunny CDN cache
+        env:
+          BUNNY_PULL_ZONE_ID: ${{ vars.BUNNY_PULL_ZONE_ID }}
+          BUNNY_API_KEY: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${BUNNY_PULL_ZONE_ID:-}" ]; then
+            echo "BUNNY_PULL_ZONE_ID is not configured; skipping CDN purge."
+            exit 0
+          fi
+          curl --fail --silent --show-error --request POST \
+            --header "AccessKey: ${BUNNY_API_KEY}" \
+            "https://api.bunny.net/pullzone/${BUNNY_PULL_ZONE_ID}/purgeCache"
+
       - name: Publish deployment summary
         run: |
           echo "Bunny path: / (bucket root)"
