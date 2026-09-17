@@ -97,7 +97,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let wsReconnectDelay=1000;
   let wsRawLevel=0;
   let wsBassBaseline=0;
-  let wsBassEnvelope=0;
+  let wsSubEnvelope=0;
   const levelsUrl='wss://stream.doomsday.radio/levels';
   const baseSignalLevel=0.74;
   const canAnalyzeAudio=location.hostname==='doomsday.radio';
@@ -353,11 +353,14 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
        and measure bass as a spike ratio against it: "hardest hit of the
        song". The absolute floor keeps quiet passages from glitching. */
     wsBassBaseline+=(bass-wsBassBaseline)*0.008;
-    /* Kick detector: the onset is how far the current bass dominance sits
-     * above its slow envelope. A sustained bassline lifts the envelope and
-     * produces no onsets; a kick drum spikes far above it. */
-    const bassOnset=Math.max(0,bass-wsBassEnvelope);
-    wsBassEnvelope+=(bass-wsBassEnvelope)*0.03;
+    /* Kick detector on the SUB band (0-120 Hz): kicks live almost entirely
+     * below 120 Hz, low piano/guitar notes split across band 1 and the mids.
+     * Onset = sub level above its slow envelope, gated by an absolute sub
+     * floor so warm midrange instruments can't fake a kick. */
+    const sub=milli(bands[0]);
+    const subOnset=Math.max(0,sub-wsSubEnvelope);
+    wsSubEnvelope+=(sub-wsSubEnvelope)*0.03;
+    const subGate=clamp01((sub-0.25)/0.2);
     const bassSpikeRatio=bass/Math.max(0.15,wsBassBaseline*1.7);
     signal.bass+=(bass-signal.bass)*0.15;
     signal.mid+=(mid-signal.mid)*0.10;
@@ -366,7 +369,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     signal.transient=Math.max(0,Math.min(1,levelRise/0.08));
     signal.hardBass=Math.max(0,Math.min(1,(bassSpikeRatio-1.2)/0.8));
     signal.hardBassConfirmed=signal.hardBass>=fxHardBassOn&&bass>=0.3;
-    signal.bassOnset+=(Math.max(0,Math.min(1,bassOnset/0.3))-signal.bassOnset)*0.45;
+    signal.bassOnset+=(clamp01(subOnset/0.25)*subGate-signal.bassOnset)*0.45;
     signal.playing=true;
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     updateSignalVisualization(signal);
