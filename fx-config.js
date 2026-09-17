@@ -119,6 +119,7 @@ window.doomsdayFxConfig = {
       subCeil: 0.45,
       subGateOn: 0.08,
       subGateScale: 0.10,
+      kickSubMin: 0.34,
       glitchOn: 0.85,
       minIntervalMs: 90,
       maxIntervalMs: 460,

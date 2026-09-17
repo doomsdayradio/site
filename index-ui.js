@@ -139,6 +139,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let lastSubLevel=0;
   let localSubFast=0;
   let localSubBaseline=0.04;
+  let localKickArmed=true;
   let localKickCooldownUntil=0;
   let localKickSequence=0;
   let lastKickDebug=null;
@@ -306,14 +307,15 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const values={
       bass:spectrumBandLevel(spectrum,35,160,binWidth),
       mid:spectrumBandLevel(spectrum,160,2200,binWidth),
-      treble:spectrumBandLevel(spectrum,2200,10000,binWidth),
+      treble:spectrumBandLevel(spectrum,10000,16000,binWidth),
       transient:Math.min(1,(features.transient||0)*0.35)
     };
     Object.keys(spectrumBands).forEach(function(name){
       const value=Math.max(0,Math.min(1,values[name]));
       const previous=Number(spectrumBands[name].fill.dataset.value||0);
-      const smoothing=name==='transient'?0.12:0.12;
-      const smoothed=previous+(value-previous)*smoothing;
+      const smoothing=name==='transient'?0.08:0.045;
+      const next=previous+(value-previous)*smoothing;
+      const smoothed=Math.abs(next-previous)<0.01?previous:next;
       spectrumBands[name].fill.dataset.value=String(smoothed);
       spectrumBands[name].fill.style.width=Math.round(smoothed*100)+'%';
       spectrumBands[name].readout.value=Math.round(smoothed*100).toString().padStart(2,'0')+'%';
@@ -349,7 +351,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   function spectrumLevelFromRms(rms){
     const db=20*Math.log10(Math.max(0.00001,rms));
     return Math.max(0,Math.min(1,(db+60)/72));
-    let localKickArmed=true;
   }
 
   function spectrumBandLevel(spectrum,startHz,endHz,binWidth){
@@ -380,12 +381,12 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     for(let index=1;index<spectrum.length;index++) totalEnergy+=spectrum[index]*spectrum[index];
     const bassEnergy=bandEnergy(35,160);
     const midEnergy=bandEnergy(160,2200);
-    const trebleEnergy=bandEnergy(2200,10000);
+    const trebleEnergy=bandEnergy(10000,16000);
     const bassMidEnergy=Math.max(0.001,bassEnergy+midEnergy);
     const totalBandEnergy=Math.max(0.001,totalEnergy);
     const bassRatio=spectrumBandLevel(spectrum,35,160,binWidth);
     const midRatio=spectrumBandLevel(spectrum,160,2200,binWidth);
-    const trebleRatio=spectrumBandLevel(spectrum,2200,10000,binWidth);
+    const trebleRatio=spectrumBandLevel(spectrum,10000,16000,binWidth);
     const rms=Math.max(0,Math.min(1,(features.rms||0)*4));
     const rmsRise=Math.max(0,rms-previousMeydaRms);
     previousMeydaRms=rms;
@@ -675,19 +676,19 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       }else if(frequency>=180&&frequency<2200){
         mid+=value;
         midEnergy+=value*value;
-      }else if(frequency>=2200){
+      }else if(frequency>=10000){
         treble+=value;
       }
     }
     const bassBandRms=Math.sqrt(bassEnergy/Math.max(1,Math.ceil(145/binWidth)));
     const bassDb=20*Math.log10(Math.max(0.00001,bassBandRms));
-    const bassPosition=Math.max(0,Math.min(1,(bassDb+72)/48));
-    const directBass=Math.max(0,Math.min(1,(bassPosition-0.18)/0.52));
+    const bassFloor=Math.max(0.34,mid*0.9);
+    const directBass=Math.max(0,Math.min(1,(bass-bassFloor-0.04)/0.30));
     const signal=window.doomsdayAudioSignal;
     bass/=Math.max(1,Math.ceil(145/binWidth));
     lowBass/=Math.max(1,Math.ceil(85/binWidth));
     mid/=Math.max(1,Math.ceil(2020/binWidth));
-    treble/=Math.max(1,frequencyData.length-Math.ceil(2200/binWidth));
+    treble/=Math.max(1,frequencyData.length-Math.ceil(10000/binWidth));
     const rawLevel=Math.max(bass,mid,treble);
     let spectrumAvg=spectrumSum/frequencyData.length;
     const levelRise=Math.max(0,rawLevel-signal.level);
@@ -705,7 +706,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     signal.sub+=(localSub-signal.sub)*0.35;
     signal.bassOnset*=0.72;
     if(localSub<0.35) localKickArmed=true;
-    if(localKickStrength>=0.72&&localKickArmed&&now>=localKickCooldownUntil){
+    const localKickSubMin=Number(fxBassCoupledCfg.kickSubMin)||0.34;
+    if(localSub>=localKickSubMin&&localKickStrength>=0.72&&localKickArmed&&now>=localKickCooldownUntil){
       localKickCooldownUntil=now+140;
       localKickArmed=false;
       localKickSequence+=1;
@@ -722,7 +724,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     if(meydaFeatures){
       signal.bass=spectrumBandLevel(displaySpectrum,35,160,binWidth);
       signal.mid=spectrumBandLevel(displaySpectrum,160,2200,binWidth);
-      signal.treble=spectrumBandLevel(displaySpectrum,2200,10000,binWidth);
+      signal.treble=spectrumBandLevel(displaySpectrum,10000,16000,binWidth);
       signal.level=meydaFeatures.level;
       signal.transient=meydaFeatures.transient;
     }
@@ -850,17 +852,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const percent=Math.round(Math.max(0,Math.min(1,signal.level))*100);
     const now=performance.now();
 
-    // Distinct harmonic 3-phase chromatic rotation across canonical palette:
-    // Orange (#f36c04), Signal Green (#83ffab), Warm Phosphor White (#f5efe4)
-    const phase=now*0.0009;
-    const pOrange=Math.pow(Math.max(0,Math.cos(phase)),2.2);
-    const pGreen=Math.pow(Math.max(0,Math.cos(phase-2.0944)),2.2); // +120 deg
-    const pWhite=Math.pow(Math.max(0,Math.cos(phase-4.1888)),2.2); // +240 deg
-
-    // Audio-reactive spectral influence
-    const wOrange=pOrange*0.8 + (signal.bass||0)*1.4;
-    const wGreen=pGreen*0.8 + (signal.mid||0)*1.4;
-    const wWhite=pWhite*0.8 + (signal.treble||0)*1.2;
+    const wOrange=0.8 + (signal.bass||0)*1.4;
+    const wGreen=0.8 + (signal.mid||0)*1.4;
+    const wWhite=0.8 + (signal.treble||0)*1.2;
     const totalWeight=Math.max(0.001,wOrange+wGreen+wWhite);
 
     const r=Math.round((243*wOrange + 131*wGreen + 245*wWhite)/totalWeight);
@@ -869,7 +863,13 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
     const lvl=Math.max(0,Math.min(1,signal.level));
      const glowSpectrum=Math.max(0,Math.min(1,(((signal.bass||0)*0.45+(signal.mid||0)*0.65+(signal.treble||0)*0.85)-cfgNum(fxGlowCfg,'floor',0.10))/cfgNum(fxGlowCfg,'range',0.70)));
-      const glowActivity=Math.max(0,Math.min(1,((signal.transient||0)*0.7+(signal.level||0)*0.3)*glowSpectrum));
+      const glowTarget=signal.playing&&signal.level>=0.06
+        ? Math.max(0,Math.min(1,((signal.transient||0)*0.7+(signal.level||0)*0.3)*glowSpectrum))
+        : 0;
+      const previousGlow=Number(document.documentElement.dataset.glowActivity||0);
+      const nextGlow=previousGlow+(glowTarget-previousGlow)*0.06;
+      const glowActivity=Math.abs(nextGlow-previousGlow)<0.008?previousGlow:nextGlow;
+      document.documentElement.dataset.glowActivity=glowActivity.toFixed(4);
     const innerAlpha=(glowActivity*cfgNum(fxGlowCfg,'innerAlpha',0.50)).toFixed(2);
     const outerAlpha=(glowActivity*cfgNum(fxGlowCfg,'outerAlpha',0.22)).toFixed(2);
     const innerR=(glowActivity*cfgNum(fxGlowCfg,'innerRadius',15)).toFixed(1)+'px';
