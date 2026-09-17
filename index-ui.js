@@ -107,6 +107,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let wsRawLevel=0;
   let wsBassBaseline=0;
   let wsSubEnvelope=0;
+  let lastSubLevel=0;
   const levelsUrl='wss://stream.doomsday.radio/levels';
   const baseSignalLevel=0.74;
   const canAnalyzeAudio=location.hostname==='doomsday.radio';
@@ -154,8 +155,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     if(vizDebugLines.length) lines.push('-- log --', vizDebugLines.join('\n'));
     if(debugHistory.length>4) lines.push(
       '-- rhythm (last ~12s) --',
-      'bass     '+spark('bass'),
-      'onset    '+spark('onset'),
+      'sub(raw) '+spark('sub'),
+      'kick     '+spark('onset'),
+      'bass(dom)'+spark('bass'),
       'transient'+spark('transient'),
       'level    '+spark('level')
     );
@@ -191,7 +193,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       bass:s.bass||0,
       onset:s.bassOnset||0,
       transient:s.transient||0,
-      level:s.level||0
+      level:s.level||0,
+      sub:lastSubLevel
     });
     if(debugHistory.length>72) debugHistory.shift();
   }
@@ -413,6 +416,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
      * Onset = sub level above its slow envelope, gated by an absolute sub
      * floor so warm midrange instruments can't fake a kick. */
     const sub=milli(bands[0]);
+    lastSubLevel=sub;
     const subOnset=Math.max(0,sub-wsSubEnvelope);
     wsSubEnvelope+=(sub-wsSubEnvelope)*0.03;
     const subGate=clamp01((sub-cfgNum(fxBassCoupledCfg,'subGateOn',0.3))/cfgNum(fxBassCoupledCfg,'subGateScale',0.15));
