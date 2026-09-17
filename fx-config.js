@@ -30,7 +30,7 @@ window.doomsdayFxConfig = {
      * emissionScale: steepness of the emission ramp above `on` (smaller = sharper)
      */
     heavyBass: {
-      on: 0.90,
+      on: 0.85,
       off: 0.76,
       confirmFrames: 3,
       glitchCooldownMs: 1200,
@@ -102,36 +102,27 @@ window.doomsdayFxConfig = {
 
     /* TEST MODE: bass-coupled emissions. When enabled, the zone logic
      * (heavyBass/highLevel/softPulse) is bypassed for smoke emissions.
-     * Emissions are KICK-driven: the signal carries a bass onset (how far the
-     * bass dominance sits above its slow envelope), kicks spike it, sustained
-     * basslines don't. Emission parameters interpolate from that onset.
+    * Ordinary emissions follow sub intensity. A qualifying kick starts the
+    * short full-strength glitch burst above that base response.
      * enabled:      turn the test mode on/off (off = zone logic as before)
-     * onsetBoost:   gain on the kick onset before clamping (higher = more kicks)
-     * levelFloorMix: portion of the raw SUB level always mixed in (exponential
-     *               curve); 0 = only kick hits emit, 1 = sub level alone
      * subFloor/subCeil: raw sub (0-120 Hz) range mapped to 0..100% strength
      * subGateOn/subGateScale: absolute sub gate — below subGateOn
      *               nothing fires, full gate at subGateOn+subGateScale
-     * onsetScale:   absolute sub peak (over the level ~3s ago) that counts
-     *               as a full hit
      * glitchOn:     kick value that triggers the logo glitch in this mode
      * minIntervalMs/maxIntervalMs: emission delay at full/near-zero activity
-     * intensityExponent: steepness of the exponential strength curve
+    * intensityExponent: steepness of the sub-intensity curve
      *               (higher = quieter mid-range, more explosive top end)
      */
     bassCoupled: {
       enabled: true,
-      onsetBoost: 3.0,
-      levelFloorMix: 0.4,
-      subFloor: 0.10,
-      subCeil: 0.55,
-      subGateOn: 0.18,
-      subGateScale: 0.12,
-      onsetScale: 0.15,
+      subFloor: 0.04,
+      subCeil: 0.45,
+      subGateOn: 0.08,
+      subGateScale: 0.10,
       glitchOn: 0.85,
       minIntervalMs: 90,
       maxIntervalMs: 460,
-      intensityExponent: 2.5
+      intensityExponent: 1.8
     },
 
     /* Bass shaping: ramps that translate the raw bass value into punch.

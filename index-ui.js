@@ -64,7 +64,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   /* hardBass trigger thresholds come from fx-config.js; these defaults mirror
    * the config so the signal pipeline works even without the config file. */
   const fxHeavyBass=((window.doomsdayFxConfig||{}).triggers||{}).heavyBass||{};
-  const fxHardBassOn=Number.isFinite(Number(fxHeavyBass.on))?Number(fxHeavyBass.on):0.88;
+  const getFxHardBassOn=function(){
+    const value=Number(fxHeavyBass.on);
+    return Number.isFinite(value)?value:0.88;
+  };
   const fxNoiseCfg=((window.doomsdayFxConfig||{}).triggers||{}).noise||{};
   const fxSyncCfg=((window.doomsdayFxConfig||{}).triggers||{}).sync||{};
   const fxBassCoupledCfg=((window.doomsdayFxConfig||{}).triggers||{}).bassCoupled||{};
@@ -78,6 +81,14 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     if(Number.isFinite(savedDelay)&&savedDelay>=0) wsDelayMs=savedDelay;
   }catch(error){}
   const wsQueue=[];
+  window.addEventListener('doomsday:debug-config-change',function(event){
+    const sync=((event.detail||{}).triggers||{}).sync||{};
+    const value=Number(sync.delayMs);
+    if(Number.isFinite(value)&&value>=0){
+      wsDelayMs=value;
+      wsQueue.length=0;
+    }
+  });
   const noiseLayer=document.querySelector('.noise');
   const noiseBaseline=document.documentElement.classList.contains('fx-lite')?0.028:0.02;
   const noiseMaxOpacity=Number.isFinite(Number(fxNoiseCfg.maxOpacity))?Number(fxNoiseCfg.maxOpacity):0.16;
@@ -108,15 +119,24 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let wsFastLevel=0;
   let wsBassBaseline=0;
   let lastSubLevel=0;
+  let localSubFast=0;
+  let localSubBaseline=0.04;
+  let localKickCooldownUntil=0;
+  let localKickSequence=0;
   let lastKickDebug=null;
   let lastKickSequence=null;
   const levelsUrl='wss://stream.doomsday.radio/levels';
   const baseSignalLevel=0.74;
-  const canAnalyzeAudio=location.hostname==='doomsday.radio';
   const urlParams=new URLSearchParams(location.search);
+  const isDebugPage=/\/(?:ios-)?debug\.html$/.test(location.pathname);
+  const forceServerLevelsDebug=isDebugPage&&location.pathname.endsWith('/ios-debug.html');
+  const canAnalyzeAudio=location.hostname==='doomsday.radio';
+  const isAppleMobile=/iP(?:hone|ad|od)/.test(navigator.userAgent)
+    || (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const useServerLevelsFallback=isAppleMobile&&/AppleWebKit/.test(navigator.userAgent);
   /* ?debug shows the full player debug panel; ?viz-debug stays supported and
      behaves like ?debug (log lines included). */
-  const debugMode=urlParams.has('debug')||urlParams.has('viz-debug');
+    const debugMode=isDebugPage||urlParams.has('debug')||urlParams.has('viz-debug');
   const vizDebug=debugMode;
 
   let vizDebugPanel=null; /* log lines render into the ?debug panel below */
@@ -296,10 +316,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     };
   }
 
-  /* Server-driven visualization: liquidsoap analyzes the on-air signal and
-     broadcasts band levels over wss://stream.doomsday.radio/levels. This is
-     the top tier because iOS WebKit feeds local analysers only zeros for
-     cross-origin media. */
+    /* iOS WebKit can feed a cross-origin MediaElementSource only zeros. The
+      server-level feed is reserved for that failed local-analysis path. */
   function scheduleWsReconnect(){
     if(wsReconnectTimer) return;
     wsReconnectTimer=window.setTimeout(function(){
@@ -434,7 +452,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     signal.sub+=(sub-signal.sub)*0.25;
     signal.transient+=(transient-signal.transient)*0.4;
     signal.hardBass=Math.max(0,Math.min(1,(bassSpikeRatio-1.2)/0.8));
-    signal.hardBassConfirmed=signal.hardBass>=fxHardBassOn&&bass>=0.3;
+    signal.hardBassConfirmed=signal.hardBass>=getFxHardBassOn()&&bass>=0.3;
      /* The server retains the latest sequenced event in every payload, so the
        delayed queue may coalesce packets without losing a kick attack. */
      signal.bassOnset*=0.62;
@@ -569,8 +587,26 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const levelRise=Math.max(0,rawLevel-signal.level);
     signal.bass+=(directBass-signal.bass)*0.35;
     signal.lowBass=lowBass;
+    /* The local analyser has no server kick event. Normalize its low band
+       against a quiet floor, then detect short rises against a slow envelope. */
+    const localSub=Math.max(0,Math.min(1,(lowBass-0.008)/0.10));
+    const localSubRise=Math.max(0,localSub-localSubFast);
+    localSubFast+=(localSub-localSubFast)*0.38;
+    localSubBaseline+=(localSub-localSubBaseline)*0.012;
+    const localSubContrast=Math.max(0,Math.min(1,(localSub-localSubBaseline*1.35-0.04)/0.22));
+    const localRiseActivity=Math.max(0,Math.min(1,(localSubRise-0.02)/0.08));
+    const localKickStrength=Math.max(localSubContrast,localRiseActivity);
+    const now=performance.now();
+    signal.sub+=(localSub-signal.sub)*0.35;
+    signal.bassOnset*=0.72;
+    if(localKickStrength>=0.72&&now>=localKickCooldownUntil){
+      localKickCooldownUntil=now+140;
+      localKickSequence+=1;
+      signal.bassOnset=Math.max(0.90,localKickStrength);
+      lastKickDebug={sub:localSub,fast:localSubFast,seq:localKickSequence,strength:signal.bassOnset};
+    }
     signal.hardBass=signal.bass;
-    signal.hardBassConfirmed=signal.hardBass >= fxHardBassOn;
+    signal.hardBassConfirmed=signal.hardBass >= getFxHardBassOn();
     signal.mid+=(mid-signal.mid)*0.16;
     signal.treble+=(treble-signal.treble)*0.16;
     signal.level+=(rawLevel-signal.level)*0.32;
@@ -583,11 +619,14 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       signal.level=meydaFeatures.level;
       signal.transient=meydaFeatures.transient;
     }
+    if(!lastKickDebug||lastKickDebug.seq!==localKickSequence){
+      lastKickDebug={sub:localSub,fast:localSubFast,seq:localKickSequence,strength:signal.bassOnset};
+    }
     signal.playing=true;
     /* Silence watchdog: some mobile browsers feed the analyser only zeros
        (or sub-audible dither) while the time-domain level still moves.
        Treat the spectrum as silent when its average bin value stays near
-       zero, then fall back to the simulated visualizer. */
+      zero, then use server levels on iOS WebKit or simulate elsewhere. */
     const spectrumAvg=spectrumSum/frequencyData.length;
     if(spectrumAvg<2){
       silentFrames++;
@@ -605,12 +644,20 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
           }
           enterFallbackMode();
           startFallbackSignal();
+          if(useServerLevelsFallback){
+            vizLog('iOS WebKit tap silent -> server levels fallback');
+            ensureWebSocketViz();
+          }
           return;
         }
         vizLog('['+vizMode+'] tap silent -> fallback');
         teardownCaptureTap();
         enterFallbackMode();
         startFallbackSignal();
+        if(useServerLevelsFallback){
+          vizLog('iOS WebKit capture tap silent -> server levels fallback');
+          ensureWebSocketViz();
+        }
         return;
       }
     }else{
@@ -690,8 +737,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const b=Math.round((4*wOrange + 171*wGreen + 228*wWhite)/totalWeight);
 
     const lvl=Math.max(0,Math.min(1,signal.level));
-    /* Logo glow follows the transient (attacks), not the bass level. */
-    const glowActivity=Math.max(0,Math.min(1,((signal.transient||0)-0.15)/0.85));
+     /* Logo glow follows mid/treble attacks; sub-only kicks stay on the
+       emission path and do not light the logo. */
+     const glowSpectrum=Math.max(0,Math.min(1,(((signal.mid||0)*0.6+(signal.treble||0)*0.8)-0.10)/0.70));
+     const glowActivity=Math.max(0,Math.min(1,(signal.transient||0)*glowSpectrum));
     const innerAlpha=(glowActivity*0.50).toFixed(2);
     const outerAlpha=(glowActivity*0.22).toFixed(2);
     const innerR=(glowActivity*15.0).toFixed(1)+'px';
@@ -721,7 +770,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     bassDebugReadout.textContent=String(bassPercent).padStart(2,'0')+'%';
     bassDebugFill.style.width=bassPercent+'%';
     const hardBassPercent=Math.round(Math.max(0,Math.min(1,signal.hardBass||0))*100);
-    bassDebugHardReadout.textContent=String(hardBassPercent).padStart(2,'0')+'% / '+Math.round(fxHardBassOn*100)+'%';
+    bassDebugHardReadout.textContent=String(hardBassPercent).padStart(2,'0')+'% / '+Math.round(getFxHardBassOn()*100)+'%';
     const litCount=Math.round(Math.max(0,Math.min(1,signal.level))*ledSegments.length);
     const flickerSeed=performance.now()*0.007;
     ledSegments.forEach(function(segment,index){
@@ -787,7 +836,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     toggle.disabled=true;
     try{
       if(canAnalyzeAudio && !analyserBroken){
-        ensureWebSocketViz();
+        if(forceServerLevelsDebug) ensureWebSocketViz();
         try{setupAnalyser()}catch(error){
           analyser=null;frequencyData=null;floatFrequencyData=null;
           vizLog('setup FAILED: '+(error&&error.message?error.message:String(error)));

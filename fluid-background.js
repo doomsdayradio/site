@@ -17,8 +17,8 @@ const fxNum = function(group, key, fallback) {
   return Number.isFinite(value) ? value : fallback;
 };
 const fxHeavyBass = fxTriggers.heavyBass || {};
-const fxHeavyBassOn = fxNum(fxHeavyBass, 'on', 0.88);
-const fxHeavyBassOff = fxNum(fxHeavyBass, 'off', 0.72);
+const getFxHeavyBassOn = () => fxNum(fxHeavyBass, 'on', 0.88);
+const getFxHeavyBassOff = () => fxNum(fxHeavyBass, 'off', 0.72);
 const fxHighLevel = fxTriggers.highLevel || {};
 const fxHighLevelOn = fxNum(fxHighLevel, 'on', 0.88);
 const fxSoftPulse = fxTriggers.softPulse || {};
@@ -167,7 +167,7 @@ if (host && !prefersReducedMotion) {
       const hardBassActivity = bassCoupledEnabled
         ? (signal && (signal.bassOnset || 0) >= fxNum(fxBassCoupled, 'glitchOn', 0.85) ? signal.bassOnset : 0)
         : (signal && signal.hardBassConfirmed ? hardBass : 0);
-      const hardBassEmission = Math.max(0, Math.min(1, (hardBassActivity - fxHeavyBassOn) / fxNum(fxHeavyBass, 'emissionScale', 0.12)));
+      const hardBassEmission = Math.max(0, Math.min(1, (hardBassActivity - getFxHeavyBassOn()) / fxNum(fxHeavyBass, 'emissionScale', 0.12)));
       const bassPunch = Math.max(
         bassActivity * bassActivity,
         bassHardActivity * bassHardActivity,
@@ -178,12 +178,14 @@ if (host && !prefersReducedMotion) {
       const volumePulse = transient * (0.08 + volumeActivity * 0.34);
       const levelPunch = Math.max(0, Math.min(1, (level - fxHighLevelOn) / (1 - fxHighLevelOn)));
       const visualPunch = Math.min(1, Math.max(bassPunch, volumePulse, levelPunch * 0.82));
-      if (isPlaying && hardBassActivity >= fxHeavyBassOn) hardBassFrames += 1;
-      else if (hardBassActivity < fxHeavyBassOff) {
+      if (isPlaying && hardBassActivity >= getFxHeavyBassOn()) hardBassFrames += 1;
+      else if (hardBassActivity < getFxHeavyBassOff()) {
         hardBassFrames = 0;
         hardBassTriggered = false;
       }
-      const hasBassPeak = hardBassFrames >= fxNum(fxHeavyBass, 'confirmFrames', 3) && !hardBassTriggered;
+      const hasBassPeak = bassCoupledEnabled
+        ? hardBassActivity >= getFxHeavyBassOn() && !hardBassTriggered
+        : hardBassFrames >= fxNum(fxHeavyBass, 'confirmFrames', 3) && !hardBassTriggered;
 
       /* Logo glitch fires only on the hardest bass hits; a loud overall level
        * still drives emissions/level punch but never glitches the logo. */
@@ -201,18 +203,16 @@ if (host && !prefersReducedMotion) {
       }
 
       if (bassCoupledEnabled) {
-        /* TEST MODE: emission parameters are interpolated directly from the
-         * smoothed bass level; the zone logic below is bypassed. */
-        /* Sub-driven, kick-gated: strength comes from the raw sub level
-         * (0-120 Hz), the onset decides whether a hit fires at all. */
+        /* The ordinary emissions follow raw sub intensity. A qualifying kick
+         * starts a short burst at full strength, handled separately below. */
         const bcSub = signal && Number.isFinite(signal.sub) ? signal.sub : bass * 0.4;
         const bcSubFloor = fxNum(fxBassCoupled, 'subFloor', 0.10);
         const bcSubCeil = fxNum(fxBassCoupled, 'subCeil', 0.55);
         const bcSubActivity = Math.max(0, Math.min(1, (bcSub - bcSubFloor) / (bcSubCeil - bcSubFloor)));
-        const bcOnset = signal && Number.isFinite(signal.bassOnset) ? signal.bassOnset : 0;
-        const bcActivity = Math.max(0, Math.min(1,
-          bcOnset * fxNum(fxBassCoupled, 'onsetBoost', 3.0) + bcSubActivity * fxNum(fxBassCoupled, 'levelFloorMix', 0.4)
+        const bcSubGate = Math.max(0, Math.min(1,
+          (bcSub - fxNum(fxBassCoupled, 'subGateOn', 0.18)) / fxNum(fxBassCoupled, 'subGateScale', 0.12)
         ));
+        const bcActivity = bcSubActivity * bcSubGate;
         /* Exponential strength curve: quiet parts stay subtle, loud bass
          * explodes. intensityExponent controls how aggressive the top end is. */
         const bcK = fxNum(fxBassCoupled, 'intensityExponent', 2.5);
@@ -220,14 +220,18 @@ if (host && !prefersReducedMotion) {
         const punch = (Math.exp(bcK * bcActivity) - 1) / (bcExpK - 1);
         const bcMinInterval = fxNum(fxBassCoupled, 'minIntervalMs', 90);
         const bcMaxInterval = fxNum(fxBassCoupled, 'maxIntervalMs', 460);
-        const emitInterval = bcMaxInterval + (bcMinInterval - bcMaxInterval) * bcActivity;
-        if (isPlaying && bcActivity > 0.02 && now - lastAudioSpray > emitInterval) {
+        const glitchBurstActive = glitchEmissionBursts > 0 && now < glitchEmissionUntil;
+        const emitInterval = glitchBurstActive
+          ? (lowPerformanceMode ? fxNum(fxSoftPulse, 'burstIntervalMsLite', 170) : fxNum(fxSoftPulse, 'burstIntervalMs', 125))
+          : bcMaxInterval + (bcMinInterval - bcMaxInterval) * bcActivity;
+        const emissionPunch = glitchBurstActive ? 1 : punch;
+        if (isPlaying && (bcActivity > 0.02 || glitchBurstActive) && now - lastAudioSpray > emitInterval) {
           lastAudioSpray = now;
-          const cloudColor = soundWaveColor(now, bass, mid, treble, punch);
+          const cloudColor = soundWaveColor(now, bass, mid, treble, emissionPunch);
           fluid.setConfig({
             colorPalette: [cloudColor],
-            brightness: Math.min(0.5, (lowPerformanceMode ? 0.10 : 0.12) + punch * 0.34),
-            splatRadius: Math.min(0.24, (lowPerformanceMode ? 0.05 : 0.06) + punch * 0.16),
+            brightness: Math.min(0.5, (lowPerformanceMode ? 0.10 : 0.12) + emissionPunch * 0.34),
+            splatRadius: Math.min(0.24, (lowPerformanceMode ? 0.05 : 0.06) + emissionPunch * 0.16),
             splatForce: 520
           });
           const emitters = logoEmitters(0.44 + Math.sin(now * 0.002) * 0.06);
@@ -236,16 +240,17 @@ if (host && !prefersReducedMotion) {
           fluid.splatAtLocation(
             isLeft ? emitters.leftX : emitters.rightX,
             emitters.y + Math.cos(now * 0.003) * 4,
-            (isLeft ? -1 : 1) * (4 + punch * 42),
-            -(2 + punch * 26)
+            (isLeft ? -1 : 1) * (4 + emissionPunch * 42),
+            -(2 + emissionPunch * 26)
           );
+          if (glitchBurstActive) glitchEmissionBursts -= 1;
         }
       } else {
 
       // Volume adds occasional light puffs; only bass can create a strong emission.
       const glitchBurstActive = glitchEmissionBursts > 0 && now < glitchEmissionUntil;
       const transientOn = fxNum(fxSoftPulse, 'transientOn', 0.14);
-      const shouldEmitAudio = isPlaying && (glitchBurstActive || transient >= transientOn || hardBassActivity >= fxHeavyBassOn || level >= fxHighLevelOn);
+      const shouldEmitAudio = isPlaying && (glitchBurstActive || transient >= transientOn || hardBassActivity >= getFxHeavyBassOn() || level >= fxHighLevelOn);
       const audioInterval = glitchBurstActive
         ? (lowPerformanceMode ? fxNum(fxSoftPulse, 'burstIntervalMsLite', 170) : fxNum(fxSoftPulse, 'burstIntervalMs', 125))
         : (lowPerformanceMode ? fxNum(fxSoftPulse, 'intervalMsLite', 360) : fxNum(fxSoftPulse, 'intervalMs', 240));

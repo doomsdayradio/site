@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doomsday Radio - Visualisations-Debug</title>
+  <link rel="stylesheet" href="/design-system.css">
+  <link rel="stylesheet" href="./index.css?v=20260915-map-bg1">
+  <link rel="stylesheet" href="./debug.css?v=1">
+  <style>
+    .debug-page-note { position: fixed; left: 12px; bottom: 12px; z-index: 20; color: #f5efe4; font: 12px/1.4 monospace; opacity: .82; }
+    .debug-page-note a { color: #83ffab; }
+  </style>
+</head>
+<body class="debug-page">
+  <div id="fluid-background" aria-hidden="true"><canvas></canvas></div>
+  <canvas id="dust"></canvas>
+  <div class="noise"></div>
+  <div class="scanlines"></div>
+  <div class="vignette"></div>
+
+  <div id="bass-debug" class="bass-debug" aria-hidden="true">
+    <span class="bass-debug-label">BASS</span>
+    <output id="bass-debug-readout">00%</output>
+    <span class="bass-debug-track"><span id="bass-debug-fill"></span></span>
+    <span class="bass-debug-label">HARD / GLITCH</span>
+    <output id="bass-debug-hard-readout">00% / 85%</output>
+  </div>
+
+  <main class="center specimen">
+    <header class="hero-mark specimen-header wordmark">
+      <h1 class="sr-only">Doomsday Radio Visualisations-Debug</h1>
+      <div class="hero-logo-stage">
+        <img class="hero-logo" src="./ddd_radio_logo.png" alt="Doomsday Radio">
+      </div>
+      <section class="radio-player module-card" aria-label="Visualisations-Debug Stream">
+        <audio id="radio-stream" preload="none" data-src="https://stream.doomsday.radio/live"></audio>
+        <div id="equalizer" class="equalizer" aria-hidden="true"></div>
+        <div class="player-controls">
+          <div class="stream-action">
+            <button id="stream-toggle" class="stream-toggle transport-btn ddd-focus" type="button" aria-label="Livestream abspielen" aria-pressed="false" title="Livestream abspielen">
+              <span class="stream-icon transport-icon" aria-hidden="true">▶</span>
+            </button>
+            <div class="stream-copy" aria-live="polite">
+              <strong>VISUALISATIONS DEBUG</strong>
+              <span id="stream-status">SIGNAL BEREIT</span>
+            </div>
+          </div>
+          <div class="control-group volume-control">
+            <span class="sample-label">LAUTSTAERKE</span>
+            <label class="range-wrap">
+              <span class="sr-only">Lautstaerke</span>
+              <input id="stream-volume" type="range" min="0" max="1" step="0.05" value="0.8">
+            </label>
+          </div>
+        </div>
+      </section>
+    </header>
+  </main>
+
+  <div class="status">
+    <div id="freqTicks" aria-hidden="true"></div>
+    <div class="led-meter-wrapper" role="meter" aria-label="Signalpegel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div class="meter-meta"><span class="sample-label">SIGNAL</span><output id="signal-led-readout" class="meter-readout">00%</output></div>
+      <div id="signal-led-row" class="led-row" aria-hidden="true"></div>
+    </div>
+    <div id="weather-status" class="weather-status" role="status" aria-live="polite"><span id="weather-summary">DEBUG MODE</span></div>
+    <span id="clock">00:00:00</span>
+    <span>FREQ:107.END</span>
+  </div>
+
+  <p class="debug-page-note">Normal: lokale WebAudio/Meyda-Analyse | <a href="./ios-debug.html">iOS-Fallback testen</a></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/meyda@5.6.3/dist/web/meyda.min.js"></script>
+  <script src="./fx-config.js?v=17"></script>
+  <script src="./debug-config.js?v=1"></script>
+  <script src="./index-ui.js?v=20260917-localanalysis4"></script>
+  <script type="module" src="./fluid-background.js?v=20260917-subcouple2"></script>
+</body>
+</html>
