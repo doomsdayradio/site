@@ -525,7 +525,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
      if(hasNewKick) signal.bassOnset=Math.max(signal.bassOnset,kickStrength);
     signal.playing=true;
     if(spectrumSource) spectrumSource.textContent='LEVELS / SERVER-FALLBACK';
-    updateSpectrumDisplay({bass:signal.bass,mid:signal.mid,treble:signal.treble,transient:signal.transient},bands.map(milli));
+    const displaySpectrum=[];
+    for(let index=0;index<16;index++){
+      displaySpectrum.push(index<4?signal.bass:index<10?signal.mid:signal.treble);
+    }
+    updateSpectrumDisplay({bass:signal.bass,mid:signal.mid,treble:signal.treble,transient:signal.transient},displaySpectrum);
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     if(!isDebugPage) updateSignalVisualization(signal);
     pushDebugSample();
