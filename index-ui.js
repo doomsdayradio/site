@@ -147,14 +147,14 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const baseSignalLevel=0.74;
   const urlParams=new URLSearchParams(location.search);
   const isDebugPage=/\/(?:ios-)?debug\.html$/.test(location.pathname);
-  const forceServerLevelsDebug=isDebugPage&&location.pathname.endsWith('/ios-debug.html');
+  const forceServerLevelsDebug=false;
   if(isDebugPage) wsDelayMs=0;
     /* Debug pages are intentionally usable from localhost as well. The normal
       page starts with the local analyser; only ios-debug.html forces levels. */
     const canAnalyzeAudio=location.hostname==='doomsday.radio'||isDebugPage;
   const isAppleMobile=/iP(?:hone|ad|od)/.test(navigator.userAgent)
     || (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  const useServerLevelsFallback=isAppleMobile&&/AppleWebKit/.test(navigator.userAgent);
+  const useServerLevelsFallback=!isDebugPage&&isAppleMobile&&/AppleWebKit/.test(navigator.userAgent);
   /* ?debug shows the full player debug panel; ?viz-debug stays supported and
      behaves like ?debug (log lines included). */
     const debugMode=isDebugPage||urlParams.has('debug')||urlParams.has('viz-debug');
@@ -719,7 +719,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
           }
           enterFallbackMode();
           startFallbackSignal();
-          if(useServerLevelsFallback||isDebugPage){
+          if(useServerLevelsFallback){
             vizLog('silent tap -> server levels fallback');
             ensureWebSocketViz();
           }
@@ -729,7 +729,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
         teardownCaptureTap();
         enterFallbackMode();
         startFallbackSignal();
-        if(useServerLevelsFallback||isDebugPage){
+        if(useServerLevelsFallback){
           vizLog('silent capture tap -> server levels fallback');
           ensureWebSocketViz();
         }
@@ -971,20 +971,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   audio.addEventListener('waiting',function(){status.textContent='PUFFERE SIGNAL...'});
   audio.addEventListener('error',function(){
     if(meydaAnalyzer) meydaAnalyzer.stop();
-    if(isDebugPage){
-      isPlaying=true;
-      window.doomsdayAudioSignal.playing=true;
-      status.textContent='LEVELS FALLBACK';
-      vizLog('audio unavailable -> server levels fallback');
-      ensureWebSocketViz();
-      return;
-    }
     window.doomsdayAudioSignal.playing=false;
     setActive(false);
     status.textContent='SIGNAL NICHT ERREICHBAR';
   });
 
-  if(isDebugPage) ensureWebSocketViz();
 })();
 
 /* Map-service weather summary */
