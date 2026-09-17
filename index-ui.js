@@ -305,9 +305,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     if(!spectrumChart || !spectrumContext) return;
     const binWidth=audioContext?audioContext.sampleRate/(spectrum.length*2):24000/(spectrum.length*2);
     const values={
-      bass:spectrumBandLevel(spectrum,35,160,binWidth),
-      mid:spectrumBandLevel(spectrum,160,2200,binWidth),
-      treble:spectrumBandLevel(spectrum,10000,16000,binWidth),
+      bass:Number.isFinite(Number(features.bass))?Number(features.bass):spectrumBandLevel(spectrum,35,160,binWidth),
+      mid:Number.isFinite(Number(features.mid))?Number(features.mid):spectrumBandLevel(spectrum,160,2200,binWidth),
+      treble:Number.isFinite(Number(features.treble))?Number(features.treble):spectrumBandLevel(spectrum,10000,16000,binWidth),
       transient:Math.min(1,(features.transient||0)*0.35)
     };
     Object.keys(spectrumBands).forEach(function(name){
