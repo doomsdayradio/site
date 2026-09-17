@@ -120,9 +120,9 @@ window.doomsdayFxConfig = {
       enabled: true,
       onsetBoost: 3.0,
       levelFloorMix: 0.0,
-      subGateOn: 0.3,
-      subGateScale: 0.15,
-      onsetScale: 0.2,
+      subGateOn: 0.18,
+      subGateScale: 0.12,
+      onsetScale: 0.12,
       minIntervalMs: 90,
       maxIntervalMs: 460,
       intensityExponent: 2.5
