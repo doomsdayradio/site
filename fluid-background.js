@@ -99,6 +99,7 @@ if (host && !prefersReducedMotion) {
     let glitchEmissionUntil = 0;
     let audioSideToggle = 0;
     let pointerActive = false;
+    let lastPointerMove = 0;
 
     function isInteractiveTarget(target) {
       return Boolean(target && target.closest('button,a,input,label,select,textarea,.action-bar,.status'));
@@ -109,6 +110,7 @@ if (host && !prefersReducedMotion) {
       pointerX = event.clientX;
       pointerY = event.clientY;
       pointerActive = true;
+      lastPointerMove = performance.now();
     }
 
     function emitTapCloud(event) {
@@ -155,6 +157,7 @@ if (host && !prefersReducedMotion) {
     }, { passive: true });
 
     function sprayAtPointer(now) {
+      if (pointerActive && now - lastPointerMove > 180) pointerActive = false;
       const signal = window.doomsdayAudioSignal;
       const isPlaying = Boolean(signal && signal.playing);
       const level = Math.max(0, Math.min(1, signal ? (signal.level || 0) : 0));
