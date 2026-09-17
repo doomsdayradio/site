@@ -99,6 +99,7 @@ if (host && !prefersReducedMotion) {
     let glitchEmissionUntil = 0;
     let audioSideToggle = 0;
     let pointerActive = false;
+    let pointerPressed = false;
 
     function isInteractiveTarget(target) {
       return Boolean(target && target.closest('button,a,input,label,select,textarea,.action-bar,.status'));
@@ -108,7 +109,7 @@ if (host && !prefersReducedMotion) {
       if (isInteractiveTarget(event.target)) return;
       pointerX = event.clientX;
       pointerY = event.clientY;
-      pointerActive = event.pointerType !== 'mouse' || event.buttons > 0;
+      pointerActive = pointerPressed || event.pointerType !== 'mouse';
     }
 
     function emitTapCloud(event) {
@@ -133,13 +134,16 @@ if (host && !prefersReducedMotion) {
     window.addEventListener('pointermove', updatePointer, { passive: true });
     window.addEventListener('pointerdown', function(event) {
       if (isInteractiveTarget(event.target)) {
+        pointerPressed = false;
         pointerActive = false;
         return;
       }
+      pointerPressed = true;
       updatePointer(event);
       emitTapCloud(event);
     }, { passive: true });
     window.addEventListener('pointerup', function(event) {
+      pointerPressed = false;
       pointerActive = false;
       sprayX = null;
       sprayY = null;
@@ -147,6 +151,7 @@ if (host && !prefersReducedMotion) {
       previousSprayY = null;
     }, { passive: true });
     window.addEventListener('pointercancel', function(event) {
+      pointerPressed = false;
       pointerActive = false;
       sprayX = null;
       sprayY = null;
