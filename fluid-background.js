@@ -203,11 +203,15 @@ if (host && !prefersReducedMotion) {
       if (bassCoupledEnabled) {
         /* TEST MODE: emission parameters are interpolated directly from the
          * smoothed bass level; the zone logic below is bypassed. */
-        /* Onset-driven: kicks spike the bass onset; a sustained bassline
-         * contributes only the small level floor mix. */
-        const bcOnset = signal && Number.isFinite(signal.bassOnset) ? signal.bassOnset : bass * 0.3;
+        /* Sub-driven, kick-gated: strength comes from the raw sub level
+         * (0-120 Hz), the onset decides whether a hit fires at all. */
+        const bcSub = signal && Number.isFinite(signal.sub) ? signal.sub : bass * 0.4;
+        const bcSubFloor = fxNum(fxBassCoupled, 'subFloor', 0.10);
+        const bcSubCeil = fxNum(fxBassCoupled, 'subCeil', 0.55);
+        const bcSubActivity = Math.max(0, Math.min(1, (bcSub - bcSubFloor) / (bcSubCeil - bcSubFloor)));
+        const bcOnset = signal && Number.isFinite(signal.bassOnset) ? signal.bassOnset : 0;
         const bcActivity = Math.max(0, Math.min(1,
-          bcOnset * fxNum(fxBassCoupled, 'onsetBoost', 3.0) + bass * fxNum(fxBassCoupled, 'levelFloorMix', 0.15)
+          bcOnset * fxNum(fxBassCoupled, 'onsetBoost', 3.0) + bcSubActivity * fxNum(fxBassCoupled, 'levelFloorMix', 0.4)
         ));
         /* Exponential strength curve: quiet parts stay subtle, loud bass
          * explodes. intensityExponent controls how aggressive the top end is. */

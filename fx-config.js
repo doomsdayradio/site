@@ -106,10 +106,11 @@ window.doomsdayFxConfig = {
      * bass dominance sits above its slow envelope), kicks spike it, sustained
      * basslines don't. Emission parameters interpolate from that onset.
      * enabled:      turn the test mode on/off (off = zone logic as before)
-     * onsetBoost:   gain on the onset before clamping (higher = more kicks)
-     * levelFloorMix: portion of the raw bass level always mixed in; keep at 0
-     *               so hard emissions fire ONLY on kick hits, not on sustain
-     * subGateOn/subGateScale: absolute sub (0-120 Hz) gate — below subGateOn
+     * onsetBoost:   gain on the kick onset before clamping (higher = more kicks)
+     * levelFloorMix: portion of the raw SUB level always mixed in (exponential
+     *               curve); 0 = only kick hits emit, 1 = sub level alone
+     * subFloor/subCeil: raw sub (0-120 Hz) range mapped to 0..100% strength
+     * subGateOn/subGateScale: absolute sub gate — below subGateOn
      *               nothing fires, full gate at subGateOn+subGateScale
      * onsetScale:   absolute sub peak (over the level ~3s ago) that counts
      *               as a full hit
@@ -121,7 +122,9 @@ window.doomsdayFxConfig = {
     bassCoupled: {
       enabled: true,
       onsetBoost: 3.0,
-      levelFloorMix: 0.0,
+      levelFloorMix: 0.4,
+      subFloor: 0.10,
+      subCeil: 0.55,
       subGateOn: 0.18,
       subGateScale: 0.12,
       onsetScale: 0.15,

@@ -11,7 +11,7 @@ const lowPerformanceMode = prefersReducedMotion
 document.documentElement.classList.toggle('fx-lite', lowPerformanceMode);
 document.documentElement.classList.toggle('reduced-motion', prefersReducedMotion);
 document.documentElement.classList.toggle('bass-debug', new URLSearchParams(location.search).has('bass-debug'));
-window.doomsdayAudioSignal={bass:0,mid:0.6,treble:0.45,level:0.74,transient:0,hardBass:0,bassOnset:0,playing:false};
+window.doomsdayAudioSignal={bass:0,mid:0.6,treble:0.45,sub:0,level:0.74,transient:0,hardBass:0,bassOnset:0,playing:false};
 document.documentElement.style.setProperty('--audio-level','0.74');
 document.documentElement.style.setProperty('--audio-bass','0.55');
 document.documentElement.style.setProperty('--audio-mid','0.60');
@@ -105,6 +105,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let wsReconnectTimer=0;
   let wsReconnectDelay=1000;
   let wsRawLevel=0;
+  let wsFastLevel=0;
   let wsBassBaseline=0;
   let lastSubLevel=0;
   let lastKickDebug=null;
@@ -406,8 +407,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const bass=rawBass<0.10?0:clamp01((rawBass/Math.max(rawMid,rawTreble,0.12)-0.8)/1.2);
     const mid=clamp01((rawMid/Math.max(rawBass,rawTreble,0.10)-0.8)/1.2);
     const treble=rawTreble<0.06?0:clamp01((rawTreble/Math.max(rawBass,rawMid,0.10)-0.5)/1.5);
-    const levelRise=Math.max(0,rawLevel-wsRawLevel);
     wsRawLevel=rawLevel;
+    /* Transient: rise above a FAST follower of the level, so it fires on
+     * attacks and decays smoothly instead of pegging at 100%. */
+    const transient=Math.max(0,Math.min(1,(rawLevel-wsFastLevel)/0.08));
+    wsFastLevel+=(rawLevel-wsFastLevel)*0.5;
     /* WS bass values are RMS-based and top out around 60% of the 0..1 range,
        so an absolute 0.88 threshold would never fire. Track a slow baseline
        and measure bass as a spike ratio against it: "hardest hit of the
@@ -434,7 +438,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     signal.mid+=(mid-signal.mid)*0.10;
     signal.treble+=(treble-signal.treble)*0.10;
     signal.level+=(rawLevel-signal.level)*0.20;
-    signal.transient=Math.max(0,Math.min(1,levelRise/0.08));
+    signal.sub+=(sub-signal.sub)*0.25;
+    signal.transient+=(transient-signal.transient)*0.4;
     signal.hardBass=Math.max(0,Math.min(1,(bassSpikeRatio-1.2)/0.8));
     signal.hardBassConfirmed=signal.hardBass>=fxHardBassOn&&bass>=0.3;
     signal.bassOnset+=(clamp01(subOnset/cfgNum(fxBassCoupledCfg,'onsetScale',0.15))*subGate-signal.bassOnset)*0.45;
@@ -689,11 +694,12 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const b=Math.round((4*wOrange + 171*wGreen + 228*wWhite)/totalWeight);
 
     const lvl=Math.max(0,Math.min(1,signal.level));
-    const bassGlow=Math.max(0,Math.min(1,((signal.bass||0)-0.2)/0.8));
-    const innerAlpha=(bassGlow*0.50).toFixed(2);
-    const outerAlpha=(bassGlow*0.22).toFixed(2);
-    const innerR=(bassGlow*15.0).toFixed(1)+'px';
-    const outerR=(bassGlow*36.0).toFixed(1)+'px';
+    /* Logo glow follows the transient (attacks), not the bass level. */
+    const glowActivity=Math.max(0,Math.min(1,((signal.transient||0)-0.15)/0.85));
+    const innerAlpha=(glowActivity*0.50).toFixed(2);
+    const outerAlpha=(glowActivity*0.22).toFixed(2);
+    const innerR=(glowActivity*15.0).toFixed(1)+'px';
+    const outerR=(glowActivity*36.0).toFixed(1)+'px';
 
     const innerColor='rgba('+r+','+g+','+b+','+innerAlpha+')';
     const outerColor='rgba('+r+','+g+','+b+','+outerAlpha+')';
