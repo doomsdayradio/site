@@ -302,7 +302,13 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   function updateSpectrumDisplay(features,spectrum){
     if(!spectrumChart || !spectrumContext) return;
-    const values={bass:features.bass||0,mid:features.mid||0,treble:features.treble||0,transient:Math.min(1,(features.transient||0)*0.35)};
+    const binWidth=audioContext?audioContext.sampleRate/(spectrum.length*2):24000/(spectrum.length*2);
+    const values={
+      bass:spectrumBandLevel(spectrum,35,160,binWidth),
+      mid:spectrumBandLevel(spectrum,160,2200,binWidth),
+      treble:spectrumBandLevel(spectrum,2200,10000,binWidth),
+      transient:Math.min(1,(features.transient||0)*0.35)
+    };
     Object.keys(spectrumBands).forEach(function(name){
       const value=Math.max(0,Math.min(1,values[name]));
       const previous=Number(spectrumBands[name].fill.dataset.value||0);
@@ -325,15 +331,37 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     for(let bar=0;bar<barCount;bar++){
       const start=Math.floor(Math.pow(spectrum.length,bar/barCount));
       const end=Math.max(start+1,Math.floor(Math.pow(spectrum.length,(bar+1)/barCount)));
-      let peak=0;
-      for(let index=start;index<Math.min(end,spectrum.length);index++) peak=Math.max(peak,spectrum[index]||0);
-        const visiblePeak=Math.max(0,(peak-0.012)/0.22);
-        const value=Math.max(0,Math.min(1,Math.pow(visiblePeak,0.55)));
+      let energy=0;
+      let count=0;
+      for(let index=start;index<Math.min(end,spectrum.length);index++){
+        const sample=spectrum[index]||0;
+        energy+=sample*sample;
+        count++;
+      }
+      const value=spectrumLevelFromRms(count?Math.sqrt(energy/count):0);
       const barHeight=Math.max(2,value*height);
       const ratio=bar/(barCount-1);
       spectrumContext.fillStyle=ratio<0.3?'#ff9d2f':ratio<0.62?'#ffd166':'#83ffab';
       spectrumContext.fillRect(Math.round(bar*barWidth+2),height-barHeight,Math.max(3,Math.round(barWidth-4)),barHeight);
     }
+  }
+
+  function spectrumLevelFromRms(rms){
+    const db=20*Math.log10(Math.max(0.00001,rms));
+    return Math.max(0,Math.min(1,(db+54)/42));
+  }
+
+  function spectrumBandLevel(spectrum,startHz,endHz,binWidth){
+    const start=Math.max(1,Math.floor(startHz/binWidth));
+    const end=Math.min(spectrum.length,Math.ceil(endHz/binWidth));
+    let energy=0;
+    let count=0;
+    for(let index=start;index<end;index++){
+      const sample=spectrum[index]||0;
+      energy+=sample*sample;
+      count++;
+    }
+    return spectrumLevelFromRms(count?Math.sqrt(energy/count):0);
   }
 
   function updateMeydaFeatures(features){
@@ -354,9 +382,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const trebleEnergy=bandEnergy(2200,10000);
     const bassMidEnergy=Math.max(0.001,bassEnergy+midEnergy);
     const totalBandEnergy=Math.max(0.001,totalEnergy);
-    const bassRatio=bassEnergy/bassMidEnergy;
-    const midRatio=midEnergy/bassMidEnergy;
-    const trebleRatio=trebleEnergy/totalBandEnergy;
+    const bassRatio=spectrumBandLevel(spectrum,35,160,binWidth);
+    const midRatio=spectrumBandLevel(spectrum,160,2200,binWidth);
+    const trebleRatio=spectrumBandLevel(spectrum,2200,10000,binWidth);
     const rms=Math.max(0,Math.min(1,(features.rms||0)*4));
     const rmsRise=Math.max(0,rms-previousMeydaRms);
     previousMeydaRms=rms;
@@ -372,9 +400,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const flux=Math.max(0,Math.min(1,(fluxTotal/fluxDenominator)*2.5));
     const bassContrast=Math.max(0,Math.min(1,(bassRatio-midRatio*0.75-0.08)/0.32));
     meydaFeatures={
-      bass:Math.max(0,Math.min(1,bassRatio*0.7)),
-      mid:Math.max(0,Math.min(1,midRatio*0.7)),
-      treble:Math.max(0,Math.min(1,trebleRatio*0.7)),
+      bass:bassRatio,
+      mid:midRatio,
+      treble:trebleRatio,
       level:rms,
       transient:Math.max(flux,rmsRise*4),
       hardBass:bassContrast*flux,
@@ -765,8 +793,15 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     updateSignalVisualization(signal);
     bars.forEach(function(bar,index){
-      const bin=Math.min(frequencyData.length-1,Math.floor(index*frequencyData.length/bars.length));
-      const level=Math.max(0.03,Math.min(1,frequencyData[bin]/255));
+      const start=Math.floor(Math.pow(displaySpectrum.length,index/bars.length));
+      const end=Math.max(start+1,Math.floor(Math.pow(displaySpectrum.length,(index+1)/bars.length)));
+      let energy=0;
+      let count=0;
+      for(let bin=start;bin<Math.min(end,displaySpectrum.length);bin++){
+        energy+=displaySpectrum[bin]*displaySpectrum[bin];
+        count++;
+      }
+      const level=Math.max(0.03,spectrumLevelFromRms(count?Math.sqrt(energy/count):0));
       bar.style.transform='scaleY('+level.toFixed(2)+')';
       bar.style.opacity=String(0.5+level*0.5);
     });

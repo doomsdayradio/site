@@ -166,7 +166,7 @@ if (host && !prefersReducedMotion) {
     function sprayAtPointer(now) {
       if (pointerActive && now - lastPointerMove > 180) pointerActive = false;
       const signal = window.doomsdayAudioSignal;
-      const isPlaying = Boolean(signal && signal.playing);
+      const isPlaying = Boolean(signal && signal.playing && (signal.level || 0) >= 0.06);
       const level = Math.max(0, Math.min(1, signal ? (signal.level || 0) : 0));
       const transient = Math.max(0, Math.min(1, signal ? (signal.transient || 0) : 0));
       const bass = Math.max(0, Math.min(1, signal ? (signal.bass || level) : level));
@@ -224,7 +224,8 @@ if (host && !prefersReducedMotion) {
         const bcSubGate = Math.max(0, Math.min(1,
           (bcSub - fxNum(fxBassCoupled, 'subGateOn', 0.18)) / fxNum(fxBassCoupled, 'subGateScale', 0.12)
         ));
-        const bcActivity = bcSubActivity * bcSubGate;
+        const kickGate = Math.max(0, Math.min(1, signal && Number.isFinite(signal.bassOnset) ? signal.bassOnset : 0));
+        const bcActivity = bcSubActivity * bcSubGate * kickGate;
         /* Exponential strength curve: quiet parts stay subtle, loud bass
          * explodes. intensityExponent controls how aggressive the top end is. */
         const bcK = fxNum(fxBassCoupled, 'intensityExponent', 2.5);
