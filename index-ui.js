@@ -143,9 +143,36 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       'thresh    heavyBass:'+pct(hb.on)+'/'+pct(hb.off)+' highLevel:'+pct(hl.on)+' spike:'+pct(ts.on)+' +transient:'+pct(ts.transientOn)+' noiseMax:'+(nz.maxOpacity!=null?nz.maxOpacity:'-')+' delay:'+(wsDelayMs/1000)+'s',
     ];
     if(vizDebugLines.length) lines.push('-- log --', vizDebugLines.join('\n'));
+    if(debugHistory.length>4) lines.push(
+      '-- rhythm (last ~12s) --',
+      'bass     '+spark('bass'),
+      'onset    '+spark('onset'),
+      'transient'+spark('transient'),
+      'level    '+spark('level')
+    );
     debugPanel.textContent=lines.join('\n');
   }
   window.setInterval(renderDebugPanel,200);
+
+  /* Rhythm display: ring buffer of recent signal samples for the sparklines. */
+  const debugHistory=[];
+  function pushDebugSample(){
+    if(!debugMode) return;
+    const s=window.doomsdayAudioSignal;
+    debugHistory.push({
+      bass:s.bass||0,
+      onset:s.bassOnset||0,
+      transient:s.transient||0,
+      level:s.level||0
+    });
+    if(debugHistory.length>72) debugHistory.shift();
+  }
+  const SPARK_CHARS='▁▂▃▄▅▆▇█';
+  function spark(key){
+    return debugHistory.map(function(sample){
+      return SPARK_CHARS[Math.max(0,Math.min(7,Math.round((sample[key]||0)*7)))];
+    }).join('');
+  }
 
   for(let index=0;index<20;index++){
     const segment=document.createElement('span');
@@ -373,6 +400,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     signal.playing=true;
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     updateSignalVisualization(signal);
+    pushDebugSample();
     bars.forEach(function(bar,index){
       const position=index*(bands.length-1)/bars.length;
       const lower=Math.min(bands.length-1,Math.floor(position));
