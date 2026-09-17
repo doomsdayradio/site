@@ -973,6 +973,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     setActive(false);
     status.textContent='SIGNAL NICHT ERREICHBAR';
   });
+
+  if(isDebugPage) ensureWebSocketViz();
 })();
 
 /* Map-service weather summary */
