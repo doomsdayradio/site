@@ -26,8 +26,8 @@ window.doomsdayFxConfig = {
      * emissionScale: steepness of the emission ramp above `on` (smaller = sharper)
      */
     heavyBass: {
-      on: 0.88,
-      off: 0.72,
+      on: 0.90,
+      off: 0.76,
       confirmFrames: 3,
       glitchCooldownMs: 1200,
       glitchBursts: 3,
@@ -35,12 +35,11 @@ window.doomsdayFxConfig = {
       emissionScale: 0.12
     },
 
-    /* High overall level zone: logo glitch + level punch when the whole
-     * stream is loud (independent of bass character). */
+    /* High overall level zone: level punch + strong emissions when the whole
+     * stream is loud (independent of bass character). Never glitches the
+     * logo — that is heavyBass-only. */
     highLevel: {
-      on: 0.88,
-      off: 0.78,
-      confirmFrames: 2
+      on: 0.88
     },
 
     /* Soft zone: gentle puffs on transients and volume, active whenever none

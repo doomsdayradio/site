@@ -21,7 +21,6 @@ const fxHeavyBassOn = fxNum(fxHeavyBass, 'on', 0.88);
 const fxHeavyBassOff = fxNum(fxHeavyBass, 'off', 0.72);
 const fxHighLevel = fxTriggers.highLevel || {};
 const fxHighLevelOn = fxNum(fxHighLevel, 'on', 0.88);
-const fxHighLevelOff = fxNum(fxHighLevel, 'off', 0.78);
 const fxSoftPulse = fxTriggers.softPulse || {};
 const fxBass = fxTriggers.bass || {};
 const fxColors = fxTriggers.colors || {};
@@ -85,8 +84,6 @@ if (host && !prefersReducedMotion) {
     let lastLogoGlitch = 0;
     let hardBassFrames = 0;
     let hardBassTriggered = false;
-    let highLevelFrames = 0;
-    let highLevelTriggered = false;
     let glitchEmissionBursts = 0;
     let glitchEmissionUntil = 0;
     let audioSideToggle = 0;
@@ -175,18 +172,13 @@ if (host && !prefersReducedMotion) {
         hardBassFrames = 0;
         hardBassTriggered = false;
       }
-      if (isPlaying && level >= fxHighLevelOn) highLevelFrames += 1;
-      else if (level < fxHighLevelOff) {
-        highLevelFrames = 0;
-        highLevelTriggered = false;
-      }
       const hasBassPeak = hardBassFrames >= fxNum(fxHeavyBass, 'confirmFrames', 3) && !hardBassTriggered;
-      const hasLevelPeak = highLevelFrames >= fxNum(fxHighLevel, 'confirmFrames', 2) && !highLevelTriggered;
 
-      if (logoStage && (hasBassPeak || hasLevelPeak) && now - lastLogoGlitch > fxNum(fxHeavyBass, 'glitchCooldownMs', 1200)) {
+      /* Logo glitch fires only on the hardest bass hits; a loud overall level
+       * still drives emissions/level punch but never glitches the logo. */
+      if (logoStage && hasBassPeak && now - lastLogoGlitch > fxNum(fxHeavyBass, 'glitchCooldownMs', 1200)) {
         lastLogoGlitch = now;
-        if (hasBassPeak) hardBassTriggered = true;
-        if (hasLevelPeak) highLevelTriggered = true;
+        hardBassTriggered = true;
         glitchEmissionBursts = fxNum(fxHeavyBass, 'glitchBursts', 3);
         glitchEmissionUntil = now + fxNum(fxHeavyBass, 'glitchMs', 520);
         logoStage.classList.remove('logo-bass-hit');
