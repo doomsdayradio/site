@@ -348,7 +348,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   function spectrumLevelFromRms(rms){
     const db=20*Math.log10(Math.max(0.00001,rms));
-    return Math.max(0,Math.min(1,(db+60)/60));
+    return Math.max(0,Math.min(1,(db+60)/72));
     let localKickArmed=true;
   }
 
@@ -719,11 +719,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     signal.level+=(rawLevel-signal.level)*0.32;
     signal.transient=Math.max(0,Math.min(1,levelRise/0.08));
     if(meydaFeatures){
-      signal.bass=meydaFeatures.bass;
-      mid=meydaFeatures.mid;
-      treble=meydaFeatures.treble;
-      signal.mid=mid;
-      signal.treble=treble;
+      signal.bass=spectrumBandLevel(displaySpectrum,35,160,binWidth);
+      signal.mid=spectrumBandLevel(displaySpectrum,160,2200,binWidth);
+      signal.treble=spectrumBandLevel(displaySpectrum,2200,10000,binWidth);
       signal.level=meydaFeatures.level;
       signal.transient=meydaFeatures.transient;
     }
