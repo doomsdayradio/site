@@ -101,20 +101,22 @@ window.doomsdayFxConfig = {
     },
 
     /* TEST MODE: bass-coupled emissions. When enabled, the zone logic
-     * (heavyBass/highLevel/softPulse) is bypassed for smoke emissions and
-     * every emission parameter is interpolated directly from the smoothed
-     * bass level: more bass = faster, bigger, brighter, harder.
+     * (heavyBass/highLevel/softPulse) is bypassed for smoke emissions.
+     * Emissions are KICK-driven: the signal carries a bass onset (how far the
+     * bass dominance sits above its slow envelope), kicks spike it, sustained
+     * basslines don't. Emission parameters interpolate from that onset.
      * enabled:      turn the test mode on/off (off = zone logic as before)
-     * minBass:      below this bass level nothing emits
-     * maxBass:      bass at/above this maps to full strength
-     * minIntervalMs/maxIntervalMs: emission delay at full/near-zero bass
+     * onsetBoost:   gain on the onset before clamping (higher = more kicks)
+     * levelFloorMix: portion of the raw bass level always mixed in, so a
+     *               dense bassline still breathes a little
+     * minIntervalMs/maxIntervalMs: emission delay at full/near-zero activity
      * intensityExponent: steepness of the exponential strength curve
      *               (higher = quieter mid-range, more explosive top end)
      */
     bassCoupled: {
       enabled: true,
-      minBass: 0.15,
-      maxBass: 0.85,
+      onsetBoost: 3.0,
+      levelFloorMix: 0.15,
       minIntervalMs: 90,
       maxIntervalMs: 460,
       intensityExponent: 2.5

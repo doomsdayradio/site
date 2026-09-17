@@ -11,7 +11,7 @@ const lowPerformanceMode = prefersReducedMotion
 document.documentElement.classList.toggle('fx-lite', lowPerformanceMode);
 document.documentElement.classList.toggle('reduced-motion', prefersReducedMotion);
 document.documentElement.classList.toggle('bass-debug', new URLSearchParams(location.search).has('bass-debug'));
-window.doomsdayAudioSignal={bass:0,mid:0.6,treble:0.45,level:0.74,transient:0,hardBass:0,playing:false};
+window.doomsdayAudioSignal={bass:0,mid:0.6,treble:0.45,level:0.74,transient:0,hardBass:0,bassOnset:0,playing:false};
 document.documentElement.style.setProperty('--audio-level','0.74');
 document.documentElement.style.setProperty('--audio-bass','0.55');
 document.documentElement.style.setProperty('--audio-mid','0.60');
@@ -97,6 +97,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let wsReconnectDelay=1000;
   let wsRawLevel=0;
   let wsBassBaseline=0;
+  let wsBassEnvelope=0;
   const levelsUrl='wss://stream.doomsday.radio/levels';
   const baseSignalLevel=0.74;
   const canAnalyzeAudio=location.hostname==='doomsday.radio';
@@ -136,7 +137,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       'status    '+status.textContent+(isPlaying?' [playing]':' [idle]')+' viz:'+vizMode,
       'audioctx  '+(audioContext?audioContext.state:'none')+' analyser:'+(analyser?'yes':'no')+' meyda:'+(meydaAnalyzer?'yes':'no'),
       'ws        '+(wsSocket?'connected':'-')+' '+levelsUrl,
-      'signal    lvl:'+pct(s.level)+' bass:'+pct(s.bass)+' mid:'+pct(s.mid)+' treble:'+pct(s.treble)+' transient:'+pct(s.transient),
+      'signal    lvl:'+pct(s.level)+' bass:'+pct(s.bass)+' mid:'+pct(s.mid)+' treble:'+pct(s.treble)+' transient:'+pct(s.transient)+' onset:'+pct(s.bassOnset),
       'hardBass  '+pct(s.hardBass)+(s.hardBassConfirmed?' CONFIRMED':'')+' (on '+pct(hb.on)+')',
       'fx        bassFrames:'+(fx.hardBassFrames||0)+(fx.hardBassTriggered?' T':'')+' spikeFrames:'+(fx.trebleSpikeFrames||0)+(fx.trebleSpikeReady===false?' cool':'')+' glitch:'+(fx.glitchEmissionBursts||0)+' lastSpray:'+((fx.lastAudioSprayAge!=null?fx.lastAudioSprayAge+'ms':'-')),
       'thresh    heavyBass:'+pct(hb.on)+'/'+pct(hb.off)+' highLevel:'+pct(hl.on)+' spike:'+pct(ts.on)+' +transient:'+pct(ts.transientOn)+' noiseMax:'+(nz.maxOpacity!=null?nz.maxOpacity:'-')+' delay:'+(wsDelayMs/1000)+'s',
@@ -352,6 +353,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
        and measure bass as a spike ratio against it: "hardest hit of the
        song". The absolute floor keeps quiet passages from glitching. */
     wsBassBaseline+=(bass-wsBassBaseline)*0.008;
+    /* Kick detector: the onset is how far the current bass dominance sits
+     * above its slow envelope. A sustained bassline lifts the envelope and
+     * produces no onsets; a kick drum spikes far above it. */
+    const bassOnset=Math.max(0,bass-wsBassEnvelope);
+    wsBassEnvelope+=(bass-wsBassEnvelope)*0.03;
     const bassSpikeRatio=bass/Math.max(0.15,wsBassBaseline*1.7);
     signal.bass+=(bass-signal.bass)*0.15;
     signal.mid+=(mid-signal.mid)*0.10;
@@ -360,6 +366,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     signal.transient=Math.max(0,Math.min(1,levelRise/0.08));
     signal.hardBass=Math.max(0,Math.min(1,(bassSpikeRatio-1.2)/0.8));
     signal.hardBassConfirmed=signal.hardBass>=fxHardBassOn&&bass>=0.3;
+    signal.bassOnset+=(Math.max(0,Math.min(1,bassOnset/0.3))-signal.bassOnset)*0.45;
     signal.playing=true;
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     updateSignalVisualization(signal);

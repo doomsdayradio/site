@@ -201,9 +201,12 @@ if (host && !prefersReducedMotion) {
       if (bassCoupledEnabled) {
         /* TEST MODE: emission parameters are interpolated directly from the
          * smoothed bass level; the zone logic below is bypassed. */
-        const bcMinBass = fxNum(fxBassCoupled, 'minBass', 0.15);
-        const bcMaxBass = fxNum(fxBassCoupled, 'maxBass', 0.85);
-        const bcActivity = Math.max(0, Math.min(1, (bass - bcMinBass) / (bcMaxBass - bcMinBass)));
+        /* Onset-driven: kicks spike the bass onset; a sustained bassline
+         * contributes only the small level floor mix. */
+        const bcOnset = signal && Number.isFinite(signal.bassOnset) ? signal.bassOnset : bass * 0.3;
+        const bcActivity = Math.max(0, Math.min(1,
+          bcOnset * fxNum(fxBassCoupled, 'onsetBoost', 3.0) + bass * fxNum(fxBassCoupled, 'levelFloorMix', 0.15)
+        ));
         /* Exponential strength curve: quiet parts stay subtle, loud bass
          * explodes. intensityExponent controls how aggressive the top end is. */
         const bcK = fxNum(fxBassCoupled, 'intensityExponent', 2.5);
