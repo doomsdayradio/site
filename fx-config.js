@@ -91,6 +91,15 @@ window.doomsdayFxConfig = {
       boost: 1.6
     },
 
+    /* Stream sync: the browser hears the stream delayed by its audio buffer
+     * (a few seconds), while levels arrive live. The client queues payloads
+     * and replays them delayMs later so visuals sit on the audible music.
+     * delayMs: total latency to compensate (tune via ?debug until hits land
+     * on the beat). 0 disables buffering (live visuals, ahead of audio). */
+    sync: {
+      delayMs: 4000
+    },
+
     /* TEST MODE: bass-coupled emissions. When enabled, the zone logic
      * (heavyBass/highLevel/softPulse) is bypassed for smoke emissions and
      * every emission parameter is interpolated directly from the smoothed

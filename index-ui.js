@@ -66,6 +66,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const fxHeavyBass=((window.doomsdayFxConfig||{}).triggers||{}).heavyBass||{};
   const fxHardBassOn=Number.isFinite(Number(fxHeavyBass.on))?Number(fxHeavyBass.on):0.88;
   const fxNoiseCfg=((window.doomsdayFxConfig||{}).triggers||{}).noise||{};
+  const fxSyncCfg=((window.doomsdayFxConfig||{}).triggers||{}).sync||{};
+  const wsDelayMs=Number.isFinite(Number(fxSyncCfg.delayMs))?Math.max(0,Number(fxSyncCfg.delayMs)):4000;
+  const wsQueue=[];
   const noiseLayer=document.querySelector('.noise');
   const noiseBaseline=document.documentElement.classList.contains('fx-lite')?0.028:0.02;
   const noiseMaxOpacity=Number.isFinite(Number(fxNoiseCfg.maxOpacity))?Number(fxNoiseCfg.maxOpacity):0.16;
@@ -136,7 +139,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       'signal    lvl:'+pct(s.level)+' bass:'+pct(s.bass)+' mid:'+pct(s.mid)+' treble:'+pct(s.treble)+' transient:'+pct(s.transient),
       'hardBass  '+pct(s.hardBass)+(s.hardBassConfirmed?' CONFIRMED':'')+' (on '+pct(hb.on)+')',
       'fx        bassFrames:'+(fx.hardBassFrames||0)+(fx.hardBassTriggered?' T':'')+' spikeFrames:'+(fx.trebleSpikeFrames||0)+(fx.trebleSpikeReady===false?' cool':'')+' glitch:'+(fx.glitchEmissionBursts||0)+' lastSpray:'+((fx.lastAudioSprayAge!=null?fx.lastAudioSprayAge+'ms':'-')),
-      'thresh    heavyBass:'+pct(hb.on)+'/'+pct(hb.off)+' highLevel:'+pct(hl.on)+' spike:'+pct(ts.on)+' +transient:'+pct(ts.transientOn)+' noiseMax:'+(nz.maxOpacity!=null?nz.maxOpacity:'-'),
+      'thresh    heavyBass:'+pct(hb.on)+'/'+pct(hb.off)+' highLevel:'+pct(hl.on)+' spike:'+pct(ts.on)+' +transient:'+pct(ts.transientOn)+' noiseMax:'+(nz.maxOpacity!=null?nz.maxOpacity:'-')+' delay:'+(wsDelayMs/1000)+'s',
     ];
     if(vizDebugLines.length) lines.push('-- log --', vizDebugLines.join('\n'));
     debugPanel.textContent=lines.join('\n');
@@ -294,8 +297,27 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     let payload;
     try{payload=JSON.parse(raw)}
     catch(error){return}
+    if(!Array.isArray(payload.bands) || payload.bands.length<8) return;
+    if(wsDelayMs<=0){
+      applyLevelsPayload(payload);
+      return;
+    }
+    /* Delayed replay: the browser hears the stream later than the server
+     * analyzes it, so queue payloads and apply them once their slot is due. */
+    wsQueue.push({due:performance.now()+wsDelayMs,payload});
+    if(wsQueue.length>240) wsQueue.splice(0,wsQueue.length-240);
+  }
+
+  window.setInterval(function(){
+    if(!wsQueue.length || audio.paused) return;
+    const now=performance.now();
+    let due=null;
+    while(wsQueue.length && wsQueue[0].due<=now) due=wsQueue.shift().payload;
+    if(due) applyLevelsPayload(due);
+  },80);
+
+  function applyLevelsPayload(payload){
     const bands=payload.bands;
-    if(!Array.isArray(bands) || bands.length<8) return;
     /* Levels arrive as integers 0..1000 (milli-units) because liquidsoap
        cannot reliably format decimal floats into JSON. */
     const milli=function(value){
