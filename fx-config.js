@@ -125,6 +125,41 @@ window.doomsdayFxConfig = {
       intensityExponent: 1.8
     },
 
+    /* Logo glow and bass glitch presentation. */
+    glow: {
+      midWeight: 0.6,
+      trebleWeight: 0.8,
+      floor: 0.10,
+      range: 0.70,
+      innerAlpha: 0.50,
+      outerAlpha: 0.22,
+      innerRadius: 15,
+      outerRadius: 36
+    },
+    glitch: {
+      durationMs: 240,
+      topOpacity: 0.78,
+      bottomOpacity: 0.70,
+      fragmentDurationMs: 260
+    },
+    emission: {
+      normalRadius: 0.06,
+      normalRadiusScale: 0.16,
+      normalForce: 520,
+      glitchRadius: 0.22,
+      glitchForce: 520
+    },
+    treble: {
+      enabled: true,
+      pipeCount: 3,
+      pipeSpacing: 0.04,
+      radius: 0.018,
+      radiusScale: 0.02,
+      force: 22,
+      forceScale: 34,
+      lift: 1
+    },
+
     /* Bass shaping: ramps that translate the raw bass value into punch.
      * softFloor: bass below this contributes nothing to the soft punch
      * hardFloor: bass above this starts feeding the hard punch ramp

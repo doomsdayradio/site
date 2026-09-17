@@ -71,6 +71,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const fxNoiseCfg=((window.doomsdayFxConfig||{}).triggers||{}).noise||{};
   const fxSyncCfg=((window.doomsdayFxConfig||{}).triggers||{}).sync||{};
   const fxBassCoupledCfg=((window.doomsdayFxConfig||{}).triggers||{}).bassCoupled||{};
+  const fxGlowCfg=((window.doomsdayFxConfig||{}).triggers||{}).glow||{};
+  const fxGlitchCfg=((window.doomsdayFxConfig||{}).triggers||{}).glitch||{};
   const cfgNum=function(group,key,fallback){
     const value=Number(group[key]);
     return Number.isFinite(value)?value:fallback;
@@ -88,6 +90,14 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       wsDelayMs=value;
       wsQueue.length=0;
     }
+    const glow=((event.detail||{}).triggers||{}).glow||{};
+    const glitch=((event.detail||{}).triggers||{}).glitch||{};
+    document.documentElement.style.setProperty('--fx-glitch-duration',Math.max(20,Number(glitch.durationMs)||240)+'ms');
+    document.documentElement.style.setProperty('--fx-glitch-top-opacity',Math.max(0,Math.min(1,Number(glitch.topOpacity)||0)));
+    document.documentElement.style.setProperty('--fx-glitch-bottom-opacity',Math.max(0,Math.min(1,Number(glitch.bottomOpacity)||0)));
+    document.documentElement.style.setProperty('--fx-glitch-fragment-duration',Math.max(20,Number(glitch.fragmentDurationMs)||260)+'ms');
+    document.documentElement.style.setProperty('--fx-glow-inner-radius',Math.max(0,Number(glow.innerRadius)||0)+'px');
+    document.documentElement.style.setProperty('--fx-glow-outer-radius',Math.max(0,Number(glow.outerRadius)||0)+'px');
   });
   const noiseLayer=document.querySelector('.noise');
   const noiseBaseline=document.documentElement.classList.contains('fx-lite')?0.028:0.02;
@@ -741,12 +751,12 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const lvl=Math.max(0,Math.min(1,signal.level));
      /* Logo glow follows mid/treble attacks; sub-only kicks stay on the
        emission path and do not light the logo. */
-     const glowSpectrum=Math.max(0,Math.min(1,(((signal.mid||0)*0.6+(signal.treble||0)*0.8)-0.10)/0.70));
+    const glowSpectrum=Math.max(0,Math.min(1,(((signal.mid||0)*cfgNum(fxGlowCfg,'midWeight',0.6)+(signal.treble||0)*cfgNum(fxGlowCfg,'trebleWeight',0.8))-cfgNum(fxGlowCfg,'floor',0.10))/cfgNum(fxGlowCfg,'range',0.70)));
      const glowActivity=Math.max(0,Math.min(1,(signal.transient||0)*glowSpectrum));
-    const innerAlpha=(glowActivity*0.50).toFixed(2);
-    const outerAlpha=(glowActivity*0.22).toFixed(2);
-    const innerR=(glowActivity*15.0).toFixed(1)+'px';
-    const outerR=(glowActivity*36.0).toFixed(1)+'px';
+    const innerAlpha=(glowActivity*cfgNum(fxGlowCfg,'innerAlpha',0.50)).toFixed(2);
+    const outerAlpha=(glowActivity*cfgNum(fxGlowCfg,'outerAlpha',0.22)).toFixed(2);
+    const innerR=(glowActivity*cfgNum(fxGlowCfg,'innerRadius',15)).toFixed(1)+'px';
+    const outerR=(glowActivity*cfgNum(fxGlowCfg,'outerRadius',36)).toFixed(1)+'px';
 
     const innerColor='rgba('+r+','+g+','+b+','+innerAlpha+')';
     const outerColor='rgba('+r+','+g+','+b+','+outerAlpha+')';

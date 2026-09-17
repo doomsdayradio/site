@@ -5,6 +5,10 @@
 .debug-config-row { display: grid; grid-template-columns: 1fr 110px 52px; gap: 7px; align-items: center; }
 .debug-config-row input { width: 100%; accent-color: #ff9d2f; }
 .debug-config-row output { color: #ffd166; text-align: right; }
+.debug-config-label { position: relative; }
+.debug-config-help { display: inline-grid; position: relative; place-items: center; width: 14px; height: 14px; margin-left: 4px; color: #0e0b09; background: #ffd166; border-radius: 50%; font-style: normal; font-size: 10px; cursor: help; }
+.debug-config-help::after { content: attr(data-tooltip); position: absolute; z-index: 2; left: 20px; bottom: 18px; display: none; width: 220px; padding: 7px 8px; color: #f5efe4; background: #18120e; border: 1px solid rgba(255, 209, 102, .7); box-shadow: 0 5px 16px rgba(0, 0, 0, .45); font: 11px/1.35 "Share Tech Mono", monospace; pointer-events: none; }
+.debug-config-help:hover::after, .debug-config-help:focus::after { display: block; }
 .debug-config-panel textarea { display: block; width: 100%; min-height: 100px; box-sizing: border-box; margin: 8px 0; color: #f5efe4; background: #18120e; border: 1px solid rgba(255, 157, 47, .5); font: 11px/1.3 monospace; }
 .debug-config-panel small { color: #98a29c; }
 @media (max-width: 700px) { .debug-config-panel { top: auto; bottom: 10px; max-height: 48vh; } .debug-config-row { grid-template-columns: 1fr 92px 46px; } }

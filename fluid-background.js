@@ -27,6 +27,8 @@ const fxColors = fxTriggers.colors || {};
 const fxTrebleSpike = fxTriggers.trebleSpike || {};
 const fxNoise = fxTriggers.noise || {};
 const fxBassCoupled = fxTriggers.bassCoupled || {};
+const fxEmission = fxTriggers.emission || {};
+const fxTreble = fxTriggers.treble || {};
 const bassCoupledEnabled = fxBassCoupled.enabled !== false;
 const trebleSparkPalette = ['#d1ff45', '#e6f2b0', '#f4f0e6', '#e0c09b'];
 
@@ -116,7 +118,7 @@ if (host && !prefersReducedMotion) {
 
       fluid.setConfig({
         colorPalette: [tapColor],
-        brightness: 0.34,
+        brightness: 0.28,
         splatRadius: lowPerformanceMode ? 0.16 : 0.22,
         splatForce: force
       });
@@ -230,9 +232,13 @@ if (host && !prefersReducedMotion) {
           const cloudColor = soundWaveColor(now, bass, mid, treble, emissionPunch);
           fluid.setConfig({
             colorPalette: [cloudColor],
-            brightness: Math.min(0.5, (lowPerformanceMode ? 0.10 : 0.12) + emissionPunch * 0.34),
-            splatRadius: Math.min(0.24, (lowPerformanceMode ? 0.05 : 0.06) + emissionPunch * 0.16),
-            splatForce: 520
+            brightness: 0.28,
+            splatRadius: Math.min(0.5, glitchBurstActive
+              ? fxNum(fxEmission, 'glitchRadius', 0.22)
+              : fxNum(fxEmission, 'normalRadius', 0.06) + emissionPunch * fxNum(fxEmission, 'normalRadiusScale', 0.16)),
+            splatForce: glitchBurstActive
+              ? fxNum(fxEmission, 'glitchForce', 520)
+              : fxNum(fxEmission, 'normalForce', 520)
           });
           const emitters = logoEmitters(0.44 + Math.sin(now * 0.002) * 0.06);
           audioSideToggle = (audioSideToggle + 1) % 2;
@@ -266,9 +272,13 @@ if (host && !prefersReducedMotion) {
 
         fluid.setConfig({
           colorPalette: [cloudColor],
-          brightness: Math.min(0.5, cloudBrightness),
-          splatRadius: Math.min(0.22, cloudRadius),
-          splatForce: 520
+          brightness: 0.28,
+          splatRadius: glitchBurstActive
+            ? fxNum(fxEmission, 'glitchRadius', 0.22)
+            : Math.min(0.5, fxNum(fxEmission, 'normalRadius', 0.06) + emissionPunch * fxNum(fxEmission, 'normalRadiusScale', 0.16)),
+          splatForce: glitchBurstActive
+            ? fxNum(fxEmission, 'glitchForce', 520)
+            : fxNum(fxEmission, 'normalForce', 520)
         });
 
         // Emitter alternates between left and right broadcast arches with gentle drift
@@ -291,7 +301,7 @@ if (host && !prefersReducedMotion) {
       const trebleSpikeOn = fxNum(fxTrebleSpike, 'on', 0.45);
       const trebleSpikeOff = fxNum(fxTrebleSpike, 'off', 0.32);
       const trebleSpikeTransientOn = fxNum(fxTrebleSpike, 'transientOn', 0.15);
-      if (isPlaying && treble >= trebleSpikeOn && transient >= trebleSpikeTransientOn) {
+      if (fxTreble.enabled !== false && isPlaying && treble >= trebleSpikeOn && transient >= trebleSpikeTransientOn) {
         trebleSpikeFrames += 1;
       } else if (treble < trebleSpikeOff) {
         if (trebleSpikeFrames > 0) lastTrebleSpikeEnd = now;
@@ -307,20 +317,25 @@ if (host && !prefersReducedMotion) {
         const sparkColor = trebleSparkPalette[Math.floor(Math.random() * trebleSparkPalette.length)];
         fluid.setConfig({
           colorPalette: [sparkColor],
-          brightness: 0.32,
-          splatRadius: 0.018 + treble * 0.02,
-          splatForce: 520
+          brightness: 0.28,
+          splatRadius: fxNum(fxTreble, 'radius', 0.018) + treble * fxNum(fxTreble, 'radiusScale', 0.02),
+          splatForce: fxNum(fxTreble, 'force', 22) + treble * fxNum(fxTreble, 'forceScale', 34)
         });
         const sparkEmitters = logoEmitters(0.06 + Math.sin(now * 0.004) * 0.04);
-        audioSideToggle = (audioSideToggle + 1) % 2;
-        const sparkLeft = audioSideToggle === 0;
-        const sparkForce = 22 + treble * 34 + transient * 18;
-        fluid.splatAtLocation(
-          sparkLeft ? sparkEmitters.leftX : sparkEmitters.rightX,
-          sparkEmitters.y,
-          (sparkLeft ? -1 : 1) * sparkForce * 0.6,
-          -sparkForce
-        );
+        const pipeCount = Math.max(1, Math.round(fxNum(fxTreble, 'pipeCount', 3)));
+        const pipeSpacing = fxNum(fxTreble, 'pipeSpacing', 0.04) * (sparkEmitters.rightX - sparkEmitters.leftX);
+        const pipeCenter = (sparkEmitters.leftX + sparkEmitters.rightX) * 0.5;
+        const sparkForce = fxNum(fxTreble, 'force', 22) + treble * fxNum(fxTreble, 'forceScale', 34) + transient * 18;
+        for(let pipeIndex=0;pipeIndex<pipeCount;pipeIndex++){
+          const pipeOffset=(pipeIndex-(pipeCount-1)*0.5)*pipeSpacing;
+          const pipeDirection=pipeIndex%2===0?-1:1;
+          fluid.splatAtLocation(
+            pipeCenter+pipeOffset,
+            sparkEmitters.y,
+            pipeDirection*sparkForce*0.12,
+            -sparkForce*fxNum(fxTreble, 'lift', 1)
+          );
+        }
       }
       if (pointerActive && pointerX !== null && pointerY !== null) {
         if (sprayX === null || sprayY === null) {
@@ -345,7 +360,7 @@ if (host && !prefersReducedMotion) {
 
           fluid.setConfig({
             colorPalette: [mouseColor(now)],
-            brightness: 0.11,
+            brightness: 0.28,
             splatRadius: 0.12
           });
           fluid.splatAtLocation(

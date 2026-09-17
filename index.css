@@ -163,23 +163,23 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
 }
 
 .hero-logo-stage.logo-bass-hit{
-  animation:logo-bass-hit 240ms steps(3,end);
+  animation:logo-bass-hit var(--fx-glitch-duration,240ms) steps(3,end);
 }
 
 .hero-logo-stage.logo-bass-hit::before{
-  opacity:0.78;
+  opacity:var(--fx-glitch-top-opacity,0.78);
   clip-path:inset(8% 0 58% 0);
   transform:translate(-8px,3px);
   filter:sepia(1) saturate(3) hue-rotate(310deg);
-  animation:logo-fragment-top 260ms steps(2,end);
+  animation:logo-fragment-top var(--fx-glitch-fragment-duration,260ms) steps(2,end);
 }
 
 .hero-logo-stage.logo-bass-hit::after{
-  opacity:0.7;
+  opacity:var(--fx-glitch-bottom-opacity,0.7);
   clip-path:inset(62% 0 8% 0);
   transform:translate(9px,-2px);
   filter:hue-rotate(90deg) saturate(1.8);
-  animation:logo-fragment-bottom 260ms steps(2,end);
+  animation:logo-fragment-bottom var(--fx-glitch-fragment-duration,260ms) steps(2,end);
 }
 
 @keyframes logo-fragment-top{
