@@ -108,7 +108,7 @@ if (host && !prefersReducedMotion) {
       if (isInteractiveTarget(event.target)) return;
       pointerX = event.clientX;
       pointerY = event.clientY;
-      pointerActive = true;
+      pointerActive = event.pointerType !== 'mouse' || event.buttons > 0;
     }
 
     function emitTapCloud(event) {
@@ -141,17 +141,17 @@ if (host && !prefersReducedMotion) {
     }, { passive: true });
     window.addEventListener('pointerup', function(event) {
       pointerActive = false;
-      if (event.pointerType !== 'mouse') {
-        sprayX = null;
-        sprayY = null;
-      }
+      sprayX = null;
+      sprayY = null;
+      previousSprayX = null;
+      previousSprayY = null;
     }, { passive: true });
     window.addEventListener('pointercancel', function(event) {
       pointerActive = false;
-      if (event.pointerType !== 'mouse') {
-        sprayX = null;
-        sprayY = null;
-      }
+      sprayX = null;
+      sprayY = null;
+      previousSprayX = null;
+      previousSprayY = null;
     }, { passive: true });
 
     function sprayAtPointer(now) {
