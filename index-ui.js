@@ -320,9 +320,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const rawBass=avg(0,2);
     const rawMid=avg(2,6);
     const rawTreble=avg(6,8);
-    const bass=rawBass<0.10?0:clamp01((rawBass/Math.max(rawMid,rawTreble,0.05)-0.8)/1.2);
-    const mid=clamp01((rawMid/Math.max(rawBass,rawTreble,0.05)-0.8)/1.2);
-    const treble=rawTreble<0.04?0:clamp01((rawTreble/Math.max(rawBass,rawMid,0.05)-0.5)/1.5);
+    const bass=rawBass<0.10?0:clamp01((rawBass/Math.max(rawMid,rawTreble,0.12)-0.8)/1.2);
+    const mid=clamp01((rawMid/Math.max(rawBass,rawTreble,0.10)-0.8)/1.2);
+    const treble=rawTreble<0.06?0:clamp01((rawTreble/Math.max(rawBass,rawMid,0.10)-0.5)/1.5);
     const levelRise=Math.max(0,rawLevel-wsRawLevel);
     wsRawLevel=rawLevel;
     /* WS bass values are RMS-based and top out around 60% of the 0..1 range,
@@ -331,10 +331,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
        song". The absolute floor keeps quiet passages from glitching. */
     wsBassBaseline+=(bass-wsBassBaseline)*0.008;
     const bassSpikeRatio=bass/Math.max(0.15,wsBassBaseline*1.7);
-    signal.bass+=(bass-signal.bass)*0.35;
-    signal.mid+=(mid-signal.mid)*0.20;
-    signal.treble+=(treble-signal.treble)*0.20;
-    signal.level+=(rawLevel-signal.level)*0.32;
+    signal.bass+=(bass-signal.bass)*0.15;
+    signal.mid+=(mid-signal.mid)*0.10;
+    signal.treble+=(treble-signal.treble)*0.10;
+    signal.level+=(rawLevel-signal.level)*0.20;
     signal.transient=Math.max(0,Math.min(1,levelRise/0.08));
     signal.hardBass=Math.max(0,Math.min(1,(bassSpikeRatio-1.2)/0.8));
     signal.hardBassConfirmed=signal.hardBass>=fxHardBassOn&&bass>=0.3;
