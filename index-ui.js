@@ -832,11 +832,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
     document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
     document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
-    /* Static noise follows treble x transient: sharp attacks read as signal
-     * interference, sustained brightness stays calm. */
+    /* Keep the full-screen noise layer static. Treble spikes use their own
+     * localized fluid effect and must not flash the entire background. */
     if(noiseLayer){
-      const noiseActivity=Math.max(0,Math.min(1,(signal.treble||0)*(signal.transient||0)*noiseBoost));
-      noiseLayer.style.opacity=(noiseBaseline+noiseActivity*noiseMaxOpacity).toFixed(3);
+      noiseLayer.style.opacity=noiseBaseline.toFixed(3);
     }
     updateSignalVisualization(signal);
     bars.forEach(function(bar,index){
@@ -889,11 +888,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
     document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
     document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
-    /* Static noise follows treble x transient: sharp attacks read as signal
-     * interference, sustained brightness stays calm. */
+    /* Keep the full-screen noise layer static. Treble spikes use their own
+     * localized fluid effect and must not flash the entire background. */
     if(noiseLayer){
-      const noiseActivity=Math.max(0,Math.min(1,(signal.treble||0)*(signal.transient||0)*noiseBoost));
-      noiseLayer.style.opacity=(noiseBaseline+noiseActivity*noiseMaxOpacity).toFixed(3);
+      noiseLayer.style.opacity=noiseBaseline.toFixed(3);
     }
     const bassPercent=Math.round(Math.max(0,Math.min(1,signal.bass))*100);
     bassDebugReadout.textContent=String(bassPercent).padStart(2,'0')+'%';
