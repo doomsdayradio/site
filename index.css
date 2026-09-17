@@ -14,9 +14,9 @@ body::before{
   inset:0;
   z-index:0;
   pointer-events:none;
-  opacity:0.58;
+  opacity:0.4;
   background:
-    linear-gradient(rgba(18, 13, 10, 0.62),rgba(73, 48, 34, 0.48)),
+    linear-gradient(rgba(42, 36, 31, 0.6),rgba(207, 186, 168, 0.55)),
     url("./doomsday-landkarte-stylized.jpg") top / cover no-repeat;
 
 }
@@ -24,7 +24,7 @@ body::before{
 #fluid-background{
   position:fixed;inset:0;z-index:0;
   pointer-events:none;
-  opacity:0.22;
+  opacity:0.4;
   mix-blend-mode:normal;
 }
 
@@ -99,7 +99,7 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
 
 .dial{
   position:relative;
-  width:min(660px,90vw);height:min(660px,90vw);
+  width:min(760px,94vw);height:min(760px,94vw);
   display:flex;align-items:center;justify-content:center;
 }
 
@@ -109,22 +109,21 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   flex-direction:column;
   align-items:center;
   isolation:isolate;
-  width:min(560px,92vw);
-  padding:1.5rem 1.75rem 1.35rem;
-  border:1px solid rgba(255,157,47,0.32);
-  background:linear-gradient(180deg,rgba(28,19,14,0.62),rgba(21,15,11,0.38));
-  box-shadow:0 18px 50px rgba(0,0,0,0.28),inset 0 0 0 1px rgba(245,239,228,0.05);
 }
 
-/* Keep the homepage hero restrained while retaining the broadcast console frame. */
+/* Keep the homepage hero free of the showcase panel treatment. */
 .hero-mark.specimen-header{
-  border-radius:2px;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
 }
 
 .hero-logo-stage{
   position:relative;
   z-index:2;
-  width:min(330px,68vw);
+  width:min(420px,72vw);
   max-width:100%;
   line-height:0;
   touch-action:none;
@@ -211,12 +210,12 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   padding:0;
   position:relative;
   z-index:3;
-  width:min(410px,82vw);
-  margin-top:0.65rem;
+  width:min(460px,82vw);
+  margin-top:0.85rem;
 }
 
 .equalizer{
-  height:62px;
+  height:78px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -445,7 +444,7 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
 @keyframes rotate-slow{to{transform:rotate(360deg)}}
 
 .freq{
-  margin-top:0.8rem;
+  margin-top:1rem;
   margin-inline:auto;
   font-family:var(--ddd-font-mono,'Share Tech Mono',monospace);
   font-size:clamp(0.72rem,1.25vw,0.96rem);
@@ -454,8 +453,8 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   color:rgba(223,255,120,0.65);
   text-transform:none;
   text-align:center;
-  max-width:min(45ch,72vw);
-  min-height:2.8em;
+  max-width:min(58ch,72vw);
+  min-height:3.2em;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -472,7 +471,7 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
 }
 
 .signal-dot{
-  margin-top:1.25rem;
+  margin-top:2.5rem;
   width:8px;height:8px;border-radius:50%;
   background:rgba(209,255,69,0.9);
   box-shadow:0 0 6px rgba(209,255,69,0.6),0 0 20px rgba(209,255,69,0.3);
@@ -484,7 +483,7 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
 .action-bar{
   position:fixed;
   left:50%;
-  bottom:78px;
+  bottom:68px;
   transform:translateX(-50%);
   z-index:120;
   display:flex;
@@ -555,7 +554,7 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   font-size:0.7rem;letter-spacing:0.15em;
   color:rgba(223,210,194,0.88);
   border-top:1px solid rgba(223,210,194,0.3);
-  background:rgba(18,13,10,0.9);
+  background:rgba(80,65,53,0.78);
 }
 .status > span{white-space:nowrap;flex:1 1 auto;text-align:center}
 .status .led-meter-wrapper{margin:0;flex:1 1 260px;min-width:220px}
@@ -776,14 +775,10 @@ html.reduced-motion .hero-logo-stage.logo-bass-hit::after{display:none}
 }
 
 @media (max-width:640px){
-  body::before{opacity:0.5}
+  body::before{opacity:0.22}
   .center{padding:0 10px 92px}
-  .hero-mark{
-    top:max(18px, env(safe-area-inset-top, 0px));
-    width:min(350px,calc(100vw - 28px));
-    padding:1rem 0.85rem 0.9rem;
-  }
-  .hero-logo-stage{width:min(250px,66vw)}
+  .hero-mark{top:max(10px, env(safe-area-inset-top, 0px))}
+  .hero-logo-stage{width:min(290px,72vw)}
   .radio-player{width:min(380px,88vw);margin-top:0.5rem}
   .equalizer{height:58px;gap:2px}
   .equalizer-bar{width:3px}
@@ -808,7 +803,7 @@ html.reduced-motion .hero-logo-stage.logo-bass-hit::after{display:none}
   .section-menu-toggle[aria-expanded="true"] + .section-menu > :nth-child(3){animation-delay:90ms}
   .section-menu-toggle[aria-expanded="true"] + .section-menu > :nth-child(4){animation-delay:135ms}
   .section-menu-toggle[aria-expanded="true"] + .section-menu > :nth-child(5){animation-delay:180ms}
-  #fluid-background{opacity:0.3}
+  #fluid-background{opacity:0.52}
   .status{
     padding:6px 10px calc(6px + env(safe-area-inset-bottom, 0px));
     display:grid;
