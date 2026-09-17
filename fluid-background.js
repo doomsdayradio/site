@@ -352,26 +352,23 @@ if (host && !prefersReducedMotion) {
           lastPointerSpray = now;
           const movementX = sprayX - previousSprayX;
           const movementY = sprayY - previousSprayY;
-          const phase = now * 0.00022;
-          const driftX = movementX * 0.55 + Math.sin(phase) * 3.5;
-          const driftY = -movementY * 0.55 - 2.5 + Math.cos(phase * 0.73) * 2;
-          const orbitX = Math.sin(phase * 0.61) * 7;
-          const orbitY = Math.cos(phase * 0.47) * 7;
-
-          fluid.setConfig({
-            colorPalette: [mouseColor(now)],
-            brightness: 0.28,
-            splatRadius: 0.12
-          });
-          fluid.splatAtLocation(
-            (sprayX + orbitX) * (window.devicePixelRatio || 1),
-            sprayY + orbitY,
-            driftX,
-            driftY
-          );
+          const movementDistance = Math.hypot(movementX, movementY);
 
           previousSprayX = sprayX;
           previousSprayY = sprayY;
+          if (movementDistance >= 0.5) {
+            fluid.setConfig({
+              colorPalette: [mouseColor(now)],
+              brightness: 0.28,
+              splatRadius: 0.12
+            });
+            fluid.splatAtLocation(
+              sprayX * (window.devicePixelRatio || 1),
+              sprayY,
+              movementX * 0.55,
+              -movementY * 0.55
+            );
+          }
         }
       }
 
