@@ -310,17 +310,19 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       return total/(to-from);
     };
     const rawLevel=milli(payload.level);
-    /* Band RMS values are absolutely normalized, so loud full-range content
-       leaks into every band: raw band levels measure "loud", not "dominant".
-       Map each range to its dominance ratio vs the band average — high bass
-       now means the bass actually dominates the spectrum. */
-    const all=avg(0,8);
-    const dominance=function(value){
-      return Math.max(0,Math.min(1,(value/Math.max(0.04,all)-0.9)/1.1));
-    };
-    const bass=dominance(avg(0,2));
-    const mid=dominance(avg(2,6));
-    const treble=dominance(avg(6,8));
+    /* Band RMS values are absolutely normalized and the top bands are almost
+       always near-empty on our material, so "vs the band average" still reads
+       bass-dominant during loud midrange songs. Measure each range against
+       the strongest OTHER range instead — bass is only "dominant" when it
+       beats the mids and treble outright. Absolute floors keep quiet
+       passages at zero. */
+    const clamp01=function(value){return Math.max(0,Math.min(1,value))};
+    const rawBass=avg(0,2);
+    const rawMid=avg(2,6);
+    const rawTreble=avg(6,8);
+    const bass=rawBass<0.10?0:clamp01((rawBass/Math.max(rawMid,rawTreble,0.05)-0.8)/1.2);
+    const mid=clamp01((rawMid/Math.max(rawBass,rawTreble,0.05)-0.8)/1.2);
+    const treble=rawTreble<0.04?0:clamp01((rawTreble/Math.max(rawBass,rawMid,0.05)-0.5)/1.5);
     const levelRise=Math.max(0,rawLevel-wsRawLevel);
     wsRawLevel=rawLevel;
     /* WS bass values are RMS-based and top out around 60% of the 0..1 range,
