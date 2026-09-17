@@ -323,6 +323,7 @@ if (host && !prefersReducedMotion) {
         ? fxNum(fxTrebleSpike, 'intervalMsLite', 240)
         : fxNum(fxTrebleSpike, 'intervalMs', 160);
       if (isPlaying && trebleSpikeFrames >= fxNum(fxTrebleSpike, 'confirmFrames', 2) && now - lastTrebleSpray > trebleSpikeInterval) {
+          if (isPlaying && trebleSpikeReady && trebleSpikeFrames >= fxNum(fxTrebleSpike, 'confirmFrames', 2) && now - lastTrebleSpray > trebleSpikeInterval) {
         lastTrebleSpray = now;
         trebleSpikeReady = false;
         const sparkColor = trebleSparkPalette[Math.floor(Math.random() * trebleSparkPalette.length)];

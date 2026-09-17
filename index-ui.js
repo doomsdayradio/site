@@ -348,7 +348,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   function spectrumLevelFromRms(rms){
     const db=20*Math.log10(Math.max(0.00001,rms));
-    return Math.max(0,Math.min(1,(db+54)/42));
+    return Math.max(0,Math.min(1,(db+60)/60));
+    let localKickArmed=true;
   }
 
   function spectrumBandLevel(spectrum,startHz,endHz,binWidth){
@@ -698,14 +699,15 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const localSubRise=Math.max(0,localSub-localSubFast);
     localSubFast+=(localSub-localSubFast)*0.38;
     localSubBaseline+=(localSub-localSubBaseline)*0.012;
-    const localSubContrast=Math.max(0,Math.min(1,(localSub-localSubBaseline*1.35-0.04)/0.22));
     const localRiseActivity=Math.max(0,Math.min(1,(localSubRise-0.02)/0.08));
-    const localKickStrength=Math.max(localSubContrast,localRiseActivity);
+    const localKickStrength=localRiseActivity;
     const now=performance.now();
     signal.sub+=(localSub-signal.sub)*0.35;
     signal.bassOnset*=0.72;
-    if(localKickStrength>=0.72&&now>=localKickCooldownUntil){
+    if(localSub<0.35) localKickArmed=true;
+    if(localKickStrength>=0.72&&localKickArmed&&now>=localKickCooldownUntil){
       localKickCooldownUntil=now+140;
+      localKickArmed=false;
       localKickSequence+=1;
       signal.bassOnset=Math.max(0.90,localKickStrength);
       lastKickDebug={sub:localSub,fast:localSubFast,seq:localKickSequence,strength:signal.bassOnset};
