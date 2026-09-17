@@ -67,7 +67,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const fxHardBassOn=Number.isFinite(Number(fxHeavyBass.on))?Number(fxHeavyBass.on):0.88;
   const fxNoiseCfg=((window.doomsdayFxConfig||{}).triggers||{}).noise||{};
   const fxSyncCfg=((window.doomsdayFxConfig||{}).triggers||{}).sync||{};
-  const wsDelayMs=Number.isFinite(Number(fxSyncCfg.delayMs))?Math.max(0,Number(fxSyncCfg.delayMs)):4000;
+  let wsDelayMs=Number.isFinite(Number(fxSyncCfg.delayMs))?Math.max(0,Number(fxSyncCfg.delayMs)):4000;
+  try{
+    const savedDelay=Number(localStorage.getItem('ddSyncDelayMs'));
+    if(Number.isFinite(savedDelay)&&savedDelay>=0) wsDelayMs=savedDelay;
+  }catch(error){}
   const wsQueue=[];
   const noiseLayer=document.querySelector('.noise');
   const noiseBaseline=document.documentElement.classList.contains('fx-lite')?0.028:0.02;
@@ -153,6 +157,25 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     debugPanel.textContent=lines.join('\n');
   }
   window.setInterval(renderDebugPanel,200);
+
+  /* Live delay calibration (?debug): ArrowUp/ArrowDown shift the levels
+   * delay by 250ms, PageUp/PageDown by 1000ms. The value persists in
+   * localStorage and wins over fx-config until cleared. */
+  document.addEventListener('keydown',function(event){
+    if(!debugMode) return;
+    let step=0;
+    if(event.key==='ArrowUp') step=250;
+    else if(event.key==='ArrowDown') step=-250;
+    else if(event.key==='PageUp') step=1000;
+    else if(event.key==='PageDown') step=-1000;
+    if(!step) return;
+    event.preventDefault();
+    wsDelayMs=Math.max(0,wsDelayMs+step);
+    wsQueue.length=0;
+    try{localStorage.setItem('ddSyncDelayMs',String(wsDelayMs))}catch(error){}
+    vizLog('sync delay -> '+(wsDelayMs/1000).toFixed(2)+'s');
+    renderDebugPanel();
+  });
 
   /* Rhythm display: ring buffer of recent signal samples for the sparklines. */
   const debugHistory=[];
