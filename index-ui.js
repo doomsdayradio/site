@@ -94,7 +94,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const sync=((event.detail||{}).triggers||{}).sync||{};
     const value=Number(sync.delayMs);
     if(Number.isFinite(value)&&value>=0){
-      wsDelayMs=value;
+      wsDelayMs=isDebugPage?0:value;
       wsQueue.length=0;
     }
     const glow=((event.detail||{}).triggers||{}).glow||{};
@@ -148,6 +148,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const urlParams=new URLSearchParams(location.search);
   const isDebugPage=/\/(?:ios-)?debug\.html$/.test(location.pathname);
   const forceServerLevelsDebug=isDebugPage&&location.pathname.endsWith('/ios-debug.html');
+  if(isDebugPage) wsDelayMs=0;
     /* Debug pages are intentionally usable from localhost as well. The normal
       page starts with the local analyser; only ios-debug.html forces levels. */
     const canAnalyzeAudio=location.hostname==='doomsday.radio'||isDebugPage;
