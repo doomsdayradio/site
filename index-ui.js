@@ -522,7 +522,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     if(spectrumSource) spectrumSource.textContent='LEVELS / SERVER-FALLBACK';
     updateSpectrumDisplay({bass:rawBass,mid:rawMid,treble:rawTreble,transient:transient},bands.map(milli));
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
-    updateSignalVisualization(signal);
+    if(!isDebugPage) updateSignalVisualization(signal);
     pushDebugSample();
     bars.forEach(function(bar,index){
       const position=index*(bands.length-1)/bars.length;
@@ -875,7 +875,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       playing:false
     };
     document.documentElement.style.setProperty('--audio-level',level.toFixed(3));
-    updateSignalVisualization(window.doomsdayAudioSignal);
+    if(!isDebugPage) updateSignalVisualization(window.doomsdayAudioSignal);
   }
 
   setInterval(updateAmbientMeter,85);
