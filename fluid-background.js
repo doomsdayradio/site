@@ -26,6 +26,8 @@ const fxBass = fxTriggers.bass || {};
 const fxColors = fxTriggers.colors || {};
 const fxTrebleSpike = fxTriggers.trebleSpike || {};
 const fxNoise = fxTriggers.noise || {};
+const fxBassCoupled = fxTriggers.bassCoupled || {};
+const bassCoupledEnabled = fxBassCoupled.enabled !== false;
 const trebleSparkPalette = ['#d1ff45', '#e6f2b0', '#f4f0e6', '#e0c09b'];
 
 if (host && !prefersReducedMotion) {
@@ -196,6 +198,38 @@ if (host && !prefersReducedMotion) {
         }, 260);
       }
 
+      if (bassCoupledEnabled) {
+        /* TEST MODE: emission parameters are interpolated directly from the
+         * smoothed bass level; the zone logic below is bypassed. */
+        const bcMinBass = fxNum(fxBassCoupled, 'minBass', 0.15);
+        const bcMaxBass = fxNum(fxBassCoupled, 'maxBass', 0.85);
+        const bcActivity = Math.max(0, Math.min(1, (bass - bcMinBass) / (bcMaxBass - bcMinBass)));
+        const bcCurve = fxNum(fxBassCoupled, 'curve', 1.6);
+        const punch = Math.pow(bcActivity, bcCurve);
+        const bcMinInterval = fxNum(fxBassCoupled, 'minIntervalMs', 90);
+        const bcMaxInterval = fxNum(fxBassCoupled, 'maxIntervalMs', 460);
+        const emitInterval = bcMaxInterval + (bcMinInterval - bcMaxInterval) * bcActivity;
+        if (isPlaying && bcActivity > 0.02 && now - lastAudioSpray > emitInterval) {
+          lastAudioSpray = now;
+          const cloudColor = soundWaveColor(now, bass, mid, treble, punch);
+          fluid.setConfig({
+            colorPalette: [cloudColor],
+            brightness: Math.min(0.5, (lowPerformanceMode ? 0.10 : 0.12) + punch * 0.34),
+            splatRadius: Math.min(0.24, (lowPerformanceMode ? 0.05 : 0.06) + punch * 0.16),
+            splatForce: 520
+          });
+          const emitters = logoEmitters(0.44 + Math.sin(now * 0.002) * 0.06);
+          audioSideToggle = (audioSideToggle + 1) % 2;
+          const isLeft = audioSideToggle === 0;
+          fluid.splatAtLocation(
+            isLeft ? emitters.leftX : emitters.rightX,
+            emitters.y + Math.cos(now * 0.003) * 4,
+            (isLeft ? -1 : 1) * (4 + punch * 42),
+            -(2 + punch * 26)
+          );
+        }
+      } else {
+
       // Volume adds occasional light puffs; only bass can create a strong emission.
       const glitchBurstActive = glitchEmissionBursts > 0 && now < glitchEmissionUntil;
       const transientOn = fxNum(fxSoftPulse, 'transientOn', 0.14);
@@ -232,6 +266,7 @@ if (host && !prefersReducedMotion) {
 
         fluid.splatAtLocation(emitX, emitY, forceX, forceY);
         if (glitchBurstActive) glitchEmissionBursts -= 1;
+      }
       }
 
       /* Treble spikes: sharp, small, cool-colored splashes at the top of the

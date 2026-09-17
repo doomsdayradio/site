@@ -91,6 +91,26 @@ window.doomsdayFxConfig = {
       boost: 1.6
     },
 
+    /* TEST MODE: bass-coupled emissions. When enabled, the zone logic
+     * (heavyBass/highLevel/softPulse) is bypassed for smoke emissions and
+     * every emission parameter is interpolated directly from the smoothed
+     * bass level: more bass = faster, bigger, brighter, harder.
+     * enabled:      turn the test mode on/off (off = zone logic as before)
+     * minBass:      below this bass level nothing emits
+     * maxBass:      bass at/above this maps to full strength
+     * minIntervalMs/maxIntervalMs: emission delay at full/near-zero bass
+     * curve:        exponent on the activity ramp (higher = later onset,
+     *               punchier top end)
+     */
+    bassCoupled: {
+      enabled: true,
+      minBass: 0.15,
+      maxBass: 0.85,
+      minIntervalMs: 90,
+      maxIntervalMs: 460,
+      curve: 1.6
+    },
+
     /* Bass shaping: ramps that translate the raw bass value into punch.
      * softFloor: bass below this contributes nothing to the soft punch
      * hardFloor: bass above this starts feeding the hard punch ramp
