@@ -108,6 +108,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let wsBassBaseline=0;
   let wsSubEnvelope=0;
   let lastSubLevel=0;
+  let lastKickDebug=null;
   const levelsUrl='wss://stream.doomsday.radio/levels';
   const baseSignalLevel=0.74;
   const canAnalyzeAudio=location.hostname==='doomsday.radio';
@@ -150,6 +151,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       'signal    lvl:'+pct(s.level)+' bass:'+pct(s.bass)+' mid:'+pct(s.mid)+' treble:'+pct(s.treble)+' transient:'+pct(s.transient)+' onset:'+pct(s.bassOnset),
       'hardBass  '+pct(s.hardBass)+(s.hardBassConfirmed?' CONFIRMED':'')+' (on '+pct(hb.on)+')',
       'fx        bassFrames:'+(fx.hardBassFrames||0)+(fx.hardBassTriggered?' T':'')+' spikeFrames:'+(fx.trebleSpikeFrames||0)+(fx.trebleSpikeReady===false?' cool':'')+' glitch:'+(fx.glitchEmissionBursts||0)+' lastSpray:'+((fx.lastAudioSprayAge!=null?fx.lastAudioSprayAge+'ms':'-')),
+      lastKickDebug?('kickdet  sub:'+lastKickDebug.sub.toFixed(2)+' env:'+lastKickDebug.env.toFixed(2)+' ratio:'+lastKickDebug.ratio.toFixed(2)+' gate:'+lastKickDebug.gate.toFixed(2)):'kickdet  -',
       'thresh    heavyBass:'+pct(hb.on)+'/'+pct(hb.off)+' highLevel:'+pct(hl.on)+' spike:'+pct(ts.on)+' +transient:'+pct(ts.transientOn)+' noiseMax:'+(nz.maxOpacity!=null?nz.maxOpacity:'-')+' delay:'+(wsDelayMs/1000)+'s',
     ];
     if(vizDebugLines.length) lines.push('-- log --', vizDebugLines.join('\n'));
@@ -417,9 +419,15 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
      * floor so warm midrange instruments can't fake a kick. */
     const sub=milli(bands[0]);
     lastSubLevel=sub;
-    const subOnset=Math.max(0,sub-wsSubEnvelope);
+    /* Kick detector, self-calibrating: onset is how far the sub level sits
+     * ABOVE ITS OWN slow envelope as a ratio (kick doubles sub -> onset 1),
+     * so it works at any song loudness. The absolute gate still keeps
+     * midrange-only content out. */
+    const subRatio=sub/Math.max(0.04,wsSubEnvelope);
+    const subOnset=Math.max(0,subRatio-1);
     wsSubEnvelope+=(sub-wsSubEnvelope)*0.03;
     const subGate=clamp01((sub-cfgNum(fxBassCoupledCfg,'subGateOn',0.18))/cfgNum(fxBassCoupledCfg,'subGateScale',0.12));
+    lastKickDebug={sub:sub,env:wsSubEnvelope,ratio:subRatio,gate:subGate};
     const bassSpikeRatio=bass/Math.max(0.15,wsBassBaseline*1.7);
     signal.bass+=(bass-signal.bass)*0.15;
     signal.mid+=(mid-signal.mid)*0.10;
@@ -428,7 +436,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     signal.transient=Math.max(0,Math.min(1,levelRise/0.08));
     signal.hardBass=Math.max(0,Math.min(1,(bassSpikeRatio-1.2)/0.8));
     signal.hardBassConfirmed=signal.hardBass>=fxHardBassOn&&bass>=0.3;
-    signal.bassOnset+=(clamp01(subOnset/cfgNum(fxBassCoupledCfg,'onsetScale',0.12))*subGate-signal.bassOnset)*0.45;
+    signal.bassOnset+=(clamp01(subOnset/cfgNum(fxBassCoupledCfg,'onsetScale',0.5))*subGate-signal.bassOnset)*0.45;
     signal.playing=true;
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     updateSignalVisualization(signal);
