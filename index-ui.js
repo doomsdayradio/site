@@ -416,12 +416,15 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   function spectrumBandLevel(spectrum,band,binWidth){
     const start=Math.max(1,Math.floor(band.fromHz/binWidth));
     const end=Math.min(spectrum.length,Math.ceil(band.toHz/binWidth));
-    let bandPeak=0;
+    let energy=0;
+    let count=0;
     for(let index=start;index<end;index++){
       const sample=spectrum[index]||0;
-      if(sample>bandPeak) bandPeak=sample;
+      energy+=sample*sample;
+      count++;
     }
-    return Math.max(0,Math.min(1,(bandPeak-band.levelMin)/(band.levelMax-band.levelMin)));
+    const bandRms=count?Math.sqrt(energy/count):0;
+    return Math.max(0,Math.min(1,(bandRms-band.levelMin)/(band.levelMax-band.levelMin)));
   }
   function updateMeydaFeatures(features){
     const spectrum=features.amplitudeSpectrum||[];
