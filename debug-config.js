@@ -15,7 +15,7 @@
     glow: { enabled: true, midWeight: 0.6, trebleWeight: 0.8, floor: 0.10, range: 0.70, innerAlpha: 0.50, outerAlpha: 0.22, innerRadius: 15, outerRadius: 36 },
     glitch: { enabled: true, durationMs: 240, topOpacity: 0.78, bottomOpacity: 0.70, fragmentDurationMs: 260 },
     emission: { enabled: true, normalRadius: 0.06, normalRadiusScale: 0.16, normalForce: 520, glitchRadius: 0.22, glitchForce: 520 },
-    treble: { enabled: true, pipeCount: 12, pipeSpacing: 0.025, radius: 0.004, radiusScale: 0.004, force: 10, forceScale: 18, lift: 1, direction: 'up', angleSpread: 0.55 }
+    treble: { enabled: true, pipeCount: 12, pipeSpacing: 0.025, radius: 0.004, radiusScale: 0.004, force: 10, forceScale: 18, lift: 1, direction: 'down', angleSpread: 0.55 }
   };
   var analysisDefaults = {};
   Object.keys(analysisBands).forEach(function (bandName) {

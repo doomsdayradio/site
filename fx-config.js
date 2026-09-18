@@ -196,7 +196,7 @@ window.doomsdayFxConfig = {
       force: 24,
       forceScale: 28,
       lift: 1,
-      direction: 'up',
+      direction: 'down',
       angleSpread: 0.55
     },
 
