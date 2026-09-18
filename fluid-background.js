@@ -82,37 +82,6 @@ if (host && !prefersReducedMotion) {
     fluid.start();
     window.doomsdayFluidReady = true;
 
-    const treblePipeLayer = document.createElement('div');
-    treblePipeLayer.className = 'treble-pipe-layer';
-    const treblePipeNodes = [];
-    for (let pipeIndex = 0; pipeIndex < 16; pipeIndex += 1) {
-      const pipeNode = document.createElement('i');
-      pipeNode.className = 'treble-pipe';
-      treblePipeLayer.appendChild(pipeNode);
-      treblePipeNodes.push(pipeNode);
-    }
-    host.appendChild(treblePipeLayer);
-
-    function renderTreblePipes(treble, transient, now) {
-      const rect = logo ? logo.getBoundingClientRect() : null;
-      if (!rect) return;
-      const pipeCount = Math.max(1, Math.min(treblePipeNodes.length, Math.round(fxNum(fxTreble, 'pipeCount', 8))));
-      const spacing = rect.width * fxNum(fxTreble, 'pipeSpacing', 0.03);
-      const center = (rect.left + rect.right) * 0.5;
-      const pipeFloor = Math.min(0.06, fxNum(fxTrebleSpike, 'off', 0.18) * 0.35);
-      const active = trebleEnabled && treble >= pipeFloor;
-      const pulse = Math.max(0, Math.sin(now * 0.018)) * transient;
-      treblePipeNodes.forEach(function (pipeNode, pipeIndex) {
-        const visible = active && pipeIndex < pipeCount;
-        const offset = (pipeIndex - (pipeCount - 1) * 0.5) * spacing;
-        const height = 10 + treble * 42 + pulse * 24;
-        pipeNode.style.left = (center + offset) + 'px';
-        pipeNode.style.top = (rect.top - 4 - height) + 'px';
-        pipeNode.style.height = height + 'px';
-        pipeNode.style.opacity = visible ? String(0.35 + treble * 0.65) : '0';
-      });
-    }
-
     function logoEmitters(verticalRatio) {
       const pixelRatio = window.devicePixelRatio || 1;
       const rect = logo ? logo.getBoundingClientRect() : {
@@ -259,7 +228,6 @@ if (host && !prefersReducedMotion) {
       const volumePulse = derived.volumePulse;
       const levelPunch = derived.levelPunch;
       const visualPunch = derived.visualPunch;
-      renderTreblePipes(treble, transient, now);
       if (isPlaying && hardBassActivity >= getFxHeavyBassOn()) hardBassFrames += 1;
       else if (hardBassActivity < getFxHeavyBassOff()) {
         hardBassFrames = 0;
@@ -392,6 +360,43 @@ if (host && !prefersReducedMotion) {
         if (trebleSpikeFrames > 0) lastTrebleSpikeEnd = now;
         trebleSpikeFrames = 0;
         if (now - lastTrebleSpikeEnd > fxNum(fxTrebleSpike, 'cooldownMs', 500)) trebleSpikeReady = true;
+      }
+      const trebleSpikeInterval = lowPerformanceMode
+        ? fxNum(fxTrebleSpike, 'intervalMsLite', 240)
+        : fxNum(fxTrebleSpike, 'intervalMs', 160);
+      if (trebleEnabled && isPlaying && trebleSpikeReady
+        && trebleSpikeFrames >= fxNum(fxTrebleSpike, 'confirmFrames', 2)
+        && now - lastTrebleSpray > trebleSpikeInterval) {
+        lastTrebleSpray = now;
+        trebleSpikeReady = false;
+        const sparkColor = trebleSparkPalette[Math.floor(Math.random() * trebleSparkPalette.length)];
+        const pipeRadius = Math.min(0.018,
+          fxNum(fxTreble, 'radius', 0.003) + treble * fxNum(fxTreble, 'radiusScale', 0.003));
+        fluid.setConfig({
+          colorPalette: [sparkColor],
+          brightness: 0.65,
+          splatRadius: pipeRadius,
+          splatForce: fxNum(fxTreble, 'force', 10) + treble * fxNum(fxTreble, 'forceScale', 18)
+        });
+        const sparkEmitters = logoEmitters(-0.04);
+        const pipeCount = Math.max(1, Math.round(fxNum(fxTreble, 'pipeCount', 12)));
+        const pipeSpacing = fxNum(fxTreble, 'pipeSpacing', 0.025)
+          * (sparkEmitters.rightX - sparkEmitters.leftX);
+        const pipeCenter = (sparkEmitters.leftX + sparkEmitters.rightX) * 0.5;
+        const sparkForce = (fxNum(fxTreble, 'force', 10)
+          + treble * fxNum(fxTreble, 'forceScale', 18) + transient * 10) * 1.35;
+        const angleSpread = fxNum(fxTreble, 'angleSpread', 0.55);
+        for (let pipeIndex = 0; pipeIndex < pipeCount; pipeIndex += 1) {
+          const pipeOffset = (pipeIndex - (pipeCount - 1) * 0.5) * pipeSpacing;
+          const direction = Math.random() < 0.5 ? -1 : 1;
+          const angle = direction * (Math.PI / 2 + (Math.random() * 2 - 1) * angleSpread);
+          fluid.splatAtLocation(
+            pipeCenter + pipeOffset,
+            sparkEmitters.y,
+            Math.cos(angle) * sparkForce * 0.35,
+            Math.sin(angle) * sparkForce * fxNum(fxTreble, 'lift', 1)
+          );
+        }
       }
       if (fxMouse.enabled !== false && pointerActive && pointerX !== null && pointerY !== null) {
         if (sprayX === null || sprayY === null) {
