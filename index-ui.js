@@ -655,7 +655,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     signal.transient=Math.max(0,Math.min(1,Math.max(levelRise/0.10,subRise/0.12)));
     signal.bassOnset=Number.isFinite(Number(signal.bassOnset))?Number(signal.bassOnset)*0.72:0;
     const now=performance.now();
-    const kickStrength=Math.max(0,Math.min(1,subRise/0.12));
+    const kickRiseFloor=cfgNum(fxBassCoupledCfg,'kickRiseFloor',0.01);
+    const kickRiseRange=Math.max(0.001,cfgNum(fxBassCoupledCfg,'kickRiseRange',0.05));
+    const kickStrength=Math.max(0,Math.min(1,(subRise-kickRiseFloor)/kickRiseRange));
     const kickRearm=cfgNum(fxBassCoupledCfg,'kickRearm',0.25);
     const kickMinimum=cfgNum(fxBassCoupledCfg,'kickSubMin',0.34);
     const kickThreshold=cfgNum(fxBassCoupledCfg,'kickRiseOn',0.35);
@@ -716,7 +718,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
     const lvl=Math.max(0,Math.min(1,signal.level));
     const glowMid=(signal.mid||0)*cfgNum(fxGlowCfg,'midWeight',0.65);
-    const glowSpectrum=Math.max(0,Math.min(1,(glowMid-cfgNum(fxGlowCfg,'floor',0.10))/cfgNum(fxGlowCfg,'range',0.70)));
+    const glowTreble=(signal.treble||0)*cfgNum(fxGlowCfg,'trebleWeight',0.80);
+    const glowSpectrum=Math.max(0,Math.min(1,(glowMid+glowTreble-cfgNum(fxGlowCfg,'floor',0.10))/cfgNum(fxGlowCfg,'range',0.70)));
       const glowTarget=fxGlowEnabled&&signal.playing&&signal.level>=0.06
         ? glowSpectrum
         : 0;

@@ -95,7 +95,7 @@ if (host && !prefersReducedMotion) {
       return {
         leftX: (rect.left + edgeInset) * pixelRatio,
         rightX: (rect.right - edgeInset) * pixelRatio,
-        y: (rect.top + rect.height * verticalRatio) * pixelRatio
+        y: rect.top + rect.height * verticalRatio
       };
     }
 
@@ -234,7 +234,7 @@ if (host && !prefersReducedMotion) {
         hardBassTriggered = false;
       }
       const hasBassPeak = heavyBassEnabled && (bassCoupledEnabled
-        ? (hasLocalKick || hardBassActivity >= getFxHeavyBassOn()) && !hardBassTriggered
+        ? (hasLocalKick || hardBassFrames >= fxNum(fxHeavyBass, 'confirmFrames', 3)) && !hardBassTriggered
         : hardBassFrames >= fxNum(fxHeavyBass, 'confirmFrames', 3) && !hardBassTriggered);
 
       /* Logo glitch fires only on the hardest bass hits; a loud overall level
@@ -276,10 +276,28 @@ if (host && !prefersReducedMotion) {
         const emitInterval = glitchBurstActive
           ? (lowPerformanceMode ? fxNum(fxSoftPulse, 'burstIntervalMsLite', 170) : fxNum(fxSoftPulse, 'burstIntervalMs', 125))
           : bcMaxInterval + (bcMinInterval - bcMaxInterval) * bcActivity;
-        const emissionPunch = glitchBurstActive ? 1 : Math.max(punch, hardBassActivity);
+        const transientOn = fxNum(fxSoftPulse, 'transientOn', 0.14);
+        const attackActivity = softPulseEnabled && transient >= transientOn
+          ? Math.max(0, Math.min(1, (transient - transientOn) / Math.max(0.01, 1 - transientOn)))
+          : 0;
+        const levelFloor = fxNum(fxSoftPulse, 'levelFloor', 0.30);
+        const volumeActivity = softPulseEnabled
+          ? Math.max(0, Math.min(1, (level - levelFloor) / Math.max(0.01, 1 - levelFloor)))
+          : 0;
+        const highLevelActivity = highLevelEnabled && level >= fxHighLevelOn
+          ? Math.max(0, Math.min(1, (level - fxHighLevelOn) / Math.max(0.01, 1 - fxHighLevelOn)))
+          : 0;
+        const softActivity = Math.max(attackActivity, volumeActivity * 0.35, highLevelActivity);
+        const attackInterval = lowPerformanceMode
+          ? fxNum(fxSoftPulse, 'intervalMsLite', 360)
+          : fxNum(fxSoftPulse, 'intervalMs', 240);
+        const effectiveEmitInterval = softActivity > 0
+          ? Math.min(emitInterval, attackInterval)
+          : emitInterval;
+        const emissionPunch = glitchBurstActive ? 1 : Math.max(punch, hardBassActivity, softActivity * 0.65);
         const bcRiseOn = fxNum(fxBassCoupled, 'kickRiseOn', 0.18);
-        const shouldEmitBass = bcActivity > 0 || hasLocalKick || glitchBurstActive;
-        if (isPlaying && shouldEmitBass && now - lastAudioSpray > emitInterval) {
+        const shouldEmitBass = bcActivity > 0 || hasLocalKick || glitchBurstActive || softActivity > 0;
+        if (isPlaying && shouldEmitBass && now - lastAudioSpray > effectiveEmitInterval) {
           lastAudioSpray = now;
           const cloudColor = soundWaveColor(now, bass, mid, treble, emissionPunch);
           const kickEmission = hasLocalKick || bcActivityRise >= bcRiseOn || glitchBurstActive;

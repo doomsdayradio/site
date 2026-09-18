@@ -7,8 +7,10 @@
   var analysis = base.audioAnalysis || (base.audioAnalysis = {});
   var analysisBands = analysis.bands || (analysis.bands = {});
   var defaults = {
-    heavyBass: { enabled: true, on: 0.85, off: 0.76, glitchCooldownMs: 1200, glitchBursts: 3, glitchMs: 520, emissionScale: 0.12 },
+    heavyBass: { enabled: true, on: 0.85, off: 0.76, confirmFrames: 3, glitchCooldownMs: 1200, glitchBursts: 3, glitchMs: 520, emissionScale: 0.12 },
+    highLevel: { enabled: true, on: 0.88 },
     softPulse: { enabled: true, transientOn: 0.14, intervalMs: 240, intervalMsLite: 360, burstIntervalMs: 125, burstIntervalMsLite: 170, levelFloor: 0.30 },
+    noise: { enabled: true, maxOpacity: 0.16, boost: 1.6 },
     trebleSpike: { enabled: true, on: 0.16, off: 0.10, transientOn: 0.05, requireTransient: false, confirmFrames: 2, intervalMs: 140, intervalMsLite: 240, cooldownMs: 300 },
     bassCoupled: { enabled: true, subFloor: 0.04, subCeil: 0.45, subGateOn: 0.08, subGateScale: 0.10, kickSubMin: 0.34, kickRiseFloor: 0.01, kickRiseRange: 0.05, kickRiseOn: 0.35, kickRearm: 0.25, kickCooldownMs: 140, glitchOn: 0.85, minIntervalMs: 90, maxIntervalMs: 460, intensityExponent: 1.8 },
     sync: { delayMs: 5500 },
@@ -22,28 +24,41 @@
     analysisDefaults[bandName] = Object.assign({}, analysisBands[bandName]);
   });
   var fields = [
+    ['section', 'Zonen & Trigger'],
     ['heavyBass', 'enabled', 'Hardbass aktiv', false],
     ['highLevel', 'enabled', 'Lautstärke-Effekt aktiv', true],
     ['softPulse', 'enabled', 'Soft-Pulse aktiv', true],
     ['trebleSpike', 'enabled', 'Höhen-Pipes aktiv', true],
     ['noise', 'enabled', 'Noise aktiv', true],
     ['bassCoupled', 'enabled', 'Sub-Emission aktiv', true],
-    ['glow', 'enabled', 'Glow aktiv', true],
+      ['glow', 'enabled', 'Glow aktiv', true],
     ['glitch', 'enabled', 'Glitch aktiv', true],
     ['emission', 'enabled', 'Fluid-Emission aktiv', true],
     ['mouse', 'enabled', 'Maus-Emission aktiv', true],
     ['treble', 'enabled', 'Höhen-Pipes aktiv', true],
     ['heavyBass', 'on', 'Hardbass an', 0, 1, 0.01],
     ['heavyBass', 'off', 'Hardbass aus', 0, 1, 0.01],
+    ['heavyBass', 'confirmFrames', 'Hardbass confirm frames', 1, 12, 1],
+    ['heavyBass', 'emissionScale', 'Hardbass emission scale', 0.01, 1, 0.01],
+    ['highLevel', 'on', 'Lautstärke an', 0, 1, 0.01],
     ['softPulse', 'transientOn', 'Attack an', 0, 1, 0.01],
     ['softPulse', 'levelFloor', 'Attack level floor', 0, 1, 0.01],
+    ['softPulse', 'intervalMs', 'Attack interval ms', 20, 2000, 10],
+    ['softPulse', 'intervalMsLite', 'Attack interval lite ms', 20, 2000, 10],
+    ['softPulse', 'burstIntervalMs', 'Burst interval ms', 20, 2000, 10],
+    ['softPulse', 'burstIntervalMsLite', 'Burst interval lite ms', 20, 2000, 10],
+    ['noise', 'maxOpacity', 'Noise max strength', 0, 1, 0.01],
+    ['noise', 'boost', 'Noise boost', 0, 4, 0.05],
+    ['section', 'Höhen-Splats'],
     ['trebleSpike', 'on', 'Höhen an', 0, 1, 0.01],
     ['trebleSpike', 'off', 'Höhen aus', 0, 1, 0.01],
     ['trebleSpike', 'transientOn', 'Höhen-Attack an', 0, 1, 0.01],
     ['trebleSpike', 'requireTransient', 'Höhen-Attack erforderlich', false],
     ['trebleSpike', 'confirmFrames', 'Höhen confirm frames', 1, 12, 1],
     ['trebleSpike', 'intervalMs', 'Höhen interval ms', 20, 2000, 10],
+    ['trebleSpike', 'intervalMsLite', 'Höhen interval lite ms', 20, 2000, 10],
     ['trebleSpike', 'cooldownMs', 'Höhen cooldown ms', 0, 5000, 50],
+    ['section', 'Sub & Kick'],
     ['bassCoupled', 'subFloor', 'Sub floor', 0, 1, 0.01],
     ['bassCoupled', 'subCeil', 'Sub ceiling', 0, 1, 0.01],
     ['bassCoupled', 'subGateOn', 'Gate an', 0, 1, 0.01],
@@ -58,6 +73,7 @@
     ['bassCoupled', 'intensityExponent', 'Sub exponent', 0.1, 5, 0.1],
     ['bassCoupled', 'minIntervalMs', 'Min. emission ms', 20, 1000, 10],
     ['bassCoupled', 'maxIntervalMs', 'Max. emission ms', 50, 2000, 10],
+    ['section', 'Glow & Logo-Glitch'],
     ['sync', 'delayMs', 'Sync delay ms', 0, 12000, 50],
     ['glow', 'midWeight', 'Glow mid weight', 0, 2, 0.05],
     ['glow', 'trebleWeight', 'Glow treble weight', 0, 2, 0.05],
@@ -71,6 +87,7 @@
     ['glitch', 'topOpacity', 'Glitch top strength', 0, 1, 0.01],
     ['glitch', 'bottomOpacity', 'Glitch bottom strength', 0, 1, 0.01],
     ['glitch', 'fragmentDurationMs', 'Fragment duration ms', 20, 1000, 10],
+    ['section', 'Fluid & Maus'],
     ['emission', 'normalRadius', 'Emission size', 0, 0.4, 0.01],
     ['emission', 'normalRadiusScale', 'Emission size scale', 0, 0.4, 0.01],
     ['emission', 'normalForce', 'Emission force', 0, 1000, 10],
@@ -85,6 +102,7 @@
     ['mouse', 'tapRadiusLite', 'Mouse click size lite', 0, 0.4, 0.01],
     ['mouse', 'tapForceMin', 'Mouse click force min', 0, 100, 1],
     ['mouse', 'tapForceRange', 'Mouse click force range', 0, 100, 1],
+    ['section', 'Höhen-Geometrie'],
     ['treble', 'pipeCount', 'Hoehen pipe count', 1, 8, 1],
     ['treble', 'pipeSpacing', 'Hoehen pipe spacing', 0, 0.2, 0.01],
     ['treble', 'radius', 'Hoehen pipe size', 0, 0.2, 0.005],
@@ -93,7 +111,8 @@
     ['treble', 'forceScale', 'Hoehen force scale', 0, 200, 1],
     ['treble', 'direction', 'Hoehen Richtung', 'up', 'down'],
     ['treble', 'lift', 'Hoehen lift', 0, 2, 0.05],
-    ['treble', 'angleSpread', 'Hoehen Winkelstreuung', 0, 1.2, 0.05]
+    ['treble', 'angleSpread', 'Hoehen Winkelstreuung', 0, 1.2, 0.05],
+    ['section', 'Audio-Analyse']
   ];
   Object.keys(analysisDefaults).forEach(function (bandName) {
     ['fromHz', 'toHz', 'levelMin', 'levelMax'].forEach(function (key) {
@@ -251,6 +270,13 @@
     document.body.appendChild(panel);
     var grid = panel.querySelector('.debug-config-grid');
     fields.forEach(function (field) {
+      if (field[0] === 'section') {
+        var heading = document.createElement('h3');
+        heading.className = 'debug-config-section';
+        heading.textContent = field[1];
+        grid.appendChild(heading);
+        return;
+      }
       var groupName = field[0], key = field[1];
       var isAnalysisField = groupName.indexOf('audioAnalysis.bands.') === 0;
       var targetGroup = isAnalysisField
