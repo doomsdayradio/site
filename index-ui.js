@@ -68,6 +68,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const btnIcon=toggle?toggle.querySelector('.stream-icon'):null;
   const ledSegments=[];
   const bars=[];
+  const spectrumDisplayLevels=new Float32Array(16);
   /* hardBass trigger thresholds come from fx-config.js; these defaults mirror
    * the config so the signal pipeline works even without the config file. */
   const fxHeavyBass=((window.doomsdayFxConfig||{}).triggers||{}).heavyBass||{};
@@ -391,7 +392,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
         energy+=sample*sample;
         count++;
       }
-      const value=spectrumLevelFromRms(count?Math.sqrt(energy/count):0,features&&features._spectrumScale==='db');
+      const target=spectrumLevelFromRms(count?Math.sqrt(energy/count):0,features&&features._spectrumScale==='db');
+      const previous=spectrumDisplayLevels[bar]||0;
+      const smoothing=target>previous?0.22:0.10;
+      const value=previous+(target-previous)*smoothing;
+      spectrumDisplayLevels[bar]=value;
       const barHeight=Math.max(2,value*height);
       const ratio=bar/(barCount-1);
       spectrumContext.fillStyle=ratio<0.3?'#ff9d2f':ratio<0.62?'#ffd166':'#83ffab';
@@ -588,9 +593,15 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     if(!isDebugPage) updateSignalVisualization(signal);
     pushDebugSample();
-    const visualSpectrum=displaySpectrum.map(function(value){
-      return clamp01(Math.pow(value,0.72));
-    });
+    const visualSpectrum=[];
+    for(let index=0;index<32;index++){
+      const position=index*15/31;
+      const lower=Math.floor(position);
+      const upper=Math.min(15,lower+1);
+      const fraction=position-lower;
+      const value=spectrumDisplayLevels[lower]*(1-fraction)+spectrumDisplayLevels[upper]*fraction;
+      visualSpectrum.push(clamp01(value));
+    }
     bars.forEach(function(bar,index){
       const target=Math.max(0.06,visualSpectrum[index]||0);
       const previous=Number(bar.dataset.level||0.08);

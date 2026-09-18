@@ -90,13 +90,13 @@ window.doomsdayFxConfig = {
      */
     trebleSpike: {
       enabled: true,
-      on: 0.45,
-      off: 0.32,
-      transientOn: 0.15,
+      on: 0.28,
+      off: 0.18,
+      transientOn: 0.05,
       confirmFrames: 2,
-      intervalMs: 110,
+      intervalMs: 140,
       intervalMsLite: 170,
-      cooldownMs: 500
+      cooldownMs: 300
     },
 
     /* Static noise overlay: opacity = treble x transient, scaled by
