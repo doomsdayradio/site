@@ -17,7 +17,7 @@
     glow: { enabled: true, midWeight: 0.6, trebleWeight: 0.8, floor: 0.10, range: 0.70, innerAlpha: 0.50, outerAlpha: 0.22, innerRadius: 15, outerRadius: 36 },
     glitch: { enabled: true, durationMs: 240, topOpacity: 0.78, bottomOpacity: 0.70, fragmentDurationMs: 260 },
     emission: { enabled: true, normalRadius: 0.06, normalRadiusScale: 0.16, normalForce: 520, glitchRadius: 0.22, glitchForce: 520 },
-    treble: { enabled: true, pipeCount: 8, pipeSpacing: 0.025, radius: 0.0015, radiusScale: 0.0015, force: 10, forceScale: 18, lift: 1, direction: 'down', angleSpread: 0.55 }
+    treble: { enabled: true, pipeCount: 8, pipeSpacing: 0.025, radius: 0.012, radiusScale: 0.006, force: 10, forceScale: 18, lift: 1, direction: 'down', angleSpread: 0.55 }
   };
   var analysisDefaults = {};
   Object.keys(analysisBands).forEach(function (bandName) {
@@ -241,12 +241,6 @@
     if (analysisBands.treble && analysisBands.treble.fromHz === 10000 && analysisBands.treble.toHz === 16000) {
       analysisBands.treble.fromHz = 180;
       analysisBands.treble.toHz = 12000;
-      save();
-    }
-    if (trigger.treble
-      && (trigger.treble.radius > 0.006 || trigger.treble.radiusScale > 0.006)) {
-      trigger.treble.radius = 0.004;
-      trigger.treble.radiusScale = 0.004;
       save();
     }
   }
