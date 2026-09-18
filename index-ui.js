@@ -575,18 +575,24 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     signal.playing=true;
     if(spectrumSource) spectrumSource.textContent='LEVELS / SERVER-FALLBACK';
     const displaySpectrum=[];
-    for(let index=0;index<16;index++){
-      displaySpectrum.push(index<4?signal.bass:index<10?signal.mid:signal.treble);
+    for(let index=0;index<32;index++){
+      const position=index*7/31;
+      const lower=Math.floor(position);
+      const upper=Math.min(7,lower+1);
+      const fraction=position-lower;
+      const lowerValue=milli(bands[lower]);
+      const upperValue=milli(bands[upper]);
+      displaySpectrum.push(lowerValue+(upperValue-lowerValue)*fraction);
     }
     updateSpectrumDisplay({bass:signal.bass,mid:signal.mid,treble:signal.treble,transient:signal.transient,sub:sub,_spectrumScale:'db'},displaySpectrum);
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     if(!isDebugPage) updateSignalVisualization(signal);
     pushDebugSample();
-    const visualSpectrum=(signal.bass||0)*0.45+(signal.mid||0)*0.65+(signal.treble||0)*0.85;
-    const visualEnergy=clamp01(visualSpectrum*0.7+(signal.level||0)*0.3);
+    const visualSpectrum=displaySpectrum.map(function(value){
+      return clamp01(Math.pow(value,0.72));
+    });
     bars.forEach(function(bar,index){
-      const profile=0.62+0.38*Math.abs(Math.sin(index*0.46+0.7));
-      const target=Math.max(0.08,visualEnergy*profile);
+      const target=Math.max(0.06,visualSpectrum[index]||0);
       const previous=Number(bar.dataset.level||0.08);
       const smoothing=target>previous?0.10:0.035;
       const level=previous+(target-previous)*smoothing;
