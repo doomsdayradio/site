@@ -142,8 +142,8 @@ window.doomsdayFxConfig = {
       kickRearm: 0.25,
       kickCooldownMs: 140,
       glitchOn: 0.85,
-      minIntervalMs: 55,
-      maxIntervalMs: 260,
+      minIntervalMs: 35,
+      maxIntervalMs: 180,
       intensityExponent: 1.8
     },
 

@@ -183,7 +183,11 @@ if (host && !prefersReducedMotion) {
     function sprayAtPointer(now) {
       if (pointerActive && now - lastPointerMove > 180) pointerActive = false;
       const signal = window.doomsdayAudioSignal;
-      const isPlaying = Boolean(signal && signal.playing && (signal.level || 0) >= 0.06);
+      const isPlaying = Boolean(signal && signal.playing && (
+        (signal.level || 0) >= 0.02
+        || (signal.sub || 0) >= 0.12
+        || (signal.bass || 0) >= 0.12
+      ));
       const level = Math.max(0, Math.min(1, signal ? (signal.level || 0) : 0));
       const transient = Math.max(0, Math.min(1, signal ? (signal.transient || 0) : 0));
       const bass = Math.max(0, Math.min(1, signal ? (signal.bass || level) : level));

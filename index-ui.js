@@ -570,7 +570,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     signal.hardBassConfirmed=signal.hardBass>=getFxHardBassOn()&&bass>=0.3;
      /* The server retains the latest sequenced event in every payload, so the
        delayed queue may coalesce packets without losing a kick attack. */
-     signal.bassOnset*=0.62;
+    signal.bassOnset=Number.isFinite(Number(signal.bassOnset))?Number(signal.bassOnset)*0.62:0;
      if(hasQualifiedKick) signal.bassOnset=Math.max(signal.bassOnset,kickStrength);
     signal.playing=true;
     if(spectrumSource) spectrumSource.textContent='LEVELS / SERVER-FALLBACK';
@@ -711,7 +711,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     signal.treble+=(treble-signal.treble)*0.16;
     signal.level+=(rawLevel-signal.level)*0.25;
     signal.transient=Math.max(0,Math.min(1,Math.max(levelRise/0.10,subRise/0.12)));
-    signal.bassOnset*=0.72;
+    signal.bassOnset=Number.isFinite(Number(signal.bassOnset))?Number(signal.bassOnset)*0.72:0;
     const now=performance.now();
     const kickStrength=Math.max(0,Math.min(1,subRise/0.12));
     const kickRearm=cfgNum(fxBassCoupledCfg,'kickRearm',0.25);
