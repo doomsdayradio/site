@@ -610,7 +610,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   }
 
   function teardownElementTap(){
-    meydaFeatures=null;
     /* Keep outputGain connected: once createMediaElementSource() routed the
        element through the WebAudio graph, disconnecting would mute the stream. */
     try{if(analyser)analyser.disconnect()}catch(error){}
@@ -957,8 +956,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   audio.addEventListener('pause',function(){
     isPlaying=false;
-    meydaFeatures=null;
-    previousMeydaRms=0;
     stopFallbackSignal();
     if(noiseLayer) noiseLayer.style.opacity=String(noiseBaseline);
     window.doomsdayAudioSignal.playing=false;

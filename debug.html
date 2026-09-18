@@ -58,7 +58,7 @@
       <section class="audio-spectrum module-card" aria-label="Aufgetrenntes Audiospektrum">
         <div class="audio-spectrum-head">
           <strong>AUDIO SPECTRUM</strong>
-          <span id="audio-spectrum-source">LOKAL / MEYDA</span>
+          <span id="audio-spectrum-source">LOKAL / FFT dB</span>
         </div>
         <div class="audio-spectrum-bands">
           <div class="audio-spectrum-band" data-spectrum-band="bass">
@@ -103,12 +103,11 @@
     <span>FREQ:107.END</span>
   </div>
 
-  <p class="debug-page-note">Normal: lokale WebAudio/Meyda-Analyse | <a href="./ios-debug.html">iOS-Fallback testen</a></p>
+  <p class="debug-page-note">Normal: lokale WebAudio-FFT-Analyse | <a href="./ios-debug.html">iOS-Fallback testen</a></p>
 
-  <script src="https://cdn.jsdelivr.net/npm/meyda@5.6.3/dist/web/meyda.min.js"></script>
   <script src="./fx-config.js?v=21"></script>
   <script src="./debug-config.js?v=12"></script>
-  <script src="./index-ui.js?v=20260918-local-kick9"></script>
+  <script src="./index-ui.js?v=20260918-local-kick10"></script>
   <script type="module" src="./fluid-background.js?v=20260917-kickgate4"></script>
 </body>
 </html>
