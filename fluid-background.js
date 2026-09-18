@@ -30,14 +30,26 @@ const fxBassCoupled = fxTriggers.bassCoupled || {};
 const fxEmission = fxTriggers.emission || {};
 const fxMouse = fxTriggers.mouse || {};
 const fxTreble = fxTriggers.treble || {};
-const bassCoupledEnabled = fxBassCoupled.enabled !== false;
-const heavyBassEnabled = fxHeavyBass.enabled !== false;
-const highLevelEnabled = fxHighLevel.enabled !== false;
-const softPulseEnabled = fxSoftPulse.enabled !== false;
-const glitchEnabled = (fxTriggers.glitch || {}).enabled !== false;
-const emissionEnabled = fxEmission.enabled !== false;
-const trebleEnabled = fxTreble.enabled !== false && fxTrebleSpike.enabled !== false;
+let bassCoupledEnabled = fxBassCoupled.enabled !== false;
+let heavyBassEnabled = fxHeavyBass.enabled !== false;
+let highLevelEnabled = fxHighLevel.enabled !== false;
+let softPulseEnabled = fxSoftPulse.enabled !== false;
+let glitchEnabled = (fxTriggers.glitch || {}).enabled !== false;
+let emissionEnabled = fxEmission.enabled !== false;
+let trebleEnabled = fxTreble.enabled !== false && fxTrebleSpike.enabled !== false;
 const trebleSparkPalette = ['#d1ff45', '#e6f2b0', '#f4f0e6', '#e0c09b'];
+
+function refreshEnabledFlags() {
+  bassCoupledEnabled = fxBassCoupled.enabled !== false;
+  heavyBassEnabled = fxHeavyBass.enabled !== false;
+  highLevelEnabled = fxHighLevel.enabled !== false;
+  softPulseEnabled = fxSoftPulse.enabled !== false;
+  glitchEnabled = (fxTriggers.glitch || {}).enabled !== false;
+  emissionEnabled = fxEmission.enabled !== false;
+  trebleEnabled = fxTreble.enabled !== false && fxTrebleSpike.enabled !== false;
+}
+
+window.addEventListener('doomsday:debug-config-change', refreshEnabledFlags);
 
 if (host && !prefersReducedMotion) {
   try {
