@@ -259,6 +259,7 @@ if (host && !prefersReducedMotion) {
         const bcSubFloor = fxNum(fxBassCoupled, 'subFloor', 0.10);
         const bcSubCeil = fxNum(fxBassCoupled, 'subCeil', 0.55);
         const bcSubActivity = Math.max(0, Math.min(1, (bcSub - bcSubFloor) / (bcSubCeil - bcSubFloor)));
+        const subFloorPassed = bcSub >= bcSubFloor;
         const bcSubGate = Math.max(0, Math.min(1,
           (bcSub - fxNum(fxBassCoupled, 'subGateOn', 0.18)) / fxNum(fxBassCoupled, 'subGateScale', 0.12)
         ));
@@ -296,7 +297,8 @@ if (host && !prefersReducedMotion) {
           : emitInterval;
         const emissionPunch = glitchBurstActive ? 1 : Math.max(punch, hardBassActivity, softActivity * 0.65);
         const bcRiseOn = fxNum(fxBassCoupled, 'kickRiseOn', 0.18);
-        const shouldEmitBass = bcActivity > 0 || hasLocalKick || glitchBurstActive || softActivity > 0;
+        const shouldEmitBass = hasLocalKick || glitchBurstActive
+          || (subFloorPassed && (bcActivity > 0 || softActivity > 0));
         if (isPlaying && shouldEmitBass && now - lastAudioSpray > effectiveEmitInterval) {
           lastAudioSpray = now;
           const cloudColor = soundWaveColor(now, bass, mid, treble, emissionPunch);
