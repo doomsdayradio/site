@@ -46,8 +46,8 @@ window.doomsdayFxConfig = {
       off: 0.76,
       confirmFrames: 3,
       glitchCooldownMs: 1200,
-      glitchBursts: 3,
-      glitchMs: 520,
+      glitchBursts: 6,
+      glitchMs: 760,
       emissionScale: 0.12
     },
 
@@ -94,8 +94,8 @@ window.doomsdayFxConfig = {
       off: 0.32,
       transientOn: 0.15,
       confirmFrames: 2,
-      intervalMs: 160,
-      intervalMsLite: 240,
+      intervalMs: 110,
+      intervalMsLite: 170,
       cooldownMs: 500
     },
 
@@ -142,8 +142,8 @@ window.doomsdayFxConfig = {
       kickRearm: 0.25,
       kickCooldownMs: 140,
       glitchOn: 0.85,
-      minIntervalMs: 90,
-      maxIntervalMs: 460,
+      minIntervalMs: 55,
+      maxIntervalMs: 260,
       intensityExponent: 1.8
     },
 
@@ -168,11 +168,11 @@ window.doomsdayFxConfig = {
     },
     emission: {
       enabled: true,
-      normalRadius: 0.06,
-      normalRadiusScale: 0.16,
-      normalForce: 520,
-      glitchRadius: 0.22,
-      glitchForce: 520
+      normalRadius: 0.09,
+      normalRadiusScale: 0.22,
+      normalForce: 700,
+      glitchRadius: 0.30,
+      glitchForce: 820
     },
     treble: {
       enabled: true,
