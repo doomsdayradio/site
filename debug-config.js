@@ -173,22 +173,26 @@
     var grid = panel.querySelector('.debug-config-grid');
     fields.forEach(function (field) {
       var groupName = field[0], key = field[1];
+      var isAnalysisField = groupName.indexOf('audioAnalysis.bands.') === 0;
+      var targetGroup = isAnalysisField
+        ? analysisBands[groupName.split('.').pop()]
+        : (trigger[groupName] || (trigger[groupName] = {}));
       var row = document.createElement('label');
       row.className = 'debug-config-row';
       var description = descriptions[groupName + '.' + key] || 'Parameter des Effekts.';
-      var isBoolean = typeof trigger[groupName][key] === 'boolean';
+      var isBoolean = typeof targetGroup[key] === 'boolean';
       row.innerHTML = '<span class="debug-config-label">' + field[2] + '<i class="debug-config-help" tabindex="0" data-tooltip="' + description + '" aria-label="' + description + '">?</i></span><input type="' + (isBoolean ? 'checkbox' : 'range') + '"><output></output>';
       var input = row.querySelector('input');
       var output = row.querySelector('output');
       if (!isBoolean) {
         input.min = field[3]; input.max = field[4]; input.step = field[5];
-        input.value = trigger[groupName][key];
+        input.value = targetGroup[key];
       } else {
-        input.checked = trigger[groupName][key];
+        input.checked = targetGroup[key];
       }
       function update() {
         var value = isBoolean ? input.checked : Number(input.value);
-        trigger[groupName][key] = value;
+        targetGroup[key] = value;
         output.value = isBoolean ? (value ? 'AN' : 'AUS') : (key.indexOf('Ms') >= 0 ? Math.round(value) + ' ms' : value.toFixed(2));
         save();
         fireChange();
@@ -202,7 +206,7 @@
       location.reload();
     });
     panel.querySelector('[data-action="copy"]').addEventListener('click', function () {
-      var text = JSON.stringify({ version: base.version || 1, triggers: trigger }, null, 2);
+      var text = JSON.stringify({ version: base.version || 1, triggers: trigger, audioAnalysis: { bands: analysisBands } }, null, 2);
       var area = panel.querySelector('textarea');
       area.value = text;
       area.select();
@@ -218,6 +222,14 @@
           var target = trigger[groupName] || (trigger[groupName] = {});
           Object.keys(group).forEach(function (key) {
             if (typeof group[key] === 'number' || typeof group[key] === 'boolean') target[key] = group[key];
+          });
+        });
+        Object.keys(imported.audioAnalysis && imported.audioAnalysis.bands || {}).forEach(function (bandName) {
+          var importedBand = imported.audioAnalysis.bands[bandName];
+          if (!importedBand || typeof importedBand !== 'object') return;
+          var targetBand = analysisBands[bandName] || (analysisBands[bandName] = {});
+          Object.keys(importedBand).forEach(function (key) {
+            if (typeof importedBand[key] === 'number') targetBand[key] = importedBand[key];
           });
         });
         save();
