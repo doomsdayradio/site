@@ -410,6 +410,36 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     return Math.max(0,Math.min(1,(db+60)/72));
   }
 
+  function updateEqualizerBars(spectrum){
+    if(!spectrum||!spectrum.length) return;
+    const barCount=bars.length;
+    const sourceLength=spectrum.length;
+    bars.forEach(function(bar,index){
+      let start;
+      let end;
+      if(sourceLength===barCount){
+        start=index;
+        end=index+1;
+      }else{
+        start=Math.floor(Math.pow(sourceLength,index/barCount));
+        end=Math.max(start+1,Math.floor(Math.pow(sourceLength,(index+1)/barCount)));
+      }
+      let total=0;
+      let count=0;
+      for(let sourceIndex=start;sourceIndex<Math.min(end,sourceLength);sourceIndex++){
+        total+=Number(spectrum[sourceIndex])||0;
+        count++;
+      }
+      const target=Math.max(0.06,Math.min(1,count?total/count:0));
+      const previous=Number(bar.dataset.level||0.06);
+      const smoothing=target>previous?0.18:0.08;
+      const level=previous+(target-previous)*smoothing;
+      bar.dataset.level=String(level);
+      bar.style.transform='scaleY('+level.toFixed(2)+')';
+      bar.style.opacity=String(0.5+level*0.5);
+    });
+  }
+
   function spectrumBandRawLevel(spectrum,band,binWidth){
     const start=Math.max(1,Math.floor(band.fromHz/binWidth));
     const end=Math.min(spectrum.length,Math.ceil(band.toHz/binWidth));
@@ -593,24 +623,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     if(!isDebugPage) updateSignalVisualization(signal);
     pushDebugSample();
-    const visualSpectrum=[];
-    for(let index=0;index<32;index++){
-      const position=index*15/31;
-      const lower=Math.floor(position);
-      const upper=Math.min(15,lower+1);
-      const fraction=position-lower;
-      const value=spectrumDisplayLevels[lower]*(1-fraction)+spectrumDisplayLevels[upper]*fraction;
-      visualSpectrum.push(clamp01(value));
-    }
-    bars.forEach(function(bar,index){
-      const target=Math.max(0.06,visualSpectrum[index]||0);
-      const previous=Number(bar.dataset.level||0.08);
-      const smoothing=target>previous?0.10:0.035;
-      const level=previous+(target-previous)*smoothing;
-      bar.dataset.level=String(level);
-      bar.style.transform='scaleY('+level.toFixed(2)+')';
-      bar.style.opacity=String(0.5+level*0.5);
-    });
+    updateEqualizerBars(spectrumDisplayLevels);
   }
 
   function startFallbackSignal(){
@@ -771,18 +784,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     updateSpectrumDisplay({bass:bass,mid:mid,treble:treble,sub:sub,transient:signal.transient,bassOnset:signal.bassOnset},Array.prototype.map.call(floatFrequencyData,function(db){return Math.max(0,Math.min(1,(db-LOCAL_DB_FLOOR)/100));}));
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     updateSignalVisualization(signal);
-    const visualSpectrum=(signal.bass||0)*0.45+(signal.mid||0)*0.65+(signal.treble||0)*0.85;
-    const visualEnergy=Math.max(0,Math.min(1,visualSpectrum*0.7+(signal.level||0)*0.3));
-    bars.forEach(function(bar,index){
-      const profile=0.62+0.38*Math.abs(Math.sin(index*0.46+0.7));
-      const target=Math.max(0.08,visualEnergy*profile);
-      const previous=Number(bar.dataset.level||0.08);
-      const smoothing=target>previous?0.10:0.035;
-      const level=previous+(target-previous)*smoothing;
-      bar.dataset.level=String(level);
-      bar.style.transform='scaleY('+level.toFixed(2)+')';
-      bar.style.opacity=String(0.5+level*0.5);
-    });
+    updateEqualizerBars(Array.prototype.map.call(floatFrequencyData,function(db){
+      return Math.max(0,Math.min(1,(db-LOCAL_DB_FLOOR)/(LOCAL_DB_CEILING-LOCAL_DB_FLOOR)));
+    }));
     visualizerFrame=requestAnimationFrame(drawEqualizer);
   }
 
