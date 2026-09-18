@@ -139,7 +139,7 @@ window.doomsdayFxConfig = {
       kickRiseFloor: 0.01,
       kickRiseRange: 0.05,
       kickRiseOn: 0.35,
-      kickRearm: 0.35,
+      kickRearm: 0.25,
       kickCooldownMs: 140,
       glitchOn: 0.85,
       minIntervalMs: 90,
