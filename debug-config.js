@@ -71,7 +71,8 @@
   ];
   Object.keys(analysisDefaults).forEach(function (bandName) {
     ['fromHz', 'toHz', 'levelMin', 'levelMax'].forEach(function (key) {
-      fields.push(['audioAnalysis.bands.' + bandName, key, bandName.toUpperCase() + ' ' + key, 0, 24000, key.indexOf('level') === 0 ? 0.01 : 10]);
+      var isLevel = key.indexOf('level') === 0;
+      fields.push(['audioAnalysis.bands.' + bandName, key, bandName.toUpperCase() + ' ' + key, 0, isLevel ? 1 : 24000, isLevel ? 0.01 : 10]);
     });
   });
   var descriptions = {
@@ -178,10 +179,11 @@
         ? analysisBands[groupName.split('.').pop()]
         : (trigger[groupName] || (trigger[groupName] = {}));
       var row = document.createElement('label');
-      row.className = 'debug-config-row';
+      row.className = 'debug-config-row' + (isAnalysisField ? ' debug-config-analysis-row' : '');
       var description = descriptions[groupName + '.' + key] || 'Parameter des Effekts.';
       var isBoolean = typeof targetGroup[key] === 'boolean';
-      row.innerHTML = '<span class="debug-config-label">' + field[2] + '<i class="debug-config-help" tabindex="0" data-tooltip="' + description + '" aria-label="' + description + '">?</i></span><input type="' + (isBoolean ? 'checkbox' : 'range') + '"><output></output>';
+      var inputType = isBoolean ? 'checkbox' : (isAnalysisField ? 'number' : 'range');
+      row.innerHTML = '<span class="debug-config-label">' + field[2] + '<i class="debug-config-help" tabindex="0" data-tooltip="' + description + '" aria-label="' + description + '">?</i></span><input type="' + inputType + '"><output></output>';
       var input = row.querySelector('input');
       var output = row.querySelector('output');
       if (!isBoolean) {
@@ -193,7 +195,9 @@
       function update() {
         var value = isBoolean ? input.checked : Number(input.value);
         targetGroup[key] = value;
-        output.value = isBoolean ? (value ? 'AN' : 'AUS') : (key.indexOf('Ms') >= 0 ? Math.round(value) + ' ms' : value.toFixed(2));
+        output.value = isBoolean ? (value ? 'AN' : 'AUS') : (isAnalysisField
+          ? (key.indexOf('Hz') >= 0 ? Math.round(value) + ' Hz' : Math.round(value * 100) + '%')
+          : (key.indexOf('Ms') >= 0 ? Math.round(value) + ' ms' : value.toFixed(2)));
         save();
         fireChange();
       }

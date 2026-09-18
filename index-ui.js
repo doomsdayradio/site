@@ -63,7 +63,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const spectrumSource=document.getElementById('audio-spectrum-source');
   const spectrumBands={};
   document.querySelectorAll('[data-spectrum-band]').forEach(function(element){
-    spectrumBands[element.dataset.spectrumBand]={fill:element.querySelector('em'),readout:element.querySelector('output')};
+    spectrumBands[element.dataset.spectrumBand]={fill:element.querySelector('em'),readout:element.querySelector('output'),label:element.querySelector('small')};
   });
   const btnIcon=toggle?toggle.querySelector('.stream-icon'):null;
   const ledSegments=[];
@@ -120,6 +120,17 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     };
   };
   resolveAnalysisBands();
+  const formatSpectrumHz=function(value){
+    return value>=1000?(value/1000).toFixed(value%1000===0?0:1)+' kHz':Math.round(value)+' Hz';
+  };
+  const updateSpectrumBandLabels=function(){
+    ['sub','bass','mid','treble'].forEach(function(name){
+      const meter=spectrumBands[name];
+      const band=analysisBand[name];
+      if(meter&&meter.label&&band) meter.label.textContent=formatSpectrumHz(band.fromHz)+'–'+formatSpectrumHz(band.toHz);
+    });
+  };
+  updateSpectrumBandLabels();
   const normalizeSubLevel=function(rawLevel){
     return Math.max(0,Math.min(1,(rawLevel-analysisBand.sub.levelMin)/(analysisBand.sub.levelMax-analysisBand.sub.levelMin)));
   };
@@ -136,6 +147,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
         analysisBands[name]=updatedAnalysis[name];
       });
       resolveAnalysisBands();
+      updateSpectrumBandLabels();
     }
     const sync=((event.detail||{}).triggers||{}).sync||{};
     const value=Number(sync.delayMs);
