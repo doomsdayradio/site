@@ -210,6 +210,11 @@
         band.levelMax = analysisDefaults[bandName].levelMax;
       }
     });
+    if (analysisBands.treble && analysisBands.treble.fromHz === 10000 && analysisBands.treble.toHz === 16000) {
+      analysisBands.treble.fromHz = 180;
+      analysisBands.treble.toHz = 12000;
+      save();
+    }
   }
 
   function save() {

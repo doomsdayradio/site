@@ -285,12 +285,11 @@ if (host && !prefersReducedMotion) {
           fluid.setConfig({
             colorPalette: [cloudColor],
             brightness: 0.28,
-            splatRadius: Math.min(0.5, glitchBurstActive
-              ? fxNum(fxEmission, 'glitchRadius', 0.22)
-              : fxNum(fxEmission, 'normalRadius', 0.06) * (0.35 + emissionPunch * 0.65)
-                + emissionPunch * fxNum(fxEmission, 'normalRadiusScale', 0.16)),
+            splatRadius: Math.min(0.5, fxNum(fxEmission, 'normalRadius', 0.06) * (0.35 + emissionPunch * 0.65)
+              + emissionPunch * fxNum(fxEmission, 'normalRadiusScale', 0.16)
+              + (glitchBurstActive ? fxNum(fxEmission, 'glitchRadius', 0.22) * 0.35 : 0)),
             splatForce: glitchBurstActive
-              ? fxNum(fxEmission, 'glitchForce', 520)
+              ? fxNum(fxEmission, 'normalForce', 520) * (0.35 + fxNum(fxEmission, 'glitchForce', 520) / 520 * 0.65)
               : fxNum(fxEmission, 'normalForce', 520) * (0.18 + emissionPunch * 0.82)
           });
           const emitters = logoEmitters(0.44 + Math.sin(now * 0.002) * 0.06);
