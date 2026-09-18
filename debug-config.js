@@ -17,12 +17,10 @@
     emission: { enabled: true, normalRadius: 0.06, normalRadiusScale: 0.16, normalForce: 520, glitchRadius: 0.22, glitchForce: 520 },
     treble: { enabled: true, pipeCount: 12, pipeSpacing: 0.025, radius: 0.003, radiusScale: 0.003, force: 10, forceScale: 18, lift: 1, angleSpread: 0.55 }
   };
-  var analysisDefaults = {
-    sub: { fromHz: 0, toHz: 120, levelMin: 0.04, levelMax: 0.45 },
-    bass: { fromHz: 35, toHz: 160, levelMin: 0.18, levelMax: 0.80 },
-    mid: { fromHz: 160, toHz: 2200, levelMin: 0.18, levelMax: 0.80 },
-    treble: { fromHz: 10000, toHz: 16000, levelMin: 0.18, levelMax: 0.80 }
-  };
+  var analysisDefaults = {};
+  Object.keys(analysisBands).forEach(function (bandName) {
+    analysisDefaults[bandName] = Object.assign({}, analysisBands[bandName]);
+  });
   var fields = [
     ['heavyBass', 'enabled', 'Hardbass aktiv', false],
     ['highLevel', 'enabled', 'Lautstärke-Effekt aktiv', true],

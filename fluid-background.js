@@ -193,7 +193,7 @@ if (host && !prefersReducedMotion) {
       const bassHardThreshold = fxNum(fxBass, 'hardFloor', 0.38);
       const bassHardActivity = Math.max(0, Math.min(1, (bass - bassHardThreshold) / (1 - bassHardThreshold)));
       const hardBassActivity = heavyBassEnabled && bassCoupledEnabled
-        ? (signal && (signal.sub || 0) >= fxNum(fxBassCoupled, 'kickSubMin', 0.34) && (signal.bassOnset || 0) >= fxNum(fxBassCoupled, 'glitchOn', 0.85) ? signal.bassOnset : 0)
+        ? (signal && (signal.bassOnset || 0) >= fxNum(fxBassCoupled, 'glitchOn', 0.85) ? signal.bassOnset : 0)
         : (signal && signal.hardBassConfirmed ? hardBass : 0);
       const hardBassEmission = Math.max(0, Math.min(1, (hardBassActivity - getFxHeavyBassOn()) / fxNum(fxHeavyBass, 'emissionScale', 0.12)));
       const bassPunch = Math.max(

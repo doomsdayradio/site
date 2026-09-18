@@ -17,7 +17,7 @@ window.doomsdayFxConfig = {
    * level range is the normalized analyser peak mapped to 0..100%. */
   audioAnalysis: {
     bands: {
-      sub: {fromHz: 0, toHz: 120},
+      sub: {fromHz: 0, toHz: 120, levelMin: 0.18, levelMax: 0.80},
       bass: {fromHz: 35, toHz: 160, levelMin: 0.18, levelMax: 0.80},
       mid: {fromHz: 160, toHz: 2200, levelMin: 0.18, levelMax: 0.80},
       treble: {fromHz: 10000, toHz: 16000, levelMin: 0.18, levelMax: 0.80}
@@ -136,9 +136,9 @@ window.doomsdayFxConfig = {
       subGateOn: 0.08,
       subGateScale: 0.10,
       kickSubMin: 0.34,
-      kickRiseFloor: 0.02,
-      kickRiseRange: 0.08,
-      kickRiseOn: 0.72,
+      kickRiseFloor: 0.01,
+      kickRiseRange: 0.05,
+      kickRiseOn: 0.35,
       kickRearm: 0.35,
       kickCooldownMs: 140,
       glitchOn: 0.85,

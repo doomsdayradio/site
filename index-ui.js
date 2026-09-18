@@ -118,6 +118,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       treble:getAnalysisBand('treble',analysisBandDefaults.treble),
       sub:getAnalysisBand('sub',analysisBandDefaults.sub)
     };
+    if(analysisBand.sub.fromHz===analysisBand.bass.fromHz&&analysisBand.sub.toHz===analysisBand.bass.toHz){
+      analysisBand.sub.levelMin=analysisBand.bass.levelMin;
+      analysisBand.sub.levelMax=analysisBand.bass.levelMax;
+    }
   };
   resolveAnalysisBands();
   const formatSpectrumHz=function(value){
@@ -131,8 +135,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     });
   };
   updateSpectrumBandLabels();
-  const normalizeSubLevel=function(rawLevel){
-    return Math.max(0,Math.min(1,(rawLevel-analysisBand.sub.levelMin)/(analysisBand.sub.levelMax-analysisBand.sub.levelMin)));
+  const normalizeBandLevel=function(rawLevel,band){
+    return Math.max(0,Math.min(1,(rawLevel-band.levelMin)/(band.levelMax-band.levelMin)));
   };
   let wsDelayMs=Number.isFinite(Number(fxSyncCfg.delayMs))?Math.max(0,Number(fxSyncCfg.delayMs)):4000;
   try{
@@ -171,7 +175,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let audioContext=null;
   let analyser=null;
   let frequencyData=null;
-  let floatFrequencyData=null;
   let meydaAnalyzer=null;
   let outputGain=null;
   let meydaFeatures=null;
@@ -196,7 +199,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let wsBassBaseline=0;
   let lastSubLevel=0;
   let localSubFast=0;
-  let localSubBaseline=0.04;
   let localKickArmed=true;
   let localKickCooldownUntil=0;
   let localKickSequence=0;
@@ -338,7 +340,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     analyser.maxDecibels=0;
     analyser.smoothingTimeConstant=0;
     frequencyData=new Uint8Array(analyser.frequencyBinCount);
-    floatFrequencyData=new Float32Array(analyser.frequencyBinCount);
     const source=audioContext.createMediaElementSource(audio);
     outputGain=audioContext.createGain();
     outputGain.gain.value=Number(volume.value);
@@ -364,8 +365,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     if(!spectrumChart || !spectrumContext) return;
     const binWidth=audioContext?audioContext.sampleRate/(spectrum.length*2):24000/(spectrum.length*2);
     const liveSignal=window.doomsdayAudioSignal||{};
+    const displaySub=Number.isFinite(Number(features.sub))
+      ? Math.max(0,Math.min(1,Number(features.sub)))
+      : spectrumBandLevel(spectrum,analysisBand.sub,binWidth);
     const values={
-      sub:spectrumBandLevel(spectrum,analysisBand.sub,binWidth),
+      sub:displaySub,
       bass:spectrumBandLevel(spectrum,analysisBand.bass,binWidth),
       mid:spectrumBandLevel(spectrum,analysisBand.mid,binWidth),
       treble:spectrumBandLevel(spectrum,analysisBand.treble,binWidth),
@@ -429,23 +433,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const spectrum=features.amplitudeSpectrum||[];
     if(!spectrum.length || !audioContext) return;
     const binWidth=audioContext.sampleRate/(2*spectrum.length);
-    function bandEnergy(startHz,endHz){
-      const start=Math.max(1,Math.floor(startHz/binWidth));
-      const end=Math.min(spectrum.length,Math.ceil(endHz/binWidth));
-      let total=0;
-      for(let index=start;index<end;index++) total+=spectrum[index]*spectrum[index];
-      return total;
-    }
-    let totalEnergy=0;
-    for(let index=1;index<spectrum.length;index++) totalEnergy+=spectrum[index]*spectrum[index];
-    const bassEnergy=bandEnergy(analysisBand.bass.fromHz,analysisBand.bass.toHz);
-    const midEnergy=bandEnergy(analysisBand.mid.fromHz,analysisBand.mid.toHz);
-    const trebleEnergy=bandEnergy(analysisBand.treble.fromHz,analysisBand.treble.toHz);
-    const bassMidEnergy=Math.max(0.001,bassEnergy+midEnergy);
-    const totalBandEnergy=Math.max(0.001,totalEnergy);
     const bassRatio=spectrumBandLevel(spectrum,analysisBand.bass,binWidth);
     const midRatio=spectrumBandLevel(spectrum,analysisBand.mid,binWidth);
     const trebleRatio=spectrumBandLevel(spectrum,analysisBand.treble,binWidth);
+    const subRatio=spectrumBandLevel(spectrum,analysisBand.sub,binWidth);
     const rms=Math.max(0,Math.min(1,(features.rms||0)*4));
     const rmsRise=Math.max(0,rms-previousMeydaRms);
     previousMeydaRms=rms;
@@ -459,15 +450,15 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     }
     previousMeydaSpectrum=Array.prototype.slice.call(spectrum);
     const flux=Math.max(0,Math.min(1,(fluxTotal/fluxDenominator)*2.5));
-    const bassContrast=Math.max(0,Math.min(1,(bassRatio-midRatio*0.75-0.08)/0.32));
     meydaFeatures={
       bass:bassRatio,
       mid:midRatio,
       treble:trebleRatio,
+      sub:subRatio,
       level:rms,
       transient:Math.max(flux,rmsRise*4),
-      hardBass:bassContrast*flux,
-      hardBassConfirmed:bassContrast>=0.68&&flux>=0.28
+      hardBass:bassRatio,
+      hardBassConfirmed:bassRatio>=getFxHardBassOn()
     };
     updateSpectrumDisplay(meydaFeatures,spectrum);
   }
@@ -592,15 +583,16 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
        and measure bass as a spike ratio against it: "hardest hit of the
        song". The absolute floor keeps quiet passages from glitching. */
     wsBassBaseline+=(bass-wsBassBaseline)*0.008;
-    const sub=normalizeSubLevel(milli(bands[0]));
+    const sub=normalizeBandLevel(milli(bands[0]),analysisBand.sub);
     lastSubLevel=sub;
     const fastSub=milli(payload.sub_fast);
     const kick=payload.kick&&typeof payload.kick==='object'?payload.kick:null;
     const kickSequence=kick&&Number.isFinite(Number(kick.seq))?Number(kick.seq):null;
     const kickStrength=kick&&Number.isFinite(Number(kick.strength))?clamp01(Number(kick.strength)):0;
     const hasNewKick=kickSequence!==null&&lastKickSequence!==null&&kickSequence>lastKickSequence;
+    const hasQualifiedKick=hasNewKick;
     if(kickSequence!==null) lastKickSequence=kickSequence;
-    lastKickDebug={sub:sub,fast:fastSub,seq:kickSequence||0,strength:kickStrength};
+    lastKickDebug={sub:sub,fast:fastSub,seq:kickSequence||0,strength:hasQualifiedKick?kickStrength:0};
     const bassSpikeRatio=bass/Math.max(0.15,wsBassBaseline*1.7);
     signal.bass+=(bass-signal.bass)*0.15;
     signal.mid+=(mid-signal.mid)*0.10;
@@ -613,14 +605,14 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
      /* The server retains the latest sequenced event in every payload, so the
        delayed queue may coalesce packets without losing a kick attack. */
      signal.bassOnset*=0.62;
-     if(hasNewKick) signal.bassOnset=Math.max(signal.bassOnset,kickStrength);
+     if(hasQualifiedKick) signal.bassOnset=Math.max(signal.bassOnset,kickStrength);
     signal.playing=true;
     if(spectrumSource) spectrumSource.textContent='LEVELS / SERVER-FALLBACK';
     const displaySpectrum=[];
     for(let index=0;index<16;index++){
       displaySpectrum.push(index<4?signal.bass:index<10?signal.mid:signal.treble);
     }
-    updateSpectrumDisplay({bass:signal.bass,mid:signal.mid,treble:signal.treble,transient:signal.transient,_spectrumScale:'db'},displaySpectrum);
+    updateSpectrumDisplay({bass:signal.bass,mid:signal.mid,treble:signal.treble,transient:signal.transient,sub:sub,_spectrumScale:'db'},displaySpectrum);
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     if(!isDebugPage) updateSignalVisualization(signal);
     pushDebugSample();
@@ -660,7 +652,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     try{if(analyser)analyser.disconnect()}catch(error){}
     analyser=null;
     frequencyData=null;
-    floatFrequencyData=null;
     visualizerFrame=0;
   }
 
@@ -671,7 +662,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     try{if(analyser)analyser.disconnect()}catch(error){}
     analyser=null;
     frequencyData=null;
-    floatFrequencyData=null;
     visualizerFrame=0;
   }
 
@@ -693,7 +683,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       analyser.maxDecibels=0;
       analyser.smoothingTimeConstant=0;
       frequencyData=new Uint8Array(analyser.frequencyBinCount);
-      floatFrequencyData=new Float32Array(analyser.frequencyBinCount);
       captureStream=audio.captureStream?audio.captureStream():audio.mozCaptureStream();
       captureSource=audioContext.createMediaStreamSource(captureStream);
       captureSource.connect(analyser);
@@ -714,81 +703,50 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     if(vizMode==='ws'){visualizerFrame=0;return}
     if(!analyser || audio.paused){visualizerFrame=0;return}
     analyser.getByteFrequencyData(frequencyData);
-    analyser.getFloatFrequencyData(floatFrequencyData);
-    let bass=0;
-    let lowBass=0;
-    let mid=0;
-    let treble=0;
-    let bassEnergy=0;
-    let midEnergy=0;
     let spectrumSum=0;
     const binWidth=audioContext.sampleRate/analyser.fftSize;
     for(let index=0;index<frequencyData.length;index++){
-      const value=frequencyData[index]/255;
       spectrumSum+=frequencyData[index];
-      const amplitude=Math.pow(10,floatFrequencyData[index]/20);
-      const frequency=index*binWidth;
-      if(frequency>=analysisBand.sub.fromHz&&frequency<analysisBand.sub.toHz) lowBass+=value;
-      if(frequency>=analysisBand.bass.fromHz&&frequency<analysisBand.bass.toHz){
-        bass+=value;
-        bassEnergy+=amplitude*amplitude;
-      }else if(frequency>=analysisBand.mid.fromHz&&frequency<analysisBand.mid.toHz){
-        mid+=value;
-        midEnergy+=value*value;
-      }else if(frequency>=analysisBand.treble.fromHz&&frequency<analysisBand.treble.toHz){
-        treble+=value;
-      }
     }
-    const bassBandRms=Math.sqrt(bassEnergy/Math.max(1,Math.ceil((analysisBand.bass.toHz-analysisBand.bass.fromHz)/binWidth)));
-    const bassDb=20*Math.log10(Math.max(0.00001,bassBandRms));
+    const displaySpectrum=Array.prototype.map.call(frequencyData,function(value){return value/255});
     const signal=window.doomsdayAudioSignal;
-    bass/=Math.max(1,Math.ceil((analysisBand.bass.toHz-analysisBand.bass.fromHz)/binWidth));
-    lowBass/=Math.max(1,Math.ceil((analysisBand.sub.toHz-analysisBand.sub.fromHz)/binWidth));
-    mid/=Math.max(1,Math.ceil((analysisBand.mid.toHz-analysisBand.mid.fromHz)/binWidth));
-    treble/=Math.max(1,Math.ceil((analysisBand.treble.toHz-analysisBand.treble.fromHz)/binWidth));
-    const bassFloor=Math.max(0.18,mid*0.55);
-    const directBass=Math.max(0,Math.min(1,(bass-bassFloor-0.04)/0.42));
+    const bass=spectrumBandLevel(displaySpectrum,analysisBand.bass,binWidth);
+    const sub=spectrumBandLevel(displaySpectrum,analysisBand.sub,binWidth);
+    const mid=spectrumBandLevel(displaySpectrum,analysisBand.mid,binWidth);
+    const treble=spectrumBandLevel(displaySpectrum,analysisBand.treble,binWidth);
     const rawLevel=Math.max(bass,mid,treble);
     let spectrumAvg=spectrumSum/frequencyData.length;
     const levelRise=Math.max(0,rawLevel-signal.level);
-    signal.bass+=(directBass-signal.bass)*0.35;
-    signal.lowBass=lowBass;
-    /* The local analyser has no server kick event. Normalize its low band
-       against a quiet floor, then detect short rises against a slow envelope. */
-    const localSub=normalizeSubLevel(lowBass);
-    const localSubRise=Math.max(0,localSub-localSubFast);
-    localSubFast+=(localSub-localSubFast)*0.38;
-    localSubBaseline+=(localSub-localSubBaseline)*0.012;
-    const kickRiseFloor=cfgNum(fxBassCoupledCfg,'kickRiseFloor',0.02);
-    const kickRiseRange=Math.max(0.001,cfgNum(fxBassCoupledCfg,'kickRiseRange',0.08));
-    const localRiseActivity=Math.max(0,Math.min(1,(localSubRise-kickRiseFloor)/kickRiseRange));
+    signal.bass+=(bass-signal.bass)*0.35;
+    signal.sub+=(sub-signal.sub)*0.35;
+    signal.lowBass=sub;
+    const subRise=Math.max(0,sub-localSubFast);
+    localSubFast+=(sub-localSubFast)*0.38;
+    const kickRiseFloor=cfgNum(fxBassCoupledCfg,'kickRiseFloor',0.01);
+    const kickRiseRange=Math.max(0.001,cfgNum(fxBassCoupledCfg,'kickRiseRange',0.05));
+    const localRiseActivity=Math.max(0,Math.min(1,(subRise-kickRiseFloor)/kickRiseRange));
     const localKickStrength=localRiseActivity;
     const now=performance.now();
-    signal.sub+=(localSub-signal.sub)*0.35;
     signal.bassOnset*=0.72;
     const localKickRearm=cfgNum(fxBassCoupledCfg,'kickRearm',0.35);
-    if(localSub<localKickRearm) localKickArmed=true;
+    if(sub<localKickRearm) localKickArmed=true;
     const localKickSubMin=cfgNum(fxBassCoupledCfg,'kickSubMin',0.34);
-    const localKickRiseOn=cfgNum(fxBassCoupledCfg,'kickRiseOn',0.72);
+    const localKickRiseOn=cfgNum(fxBassCoupledCfg,'kickRiseOn',0.35);
     const localKickCooldownMs=cfgNum(fxBassCoupledCfg,'kickCooldownMs',140);
-    if(localSub>=localKickSubMin&&localKickStrength>=localKickRiseOn&&localKickArmed&&now>=localKickCooldownUntil){
+    if(localKickStrength>=localKickRiseOn&&localKickArmed&&now>=localKickCooldownUntil){
       localKickCooldownUntil=now+localKickCooldownMs;
       localKickArmed=false;
       localKickSequence+=1;
       signal.bassOnset=Math.max(0.90,localKickStrength);
-      lastKickDebug={sub:localSub,fast:localSubFast,seq:localKickSequence,strength:signal.bassOnset};
+      lastKickDebug={sub:sub,fast:localSubFast,seq:localKickSequence,strength:signal.bassOnset};
     }
-    signal.hardBass=signal.bass;
+    signal.hardBass=bass;
     signal.hardBassConfirmed=signal.hardBass >= getFxHardBassOn();
     signal.mid+=(mid-signal.mid)*0.16;
     signal.treble+=(treble-signal.treble)*0.16;
     signal.level+=(rawLevel-signal.level)*0.32;
     signal.transient=Math.max(0,Math.min(1,levelRise/0.08));
-    const displaySpectrum=Array.prototype.map.call(frequencyData,function(value){return value/255});
     if(meydaFeatures){
-      signal.bass=spectrumBandLevel(displaySpectrum,analysisBand.bass,binWidth);
-      signal.mid=spectrumBandLevel(displaySpectrum,analysisBand.mid,binWidth);
-      signal.treble=spectrumBandLevel(displaySpectrum,analysisBand.treble,binWidth);
       signal.level=meydaFeatures.level;
       signal.transient=meydaFeatures.transient;
     }
@@ -802,7 +760,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       signal.hardBassConfirmed=false;
     }
     if(!lastKickDebug||lastKickDebug.seq!==localKickSequence){
-      lastKickDebug={sub:localSub,fast:localSubFast,seq:localKickSequence,strength:signal.bassOnset};
+      lastKickDebug={sub:sub,fast:localSubFast,seq:localKickSequence,strength:signal.bassOnset};
     }
     signal.playing=true;
     updateSpectrumDisplay({
@@ -810,6 +768,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       mid:signal.mid,
       treble:signal.treble,
       transient:signal.transient,
+      sub:sub,
       bassOnset:signal.bassOnset,
       _spectrumScale:'db'
     },displaySpectrum);
@@ -1032,7 +991,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       if(canAnalyzeAudio && !analyserBroken){
         if(forceServerLevelsDebug) ensureWebSocketViz();
         try{setupAnalyser()}catch(error){
-          analyser=null;frequencyData=null;floatFrequencyData=null;
+          analyser=null;frequencyData=null;
           vizLog('setup FAILED: '+(error&&error.message?error.message:String(error)));
         }
       }
