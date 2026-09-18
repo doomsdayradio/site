@@ -208,14 +208,14 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const baseSignalLevel=0.74;
   const urlParams=new URLSearchParams(location.search);
   const isDebugPage=/\/(?:ios-)?debug\.html$/.test(location.pathname);
-  const forceServerLevelsDebug=isDebugPage;
+  const forceServerLevelsDebug=/\/ios-debug\.html$/.test(location.pathname);
   if(isDebugPage) wsDelayMs=0;
     /* Debug pages are intentionally usable from localhost as well. The normal
       page starts with the local analyser; only ios-debug.html forces levels. */
     const canAnalyzeAudio=location.hostname==='doomsday.radio'||isDebugPage;
   const isAppleMobile=/iP(?:hone|ad|od)/.test(navigator.userAgent)
     || (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  const useServerLevelsFallback=isDebugPage||(isAppleMobile&&/AppleWebKit/.test(navigator.userAgent));
+  const useServerLevelsFallback=forceServerLevelsDebug||(isAppleMobile&&/AppleWebKit/.test(navigator.userAgent));
   /* ?debug shows the full player debug panel; ?viz-debug stays supported and
      behaves like ?debug (log lines included). */
     const debugMode=isDebugPage||urlParams.has('debug')||urlParams.has('viz-debug');
@@ -941,7 +941,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       await audio.play();
       if(analyser && !visualizerFrame) visualizerFrame=requestAnimationFrame(drawEqualizer);
     }catch(error){
-      if(isDebugPage&&wsSocket){
+      if(forceServerLevelsDebug&&wsSocket){
         status.textContent='SERVER-LEVELS AKTIV';
         setActive(true);
       }else{
@@ -978,7 +978,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   });
 
   audio.addEventListener('pause',function(){
-    if(isDebugPage&&wsSocket){
+    if(forceServerLevelsDebug&&wsSocket){
       isPlaying=true;
       window.doomsdayAudioSignal.playing=true;
       setActive(true);
@@ -996,7 +996,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   audio.addEventListener('waiting',function(){status.textContent='PUFFERE SIGNAL...'});
   audio.addEventListener('error',function(){
-    if(isDebugPage&&wsSocket){
+    if(forceServerLevelsDebug&&wsSocket){
       isPlaying=true;
       window.doomsdayAudioSignal.playing=true;
       setActive(true);
