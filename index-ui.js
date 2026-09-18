@@ -176,11 +176,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let audioContext=null;
   let analyser=null;
   let frequencyData=null;
-  let meydaAnalyzer=null;
+  let floatFrequencyData=null;
   let outputGain=null;
-  let meydaFeatures=null;
-  let previousMeydaRms=0;
-  let previousMeydaSpectrum=null;
   let visualizerFrame=0;
   let fallbackFrame=0;
   let fallbackTimer=0;
@@ -251,10 +248,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const lines=[
       '== doomsday debug ==',
       'status    '+status.textContent+(isPlaying?' [playing]':' [idle]')+' viz:'+vizMode,
-      'audioctx  '+(audioContext?audioContext.state:'none')+' analyser:'+(analyser?'yes':'no')+' meyda:'+(meydaAnalyzer?'yes':'no'),
+      'audioctx  '+(audioContext?audioContext.state:'none')+' analyser:'+(analyser?'yes':'no'),
       'ws        '+(wsSocket?'connected':'-')+' '+levelsUrl,
       'signal    lvl:'+pct(s.level)+' bass:'+pct(s.bass)+' mid:'+pct(s.mid)+' treble:'+pct(s.treble)+' transient:'+pct(s.transient)+' onset:'+pct(s.bassOnset),
-      'sub       raw:'+localAnalysisDebug.raw.toFixed(3)+' norm:'+pct(localAnalysisDebug.normalized)+' bins:'+localAnalysisDebug.bins+' map:'+localAnalysisDebug.min.toFixed(2)+'..'+localAnalysisDebug.max.toFixed(2),
+      'sub       db:'+localAnalysisDebug.raw.toFixed(1)+' norm:'+pct(localAnalysisDebug.normalized)+' bins:'+localAnalysisDebug.bins+' map:'+localAnalysisDebug.min.toFixed(0)+'..'+localAnalysisDebug.max.toFixed(0)+' dB',
       'hardBass  '+pct(s.hardBass)+(s.hardBassConfirmed?' CONFIRMED':'')+' (on '+pct(hb.on)+')',
       'fx        bassFrames:'+(fx.hardBassFrames||0)+(fx.hardBassTriggered?' T':'')+' spikeFrames:'+(fx.trebleSpikeFrames||0)+(fx.trebleSpikeReady===false?' cool':'')+' glitch:'+(fx.glitchEmissionBursts||0)+' lastSpray:'+((fx.lastAudioSprayAge!=null?fx.lastAudioSprayAge+'ms':'-')),
       lastKickDebug?('kickdet  sub:'+lastKickDebug.sub.toFixed(2)+' fast:'+lastKickDebug.fast.toFixed(2)+' seq:'+lastKickDebug.seq+' strength:'+lastKickDebug.strength.toFixed(2)):'kickdet  -',
@@ -343,21 +340,13 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     analyser.maxDecibels=0;
     analyser.smoothingTimeConstant=0.55;
     frequencyData=new Uint8Array(analyser.frequencyBinCount);
+    floatFrequencyData=new Float32Array(analyser.frequencyBinCount);
     const source=audioContext.createMediaElementSource(audio);
     outputGain=audioContext.createGain();
     outputGain.gain.value=Number(volume.value);
     source.connect(analyser);
     source.connect(outputGain).connect(audioContext.destination);
     audio.volume=1;
-    if(window.Meyda){
-      meydaAnalyzer=window.Meyda.createMeydaAnalyzer({
-        audioContext:audioContext,
-        source:source,
-        bufferSize:512,
-        featureExtractors:['rms','amplitudeSpectrum'],
-        callback:updateMeydaFeatures
-      });
-    }
     bars.forEach(function(bar){bar.classList.remove('is-fallback')});
     vizMode='element';
     vizLog('element tap active');
@@ -368,14 +357,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     if(!spectrumChart || !spectrumContext) return;
     const binWidth=audioContext?audioContext.sampleRate/(spectrum.length*2):24000/(spectrum.length*2);
     const liveSignal=window.doomsdayAudioSignal||{};
-    const displaySub=Number.isFinite(Number(features.sub))
-      ? Math.max(0,Math.min(1,Number(features.sub)))
-      : spectrumBandLevel(spectrum,analysisBand.sub,binWidth);
     const values={
-      sub:displaySub,
-      bass:spectrumBandLevel(spectrum,analysisBand.bass,binWidth),
-      mid:spectrumBandLevel(spectrum,analysisBand.mid,binWidth),
-      treble:spectrumBandLevel(spectrum,analysisBand.treble,binWidth),
+      sub:Number.isFinite(Number(features.sub))?Number(features.sub):0,
+      bass:Number.isFinite(Number(features.bass))?Number(features.bass):0,
+      mid:Number.isFinite(Number(features.mid))?Number(features.mid):0,
+      treble:Number.isFinite(Number(features.treble))?Number(features.treble):0,
       transient:Math.min(1,(features.transient||0)*0.35),
       kick:Math.max(0,Math.min(1,Number(features.bassOnset)||Number(liveSignal.bassOnset)||0))
     };
@@ -441,27 +427,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   function spectrumBandLevel(spectrum,band,binWidth){
     const bandRms=spectrumBandRawLevel(spectrum,band,binWidth);
     return Math.max(0,Math.min(1,(bandRms-band.levelMin)/(band.levelMax-band.levelMin)));
-  }
-  function updateMeydaFeatures(features){
-    const spectrum=features.amplitudeSpectrum||[];
-    if(!spectrum.length || !audioContext) return;
-    const rms=Math.max(0,Math.min(1,(features.rms||0)*4));
-    const rmsRise=Math.max(0,rms-previousMeydaRms);
-    previousMeydaRms=rms;
-    let fluxTotal=0;
-    let fluxDenominator=0.001;
-    if(previousMeydaSpectrum && previousMeydaSpectrum.length===spectrum.length){
-      for(let index=0;index<spectrum.length;index++){
-        fluxTotal+=Math.max(0,spectrum[index]-previousMeydaSpectrum[index]);
-        fluxDenominator+=spectrum[index];
-      }
-    }
-    previousMeydaSpectrum=Array.prototype.slice.call(spectrum);
-    const flux=Math.max(0,Math.min(1,(fluxTotal/fluxDenominator)*2.5));
-    meydaFeatures={
-      level:rms,
-      transient:Math.max(flux,rmsRise*4)
-    };
   }
 
     /* iOS WebKit can feed a cross-origin MediaElementSource only zeros. The
@@ -645,14 +610,13 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   }
 
   function teardownElementTap(){
-    if(meydaAnalyzer){try{meydaAnalyzer.stop()}catch(error){}}
-    meydaAnalyzer=null;
     meydaFeatures=null;
     /* Keep outputGain connected: once createMediaElementSource() routed the
        element through the WebAudio graph, disconnecting would mute the stream. */
     try{if(analyser)analyser.disconnect()}catch(error){}
     analyser=null;
     frequencyData=null;
+    floatFrequencyData=null;
     visualizerFrame=0;
   }
 
@@ -663,6 +627,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     try{if(analyser)analyser.disconnect()}catch(error){}
     analyser=null;
     frequencyData=null;
+    floatFrequencyData=null;
     visualizerFrame=0;
   }
 
@@ -684,6 +649,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       analyser.maxDecibels=0;
       analyser.smoothingTimeConstant=0.55;
       frequencyData=new Uint8Array(analyser.frequencyBinCount);
+      floatFrequencyData=new Float32Array(analyser.frequencyBinCount);
       captureStream=audio.captureStream?audio.captureStream():audio.mozCaptureStream();
       captureSource=audioContext.createMediaStreamSource(captureStream);
       captureSource.connect(analyser);
@@ -700,145 +666,94 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     }
   }
 
+  const LOCAL_DB_FLOOR=-72;
+  const LOCAL_DB_CEILING=-18;
+  function localBandLevel(db){
+    return Math.max(0,Math.min(1,(db-LOCAL_DB_FLOOR)/(LOCAL_DB_CEILING-LOCAL_DB_FLOOR)));
+  }
+  function localBandDb(spectrum,band,binWidth){
+    const start=Math.max(1,Math.floor(band.fromHz/binWidth));
+    const end=Math.min(spectrum.length,Math.ceil(band.toHz/binWidth));
+    let power=0;
+    let count=0;
+    for(let index=start;index<end;index++){
+      const db=spectrum[index];
+      if(Number.isFinite(db)){
+        power+=Math.pow(10,db/10);
+        count++;
+      }
+    }
+    return count?10*Math.log10(power/count):LOCAL_DB_FLOOR;
+  }
   function drawEqualizer(){
     if(vizMode==='ws'){visualizerFrame=0;return}
-    if(!analyser || audio.paused){visualizerFrame=0;return}
-    analyser.getByteFrequencyData(frequencyData);
-    let spectrumSum=0;
+    if(!analyser || !floatFrequencyData || audio.paused){visualizerFrame=0;return}
+    analyser.getFloatFrequencyData(floatFrequencyData);
     const binWidth=audioContext.sampleRate/analyser.fftSize;
-    for(let index=0;index<frequencyData.length;index++){
-      spectrumSum+=frequencyData[index];
-    }
-    const displaySpectrum=Array.prototype.map.call(frequencyData,function(value){return value/255});
+    const subDb=localBandDb(floatFrequencyData,analysisBand.sub,binWidth);
+    const bassDb=localBandDb(floatFrequencyData,analysisBand.bass,binWidth);
+    const midDb=localBandDb(floatFrequencyData,analysisBand.mid,binWidth);
+    const trebleDb=localBandDb(floatFrequencyData,analysisBand.treble,binWidth);
+    const sub=localBandLevel(subDb);
+    const bass=localBandLevel(bassDb);
+    const mid=localBandLevel(midDb);
+    const treble=localBandLevel(trebleDb);
     const signal=window.doomsdayAudioSignal;
-    const bass=spectrumBandLevel(displaySpectrum,analysisBand.bass,binWidth);
-    const sub=spectrumBandLevel(displaySpectrum,analysisBand.sub,binWidth);
-    const subRaw=spectrumBandRawLevel(displaySpectrum,analysisBand.sub,binWidth);
-    const mid=spectrumBandLevel(displaySpectrum,analysisBand.mid,binWidth);
-    const treble=spectrumBandLevel(displaySpectrum,analysisBand.treble,binWidth);
-    localAnalysisDebug={raw:subRaw,normalized:sub,bins:Math.max(0,Math.ceil(analysisBand.sub.toHz/binWidth)-Math.max(1,Math.floor(analysisBand.sub.fromHz/binWidth))),min:analysisBand.sub.levelMin,max:analysisBand.sub.levelMax};
     const rawLevel=Math.max(bass,mid,treble);
-    let spectrumAvg=spectrumSum/frequencyData.length;
     const levelRise=Math.max(0,rawLevel-signal.level);
-    signal.bass+=(bass-signal.bass)*0.35;
-    signal.sub+=(sub-signal.sub)*0.35;
-    signal.lowBass=sub;
     const subRise=Math.max(0,sub-localSubFast);
-    localSubFast+=(sub-localSubFast)*0.38;
-    const kickRiseFloor=cfgNum(fxBassCoupledCfg,'kickRiseFloor',0.01);
-    const kickRiseRange=Math.max(0.001,cfgNum(fxBassCoupledCfg,'kickRiseRange',0.05));
-    const localRiseActivity=Math.max(0,Math.min(1,(subRise-kickRiseFloor)/kickRiseRange));
-    const localKickStrength=localRiseActivity;
-    const now=performance.now();
-    signal.bassOnset*=0.72;
-    const localKickRearm=cfgNum(fxBassCoupledCfg,'kickRearm',0.35);
-    if(sub<localKickRearm) localKickArmed=true;
-    const localKickSubMin=cfgNum(fxBassCoupledCfg,'kickSubMin',0.34);
-    const localKickRiseOn=cfgNum(fxBassCoupledCfg,'kickRiseOn',0.35);
-    const localKickCooldownMs=cfgNum(fxBassCoupledCfg,'kickCooldownMs',140);
-    const crossedKickSubMin=sub>=localKickSubMin&&localSubFast<localKickSubMin;
-    const hasKickRise=localKickStrength>=localKickRiseOn;
-    if((crossedKickSubMin||hasKickRise)&&localKickArmed&&now>=localKickCooldownUntil){
-      localKickCooldownUntil=now+localKickCooldownMs;
-      localKickArmed=false;
-      localKickSequence+=1;
-      signal.bassOnset=Math.max(0.90,localKickStrength);
-      signal.kickSequence=localKickSequence;
-      lastKickDebug={sub:sub,fast:localSubFast,seq:localKickSequence,strength:signal.bassOnset};
-    }
-    signal.hardBass=bass;
-    signal.hardBassConfirmed=signal.hardBass >= getFxHardBassOn();
+    localSubFast+=(sub-localSubFast)*0.28;
+    localAnalysisDebug={raw:subDb,normalized:sub,bins:Math.max(0,Math.ceil(analysisBand.sub.toHz/binWidth)-Math.max(1,Math.floor(analysisBand.sub.fromHz/binWidth))),min:LOCAL_DB_FLOOR,max:LOCAL_DB_CEILING};
+    signal.bass+=(bass-signal.bass)*0.25;
+    signal.sub+=(sub-signal.sub)*0.25;
+    signal.lowBass=sub;
     signal.mid+=(mid-signal.mid)*0.16;
     signal.treble+=(treble-signal.treble)*0.16;
-    signal.level+=(rawLevel-signal.level)*0.32;
-    signal.transient=Math.max(0,Math.min(1,levelRise/0.08));
-    if(meydaFeatures){
-      signal.level=meydaFeatures.level;
-      signal.transient=meydaFeatures.transient;
+    signal.level+=(rawLevel-signal.level)*0.25;
+    signal.transient=Math.max(0,Math.min(1,Math.max(levelRise/0.10,subRise/0.12)));
+    signal.bassOnset*=0.72;
+    const now=performance.now();
+    const kickStrength=Math.max(0,Math.min(1,subRise/0.12));
+    const kickRearm=cfgNum(fxBassCoupledCfg,'kickRearm',0.25);
+    const kickMinimum=cfgNum(fxBassCoupledCfg,'kickSubMin',0.34);
+    const kickThreshold=cfgNum(fxBassCoupledCfg,'kickRiseOn',0.35);
+    const kickCooldown=cfgNum(fxBassCoupledCfg,'kickCooldownMs',140);
+    if(sub<kickRearm) localKickArmed=true;
+    if(localKickArmed&&now>=localKickCooldownUntil&&sub>=kickMinimum&&kickStrength>=kickThreshold){
+      localKickArmed=false;
+      localKickCooldownUntil=now+kickCooldown;
+      localKickSequence+=1;
+      signal.kickSequence=localKickSequence;
+      signal.bassOnset=1;
     }
-    if(spectrumAvg<3){
-      signal.bass=0;
-      signal.mid=0;
-      signal.treble=0;
-      signal.level=0;
-      signal.transient=0;
-      signal.hardBass=0;
-      signal.hardBassConfirmed=false;
-    }
-    if(!lastKickDebug||lastKickDebug.seq!==localKickSequence){
-      lastKickDebug={sub:sub,fast:localSubFast,seq:localKickSequence,strength:signal.bassOnset};
-    }
+    signal.hardBass=bass;
+    signal.hardBassConfirmed=bass>=getFxHardBassOn();
     signal.playing=true;
-    updateSpectrumDisplay({
-      bass:signal.bass,
-      mid:signal.mid,
-      treble:signal.treble,
-      transient:signal.transient,
-      sub:sub,
-      bassOnset:signal.bassOnset,
-      _spectrumScale:'db'
-    },displaySpectrum);
-    /* Silence watchdog: some mobile browsers feed the analyser only zeros
-       (or sub-audible dither) while the time-domain level still moves.
-       Treat the spectrum as silent when its average bin value stays near
-      zero, then use server levels on iOS WebKit or simulate elsewhere. */
-    spectrumAvg=spectrumSum/frequencyData.length;
-    if(spectrumAvg<2){
+    lastKickDebug={sub:sub,fast:localSubFast,seq:localKickSequence,strength:signal.bassOnset};
+    let loudestDb=LOCAL_DB_FLOOR;
+    for(let index=1;index<floatFrequencyData.length;index++) loudestDb=Math.max(loudestDb,floatFrequencyData[index]);
+    if(loudestDb<=LOCAL_DB_FLOOR+1){
       silentFrames++;
-      if(silentFrames===1||silentFrames%50===0)vizLog('['+vizMode+'] silent '+silentFrames+' avg:'+spectrumAvg.toFixed(2)+' ctx:'+audioContext.state);
       if(silentFrames>=150){
         if(vizMode==='element'){
-          /* iOS WebKit routes cross-origin media elements silently through
-             createMediaElementSource. The MediaStream-level tap (captureStream)
-             is unaffected on many builds, so try it before simulating. */
           vizLog('element tap silent -> trying captureStream');
           teardownElementTap();
           if(setupCaptureAnalyser()){
             visualizerFrame=requestAnimationFrame(drawEqualizer);
             return;
           }
-          enterFallbackMode();
-          startFallbackSignal();
-          if(useServerLevelsFallback){
-            vizLog('silent tap -> server levels fallback');
-            ensureWebSocketViz();
-          }
-          return;
         }
-        vizLog('['+vizMode+'] tap silent -> fallback');
-        teardownCaptureTap();
         enterFallbackMode();
         startFallbackSignal();
-        if(useServerLevelsFallback){
-          vizLog('silent capture tap -> server levels fallback');
-          ensureWebSocketViz();
-        }
+        if(useServerLevelsFallback) ensureWebSocketViz();
         return;
       }
     }else{
-      if(silentFrames>0)vizLog('['+vizMode+'] alive again after '+silentFrames+' frames, avg:'+spectrumAvg.toFixed(2));
       silentFrames=0;
     }
-    vizFrameCount++;
-    if(vizDebug && vizFrameCount%300===0)vizLog('['+vizMode+'] avg:'+spectrumAvg.toFixed(1)+' lvl:'+signal.level.toFixed(2)+' bass:'+signal.bass.toFixed(2)+' ctx:'+audioContext.state);
+    updateSpectrumDisplay({bass:bass,mid:mid,treble:treble,sub:sub,transient:signal.transient,bassOnset:signal.bassOnset},Array.prototype.map.call(floatFrequencyData,function(db){return Math.max(0,Math.min(1,(db-LOCAL_DB_FLOOR)/100));}));
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     updateSignalVisualization(signal);
-    bars.forEach(function(bar,index){
-      const start=Math.floor(Math.pow(displaySpectrum.length,index/bars.length));
-      const end=Math.max(start+1,Math.floor(Math.pow(displaySpectrum.length,(index+1)/bars.length)));
-      let energy=0;
-      let count=0;
-      for(let bin=start;bin<Math.min(end,displaySpectrum.length);bin++){
-        energy+=displaySpectrum[bin]*displaySpectrum[bin];
-        count++;
-      }
-      /* frequencyData is already dB-normalized by AnalyserNode. Treating its
-       * 0..1 values as linear amplitudes makes quiet bands read near 80%. */
-      const normalized=count?Math.sqrt(energy/count):0;
-      const level=normalized<0.12?0:Math.max(0.03,(normalized-0.12)/0.68);
-      bar.style.transform='scaleY('+level.toFixed(2)+')';
-      bar.style.opacity=String(0.5+level*0.5);
-    });
     visualizerFrame=requestAnimationFrame(drawEqualizer);
   }
 
@@ -1002,8 +917,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
         }
       }
       if(audioContext && audioContext.state==='suspended') await audioContext.resume();
-      vizLog('play ctx:'+(audioContext?audioContext.state:'none')+' analyser:'+!!analyser+' meyda:'+!!meydaAnalyzer);
-      if(meydaAnalyzer){try{meydaAnalyzer.start()}catch(error){meydaAnalyzer=null}}
+      vizLog('play ctx:'+(audioContext?audioContext.state:'none')+' analyser:'+!!analyser);
       silentFrames=0;
       isPlaying=true;
       if(!analyser) startFallbackSignal();
@@ -1043,7 +957,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   audio.addEventListener('pause',function(){
     isPlaying=false;
-    if(meydaAnalyzer) meydaAnalyzer.stop();
     meydaFeatures=null;
     previousMeydaRms=0;
     stopFallbackSignal();
@@ -1056,7 +969,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   audio.addEventListener('waiting',function(){status.textContent='PUFFERE SIGNAL...'});
   audio.addEventListener('error',function(){
-    if(meydaAnalyzer) meydaAnalyzer.stop();
     window.doomsdayAudioSignal.playing=false;
     setActive(false);
     status.textContent='SIGNAL NICHT ERREICHBAR';
