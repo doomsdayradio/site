@@ -237,6 +237,11 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   transition:none;
 }
 
+.radio-player:not(.is-playing) .equalizer-bar{
+  transform:scaleY(0.025) !important;
+  opacity:0.35;
+}
+
 .player-controls{
   display:grid;
   gap:0.8rem;
