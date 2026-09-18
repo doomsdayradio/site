@@ -108,7 +108,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     bass:{fromHz:35,toHz:160,levelMin:0.18,levelMax:0.80},
     mid:{fromHz:160,toHz:2200,levelMin:0.18,levelMax:0.80},
     treble:{fromHz:10000,toHz:16000,levelMin:0.18,levelMax:0.80},
-    sub:{fromHz:0,toHz:120,levelMin:0.18,levelMax:0.80}
+    sub:{fromHz:0,toHz:120,levelMin:0.30,levelMax:1.00}
   };
   let analysisBand={};
   const resolveAnalysisBands=function(){
@@ -416,7 +416,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     return Math.max(0,Math.min(1,(db+60)/72));
   }
 
-  function spectrumBandLevel(spectrum,band,binWidth){
+  function spectrumBandRawLevel(spectrum,band,binWidth){
     const start=Math.max(1,Math.floor(band.fromHz/binWidth));
     const end=Math.min(spectrum.length,Math.ceil(band.toHz/binWidth));
     let energy=0;
@@ -427,6 +427,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       count++;
     }
     const bandRms=count?Math.sqrt(energy/count):0;
+    return bandRms;
+  }
+  function spectrumBandLevel(spectrum,band,binWidth){
+    const bandRms=spectrumBandRawLevel(spectrum,band,binWidth);
     return Math.max(0,Math.min(1,(bandRms-band.levelMin)/(band.levelMax-band.levelMin)));
   }
   function updateMeydaFeatures(features){
@@ -700,6 +704,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const signal=window.doomsdayAudioSignal;
     const bass=spectrumBandLevel(displaySpectrum,analysisBand.bass,binWidth);
     const sub=spectrumBandLevel(displaySpectrum,analysisBand.sub,binWidth);
+    const subRaw=spectrumBandRawLevel(displaySpectrum,analysisBand.sub,binWidth);
     const mid=spectrumBandLevel(displaySpectrum,analysisBand.mid,binWidth);
     const treble=spectrumBandLevel(displaySpectrum,analysisBand.treble,binWidth);
     const rawLevel=Math.max(bass,mid,treble);
@@ -708,8 +713,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     signal.bass+=(bass-signal.bass)*0.35;
     signal.sub+=(sub-signal.sub)*0.35;
     signal.lowBass=sub;
-    const subRise=Math.max(0,sub-localSubFast);
-    localSubFast+=(sub-localSubFast)*0.38;
+    const subRise=Math.max(0,subRaw-localSubFast);
+    localSubFast+=(subRaw-localSubFast)*0.38;
     const kickRiseFloor=cfgNum(fxBassCoupledCfg,'kickRiseFloor',0.01);
     const kickRiseRange=Math.max(0.001,cfgNum(fxBassCoupledCfg,'kickRiseRange',0.05));
     const localRiseActivity=Math.max(0,Math.min(1,(subRise-kickRiseFloor)/kickRiseRange));
@@ -721,7 +726,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const localKickSubMin=cfgNum(fxBassCoupledCfg,'kickSubMin',0.34);
     const localKickRiseOn=cfgNum(fxBassCoupledCfg,'kickRiseOn',0.35);
     const localKickCooldownMs=cfgNum(fxBassCoupledCfg,'kickCooldownMs',140);
-    const crossedKickSubMin=sub>=localKickSubMin&&localSubFast<localKickSubMin;
+    const crossedKickSubMin=subRaw>=localKickSubMin&&localSubFast<localKickSubMin;
     const hasKickRise=localKickStrength>=localKickRiseOn;
     if((crossedKickSubMin||hasKickRise)&&localKickArmed&&now>=localKickCooldownUntil){
       localKickCooldownUntil=now+localKickCooldownMs;

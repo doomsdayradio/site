@@ -17,7 +17,7 @@ window.doomsdayFxConfig = {
    * level range is the normalized analyser peak mapped to 0..100%. */
   audioAnalysis: {
     bands: {
-      sub: {fromHz: 0, toHz: 120, levelMin: 0.18, levelMax: 0.80},
+      sub: {fromHz: 0, toHz: 120, levelMin: 0.30, levelMax: 1.00},
       bass: {fromHz: 35, toHz: 160, levelMin: 0.18, levelMax: 0.80},
       mid: {fromHz: 160, toHz: 2200, levelMin: 0.18, levelMax: 0.80},
       treble: {fromHz: 10000, toHz: 16000, levelMin: 0.18, levelMax: 0.80}
