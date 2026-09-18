@@ -342,13 +342,15 @@ if (host && !prefersReducedMotion) {
         lastTrebleSpray = now;
         trebleSpikeReady = false;
         const sparkColor = trebleSparkPalette[Math.floor(Math.random() * trebleSparkPalette.length)];
+        const pipeRadius = Math.min(0.025,
+          fxNum(fxTreble, 'radius', 0.003) + treble * fxNum(fxTreble, 'radiusScale', 0.003));
         fluid.setConfig({
           colorPalette: [sparkColor],
           brightness: 0.28,
-          splatRadius: fxNum(fxTreble, 'radius', 0.006) + treble * fxNum(fxTreble, 'radiusScale', 0.008),
+          splatRadius: pipeRadius,
           splatForce: fxNum(fxTreble, 'force', 10) + treble * fxNum(fxTreble, 'forceScale', 18)
         });
-        const sparkEmitters = logoEmitters(0.06 + Math.sin(now * 0.004) * 0.04);
+        const sparkEmitters = logoEmitters(0.72 + Math.sin(now * 0.004) * 0.04);
         const pipeCount = Math.max(1, Math.round(fxNum(fxTreble, 'pipeCount', 12)));
         const pipeSpacing = fxNum(fxTreble, 'pipeSpacing', 0.025) * (sparkEmitters.rightX - sparkEmitters.leftX);
         const pipeCenter = (sparkEmitters.leftX + sparkEmitters.rightX) * 0.5;

@@ -110,12 +110,16 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     treble:{fromHz:10000,toHz:16000,levelMin:0.18,levelMax:0.80},
     sub:{fromHz:0,toHz:120,levelMin:cfgNum(fxBassCoupledCfg,'subFloor',0.04),levelMax:cfgNum(fxBassCoupledCfg,'subCeil',0.45)}
   };
-  const analysisBand={
-    bass:getAnalysisBand('bass',analysisBandDefaults.bass),
-    mid:getAnalysisBand('mid',analysisBandDefaults.mid),
-    treble:getAnalysisBand('treble',analysisBandDefaults.treble),
-    sub:getAnalysisBand('sub',analysisBandDefaults.sub)
+  let analysisBand={};
+  const resolveAnalysisBands=function(){
+    analysisBand={
+      bass:getAnalysisBand('bass',analysisBandDefaults.bass),
+      mid:getAnalysisBand('mid',analysisBandDefaults.mid),
+      treble:getAnalysisBand('treble',analysisBandDefaults.treble),
+      sub:getAnalysisBand('sub',analysisBandDefaults.sub)
+    };
   };
+  resolveAnalysisBands();
   const normalizeSubLevel=function(rawLevel){
     return Math.max(0,Math.min(1,(rawLevel-analysisBand.sub.levelMin)/(analysisBand.sub.levelMax-analysisBand.sub.levelMin)));
   };
@@ -126,6 +130,13 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   }catch(error){}
   const wsQueue=[];
   window.addEventListener('doomsday:debug-config-change',function(event){
+    const updatedAnalysis=((event.detail||{}).audioAnalysis||{}).bands;
+    if(updatedAnalysis){
+      Object.keys(updatedAnalysis).forEach(function(name){
+        analysisBands[name]=updatedAnalysis[name];
+      });
+      resolveAnalysisBands();
+    }
     const sync=((event.detail||{}).triggers||{}).sync||{};
     const value=Number(sync.delayMs);
     if(Number.isFinite(value)&&value>=0){
@@ -703,24 +714,24 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       spectrumSum+=frequencyData[index];
       const amplitude=Math.pow(10,floatFrequencyData[index]/20);
       const frequency=index*binWidth;
-      if(frequency>=35&&frequency<180){
+      if(frequency>=analysisBand.bass.fromHz&&frequency<analysisBand.bass.toHz){
         bass+=value;
         bassEnergy+=amplitude*amplitude;
-        if(frequency<120) lowBass+=value;
-      }else if(frequency>=180&&frequency<2200){
+        if(frequency>=analysisBand.sub.fromHz&&frequency<analysisBand.sub.toHz) lowBass+=value;
+      }else if(frequency>=analysisBand.mid.fromHz&&frequency<analysisBand.mid.toHz){
         mid+=value;
         midEnergy+=value*value;
-      }else if(frequency>=10000){
+      }else if(frequency>=analysisBand.treble.fromHz&&frequency<analysisBand.treble.toHz){
         treble+=value;
       }
     }
-    const bassBandRms=Math.sqrt(bassEnergy/Math.max(1,Math.ceil(145/binWidth)));
+    const bassBandRms=Math.sqrt(bassEnergy/Math.max(1,Math.ceil((analysisBand.bass.toHz-analysisBand.bass.fromHz)/binWidth)));
     const bassDb=20*Math.log10(Math.max(0.00001,bassBandRms));
     const signal=window.doomsdayAudioSignal;
-    bass/=Math.max(1,Math.ceil(145/binWidth));
-    lowBass/=Math.max(1,Math.ceil(85/binWidth));
-    mid/=Math.max(1,Math.ceil(2020/binWidth));
-    treble/=Math.max(1,frequencyData.length-Math.ceil(10000/binWidth));
+    bass/=Math.max(1,Math.ceil((analysisBand.bass.toHz-analysisBand.bass.fromHz)/binWidth));
+    lowBass/=Math.max(1,Math.ceil((analysisBand.sub.toHz-analysisBand.sub.fromHz)/binWidth));
+    mid/=Math.max(1,Math.ceil((analysisBand.mid.toHz-analysisBand.mid.fromHz)/binWidth));
+    treble/=Math.max(1,Math.ceil((analysisBand.treble.toHz-analysisBand.treble.fromHz)/binWidth));
     const bassFloor=Math.max(0.18,mid*0.55);
     const directBass=Math.max(0,Math.min(1,(bass-bassFloor-0.04)/0.42));
     const rawLevel=Math.max(bass,mid,treble);

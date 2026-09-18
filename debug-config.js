@@ -4,6 +4,8 @@
   var storageKey = 'ddDebugFxConfig';
   var base = window.doomsdayFxConfig || { version: 1, triggers: {} };
   var trigger = base.triggers || (base.triggers = {});
+  var analysis = base.audioAnalysis || (base.audioAnalysis = {});
+  var analysisBands = analysis.bands || (analysis.bands = {});
   var defaults = {
     heavyBass: { enabled: true, on: 0.85, off: 0.76, glitchCooldownMs: 1200, glitchBursts: 3, glitchMs: 520, emissionScale: 0.12 },
     bassCoupled: { enabled: true, subFloor: 0.04, subCeil: 0.45, subGateOn: 0.08, subGateScale: 0.10, glitchOn: 0.85, minIntervalMs: 90, maxIntervalMs: 460, intensityExponent: 1.8 },
@@ -11,7 +13,13 @@
     glow: { enabled: true, midWeight: 0.6, trebleWeight: 0.8, floor: 0.10, range: 0.70, innerAlpha: 0.50, outerAlpha: 0.22, innerRadius: 15, outerRadius: 36 },
     glitch: { enabled: true, durationMs: 240, topOpacity: 0.78, bottomOpacity: 0.70, fragmentDurationMs: 260 },
     emission: { enabled: true, normalRadius: 0.06, normalRadiusScale: 0.16, normalForce: 520, glitchRadius: 0.22, glitchForce: 520 },
-    treble: { enabled: true, pipeCount: 12, pipeSpacing: 0.025, radius: 0.006, radiusScale: 0.008, force: 10, forceScale: 18, lift: 1, angleSpread: 0.55 }
+    treble: { enabled: true, pipeCount: 12, pipeSpacing: 0.025, radius: 0.003, radiusScale: 0.003, force: 10, forceScale: 18, lift: 1, angleSpread: 0.55 }
+  };
+  var analysisDefaults = {
+    sub: { fromHz: 0, toHz: 120, levelMin: 0.04, levelMax: 0.45 },
+    bass: { fromHz: 35, toHz: 160, levelMin: 0.18, levelMax: 0.80 },
+    mid: { fromHz: 160, toHz: 2200, levelMin: 0.18, levelMax: 0.80 },
+    treble: { fromHz: 10000, toHz: 16000, levelMin: 0.18, levelMax: 0.80 }
   };
   var fields = [
     ['heavyBass', 'enabled', 'Hardbass aktiv', false],
@@ -61,6 +69,11 @@
     ['treble', 'lift', 'Hoehen lift', 0, 2, 0.05],
     ['treble', 'angleSpread', 'Hoehen Winkelstreuung', 0, 1.2, 0.05]
   ];
+  Object.keys(analysisDefaults).forEach(function (bandName) {
+    ['fromHz', 'toHz', 'levelMin', 'levelMax'].forEach(function (key) {
+      fields.push(['audioAnalysis.bands.' + bandName, key, bandName.toUpperCase() + ' ' + key, 0, 24000, key.indexOf('level') === 0 ? 0.01 : 10]);
+    });
+  });
   var descriptions = {
     'heavyBass.on': 'Ab diesem Hardbass-Wert startet ein Kick-Glitch.',
     'heavyBass.off': 'Unter diesem Wert wird der nächste Hardbass-Glitch wieder freigegeben.',
@@ -106,6 +119,12 @@
         if (group[key] === undefined) group[key] = defaults[groupName][key];
       });
     });
+    Object.keys(analysisDefaults).forEach(function (bandName) {
+      var band = analysisBands[bandName] || (analysisBands[bandName] = {});
+      Object.keys(analysisDefaults[bandName]).forEach(function (key) {
+        if (band[key] === undefined) band[key] = analysisDefaults[bandName][key];
+      });
+    });
   }
 
   function applyStored() {
@@ -121,6 +140,14 @@
           if (typeof group[key] === 'number' || typeof group[key] === 'boolean') target[key] = group[key];
         });
       });
+      Object.keys(stored.audioAnalysis && stored.audioAnalysis.bands || {}).forEach(function (bandName) {
+        var storedBand = stored.audioAnalysis.bands[bandName];
+        if (!storedBand || typeof storedBand !== 'object') return;
+        var targetBand = analysisBands[bandName] || (analysisBands[bandName] = {});
+        Object.keys(storedBand).forEach(function (key) {
+          if (typeof storedBand[key] === 'number') targetBand[key] = storedBand[key];
+        });
+      });
     } catch (error) {
       console.warn('[debug-config] stored config ignored', error);
     }
@@ -128,7 +155,7 @@
 
   function save() {
     try {
-      localStorage.setItem(storageKey, JSON.stringify({ version: base.version || 1, triggers: trigger }));
+      localStorage.setItem(storageKey, JSON.stringify({ version: base.version || 1, triggers: trigger, audioAnalysis: { bands: analysisBands } }));
     } catch (error) {
       console.warn('[debug-config] could not save config', error);
     }
