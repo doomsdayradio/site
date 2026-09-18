@@ -204,6 +204,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let localKickCooldownUntil=0;
   let localKickSequence=0;
   let lastKickDebug=null;
+  let localAnalysisDebug={raw:0,normalized:0,bins:0,min:0,max:0};
   let lastKickSequence=null;
   const levelsUrl='wss://stream.doomsday.radio/levels';
   const baseSignalLevel=0.74;
@@ -253,6 +254,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       'audioctx  '+(audioContext?audioContext.state:'none')+' analyser:'+(analyser?'yes':'no')+' meyda:'+(meydaAnalyzer?'yes':'no'),
       'ws        '+(wsSocket?'connected':'-')+' '+levelsUrl,
       'signal    lvl:'+pct(s.level)+' bass:'+pct(s.bass)+' mid:'+pct(s.mid)+' treble:'+pct(s.treble)+' transient:'+pct(s.transient)+' onset:'+pct(s.bassOnset),
+      'sub       raw:'+localAnalysisDebug.raw.toFixed(3)+' norm:'+pct(localAnalysisDebug.normalized)+' bins:'+localAnalysisDebug.bins+' map:'+localAnalysisDebug.min.toFixed(2)+'..'+localAnalysisDebug.max.toFixed(2),
       'hardBass  '+pct(s.hardBass)+(s.hardBassConfirmed?' CONFIRMED':'')+' (on '+pct(hb.on)+')',
       'fx        bassFrames:'+(fx.hardBassFrames||0)+(fx.hardBassTriggered?' T':'')+' spikeFrames:'+(fx.trebleSpikeFrames||0)+(fx.trebleSpikeReady===false?' cool':'')+' glitch:'+(fx.glitchEmissionBursts||0)+' lastSpray:'+((fx.lastAudioSprayAge!=null?fx.lastAudioSprayAge+'ms':'-')),
       lastKickDebug?('kickdet  sub:'+lastKickDebug.sub.toFixed(2)+' fast:'+lastKickDebug.fast.toFixed(2)+' seq:'+lastKickDebug.seq+' strength:'+lastKickDebug.strength.toFixed(2)):'kickdet  -',
@@ -339,7 +341,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     analyser.fftSize=1024;
     analyser.minDecibels=-100;
     analyser.maxDecibels=0;
-    analyser.smoothingTimeConstant=0;
+    analyser.smoothingTimeConstant=0.55;
     frequencyData=new Uint8Array(analyser.frequencyBinCount);
     const source=audioContext.createMediaElementSource(audio);
     outputGain=audioContext.createGain();
@@ -680,7 +682,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       analyser.fftSize=1024;
       analyser.minDecibels=-100;
       analyser.maxDecibels=0;
-      analyser.smoothingTimeConstant=0;
+      analyser.smoothingTimeConstant=0.55;
       frequencyData=new Uint8Array(analyser.frequencyBinCount);
       captureStream=audio.captureStream?audio.captureStream():audio.mozCaptureStream();
       captureSource=audioContext.createMediaStreamSource(captureStream);
@@ -711,8 +713,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const signal=window.doomsdayAudioSignal;
     const bass=spectrumBandLevel(displaySpectrum,analysisBand.bass,binWidth);
     const sub=spectrumBandLevel(displaySpectrum,analysisBand.sub,binWidth);
+    const subRaw=spectrumBandRawLevel(displaySpectrum,analysisBand.sub,binWidth);
     const mid=spectrumBandLevel(displaySpectrum,analysisBand.mid,binWidth);
     const treble=spectrumBandLevel(displaySpectrum,analysisBand.treble,binWidth);
+    localAnalysisDebug={raw:subRaw,normalized:sub,bins:Math.max(0,Math.ceil(analysisBand.sub.toHz/binWidth)-Math.max(1,Math.floor(analysisBand.sub.fromHz/binWidth))),min:analysisBand.sub.levelMin,max:analysisBand.sub.levelMax};
     const rawLevel=Math.max(bass,mid,treble);
     let spectrumAvg=spectrumSum/frequencyData.length;
     const levelRise=Math.max(0,rawLevel-signal.level);
