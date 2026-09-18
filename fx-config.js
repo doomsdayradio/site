@@ -197,7 +197,7 @@ window.doomsdayFxConfig = {
       forceScale: 28,
       lift: 1,
       direction: 'down',
-      angleSpread: 0.55
+      angleSpread: 0.9
     },
 
     /* Bass shaping: ramps that translate the raw bass value into punch.

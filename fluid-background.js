@@ -416,12 +416,12 @@ if (host && !prefersReducedMotion) {
         const angleSpread = Math.min(Math.PI / 2, Math.max(0, fxNum(fxTreble, 'angleSpread', 0.55)));
         for (let pipeIndex = 0; pipeIndex < pipeCount; pipeIndex += 1) {
           const pipeOffset = (pipeIndex - (pipeCount - 1) * 0.5) * pipeSpacing;
-          const angle = direction * (Math.PI / 2 + (Math.random() * 2 - 1) * angleSpread);
+          const randomAngle = (Math.random() * 2 - 1) * angleSpread;
           fluid.splatAtLocation(
             pipeCenter + pipeOffset,
             sparkEmitters.y + (direction > 0 ? 2 : -2),
-            Math.cos(angle) * sparkForce,
-            -direction * Math.abs(Math.sin(angle) * sparkForce * fxNum(fxTreble, 'lift', 1))
+            Math.sin(randomAngle) * sparkForce,
+            -direction * Math.cos(randomAngle) * sparkForce * fxNum(fxTreble, 'lift', 1)
           );
         }
       }
