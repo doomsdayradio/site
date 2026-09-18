@@ -95,7 +95,7 @@ if (host && !prefersReducedMotion) {
       return {
         leftX: (rect.left + edgeInset) * pixelRatio,
         rightX: (rect.right - edgeInset) * pixelRatio,
-        y: rect.top + rect.height * verticalRatio
+        y: (rect.top + rect.height * verticalRatio) * pixelRatio
       };
     }
 

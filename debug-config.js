@@ -9,7 +9,7 @@
   var defaults = {
     heavyBass: { enabled: true, on: 0.85, off: 0.76, glitchCooldownMs: 1200, glitchBursts: 3, glitchMs: 520, emissionScale: 0.12 },
     softPulse: { enabled: true, transientOn: 0.14, intervalMs: 240, intervalMsLite: 360, burstIntervalMs: 125, burstIntervalMsLite: 170, levelFloor: 0.30 },
-    trebleSpike: { enabled: true, on: 0.28, off: 0.18, transientOn: 0.05, requireTransient: false, confirmFrames: 2, intervalMs: 140, intervalMsLite: 240, cooldownMs: 300 },
+    trebleSpike: { enabled: true, on: 0.16, off: 0.10, transientOn: 0.05, requireTransient: false, confirmFrames: 2, intervalMs: 140, intervalMsLite: 240, cooldownMs: 300 },
     bassCoupled: { enabled: true, subFloor: 0.04, subCeil: 0.45, subGateOn: 0.08, subGateScale: 0.10, kickSubMin: 0.34, kickRiseFloor: 0.01, kickRiseRange: 0.05, kickRiseOn: 0.35, kickRearm: 0.25, kickCooldownMs: 140, glitchOn: 0.85, minIntervalMs: 90, maxIntervalMs: 460, intensityExponent: 1.8 },
     sync: { delayMs: 5500 },
     glow: { enabled: true, midWeight: 0.6, trebleWeight: 0.8, floor: 0.10, range: 0.70, innerAlpha: 0.50, outerAlpha: 0.22, innerRadius: 15, outerRadius: 36 },

@@ -90,8 +90,8 @@ window.doomsdayFxConfig = {
      */
     trebleSpike: {
       enabled: true,
-      on: 0.28,
-      off: 0.18,
+      on: 0.16,
+      off: 0.10,
       transientOn: 0.05,
       requireTransient: false,
       confirmFrames: 2,
