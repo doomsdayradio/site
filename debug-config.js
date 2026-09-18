@@ -210,6 +210,11 @@
         band.levelMax = analysisDefaults[bandName].levelMax;
       }
     });
+    if (analysisBands.sub && analysisBands.sub.levelMin < 0.1 && analysisBands.sub.levelMax <= 0.5) {
+      analysisBands.sub.levelMin = analysisDefaults.sub.levelMin;
+      analysisBands.sub.levelMax = analysisDefaults.sub.levelMax;
+      save();
+    }
     if (analysisBands.treble && analysisBands.treble.fromHz === 10000 && analysisBands.treble.toHz === 16000) {
       analysisBands.treble.fromHz = 180;
       analysisBands.treble.toHz = 12000;
