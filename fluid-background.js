@@ -4,7 +4,7 @@ const host = document.getElementById('fluid-background');
 const logo = document.querySelector('.hero-logo');
 const logoStage = document.querySelector('.hero-logo-stage') || logo;
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const lowPerformanceMode = document.documentElement.classList.contains('fx-lite');
+let lowPerformanceMode = document.documentElement.classList.contains('fx-lite');
 const ambientPalette = ['#b9855f', '#c99a72', '#d6ae86', '#e0c09b'];
 const mousePalette = ['#b84f18', '#d97824', '#e9a13a', '#f0bd64', '#cf6930'];
 
@@ -51,9 +51,23 @@ function refreshEnabledFlags() {
 
 window.addEventListener('doomsday:debug-config-change', refreshEnabledFlags);
 
+window.addEventListener('doomsday:quality-change', function (event) {
+  lowPerformanceMode = (event.detail && typeof event.detail.lowPerformanceMode === 'boolean')
+    ? event.detail.lowPerformanceMode
+    : document.documentElement.classList.contains('fx-lite');
+  if (window.doomsdayFluidInstance && typeof window.doomsdayFluidInstance.setConfig === 'function') {
+    window.doomsdayFluidInstance.setConfig({
+      simResolution: lowPerformanceMode ? 48 : 80,
+      dyeResolution: lowPerformanceMode ? 192 : 384,
+      pressureIterations: lowPerformanceMode ? 8 : 12
+    });
+  }
+});
+
 if (host && !prefersReducedMotion) {
   try {
     const fluid = new WebGLFluidEnhanced(host);
+    window.doomsdayFluidInstance = fluid;
 
     // The library styles its container for standalone demos; restore our background layer.
     host.style.position = 'fixed';

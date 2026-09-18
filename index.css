@@ -381,7 +381,7 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
 .volume-control{
   display:grid;
   gap:8px;
-  padding:1rem;
+  padding:1rem 1rem 0.5rem;
 }
 .volume-control .sample-label{color:var(--ddd-color-signal,#ff9d2f);font:0.68rem/1 var(--ddd-font-mono,"Share Tech Mono",monospace);letter-spacing:0.16em}
 .volume-control .range-wrap{
@@ -396,6 +396,27 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   height:8px;
   accent-color:var(--ddd-color-signal,#ff9d2f);
   cursor:pointer;
+}
+
+.quality-control{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0.25rem 1rem 0.85rem;
+}
+.quality-control .hardware-toggle{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  color:var(--ddd-color-signal,#ff9d2f);
+  font:0.72rem/1 var(--ddd-font-mono,"Share Tech Mono",monospace);
+  letter-spacing:0.14em;
+  cursor:pointer;
+  user-select:none;
+}
+.quality-control .hardware-toggle input:focus-visible + i{
+  outline:2px solid #d1ff45;
+  outline-offset:2px;
 }
 
 @keyframes logo-float{

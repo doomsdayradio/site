@@ -2,11 +2,19 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
 const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
 const hardwareThreads = navigator.hardwareConcurrency || 8;
 const deviceMemory = navigator.deviceMemory || 8;
-const lowPerformanceMode = prefersReducedMotion
+const autoLowPerformance = prefersReducedMotion
   || coarsePointer
   || hardwareThreads <= 4
   || deviceMemory <= 4
   || window.innerWidth < 900;
+
+let lowPerformanceMode = autoLowPerformance;
+try {
+  const savedQuality = localStorage.getItem('ddLowQuality');
+  if (savedQuality !== null) {
+    lowPerformanceMode = savedQuality === 'true';
+  }
+} catch (error) {}
 
 document.documentElement.classList.toggle('fx-lite', lowPerformanceMode);
 document.documentElement.classList.toggle('reduced-motion', prefersReducedMotion);
@@ -871,6 +879,26 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     else audio.volume=muteDebugAudio?0:Number(volume.value);
   });
 
+  const qualityToggle=document.getElementById('quality-toggle');
+  if(qualityToggle){
+    qualityToggle.checked=document.documentElement.classList.contains('fx-lite');
+    qualityToggle.addEventListener('change',function(){
+      const isLite=qualityToggle.checked;
+      lowPerformanceMode=isLite;
+      document.documentElement.classList.toggle('fx-lite',isLite);
+      try{localStorage.setItem('ddLowQuality',String(isLite))}catch(error){}
+      window.dispatchEvent(new CustomEvent('doomsday:quality-change',{detail:{lowPerformanceMode:isLite}}));
+    });
+  }
+
+  window.addEventListener('doomsday:quality-change',function(event){
+    const isLite=Boolean(event.detail&&event.detail.lowPerformanceMode);
+    if(noiseLayer&&fxNoiseEnabled){
+      const baseline=isLite?0.028:0.02;
+      noiseLayer.style.opacity=baseline.toFixed(3);
+    }
+  });
+
   audio.addEventListener('playing',function(){
     hasStarted=true;
     isPlaying=true;
@@ -963,28 +991,42 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 /* floating dust particles */
 (function(){
   const c=document.getElementById('dust');
+  if(!c) return;
   const ctx=c.getContext('2d');
+  if(!ctx) return;
   let W,H;
   let rafId=0;
   let lastFrame=0;
-  const frameInterval=lowPerformanceMode ? 1000/18 : 1000/30;
-  const particleCount=lowPerformanceMode ? 36 : 72;
+  let isLite=document.documentElement.classList.contains('fx-lite');
+  let frameInterval=isLite ? 1000/18 : 1000/30;
+  let particleCount=isLite ? 36 : 72;
 
   function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
   resize();
   addEventListener('resize',resize);
 
   const particles=[];
-  for(let i=0;i<particleCount;i++){
-    particles.push({
-      x:Math.random()*innerWidth,
-      y:Math.random()*innerHeight,
-      r:Math.random()*1.8+0.3,
-      dx:(Math.random()-0.5)*(lowPerformanceMode ? 0.18 : 0.25),
-      dy:Math.random()*(lowPerformanceMode ? 0.11 : 0.15)+0.05,
-      o:Math.random()*0.35+0.05
-    });
+  function initParticles(){
+    particles.length=0;
+    for(let i=0;i<particleCount;i++){
+      particles.push({
+        x:Math.random()*innerWidth,
+        y:Math.random()*innerHeight,
+        r:Math.random()*1.8+0.3,
+        dx:(Math.random()-0.5)*(isLite ? 0.18 : 0.25),
+        dy:Math.random()*(isLite ? 0.11 : 0.15)+0.05,
+        o:Math.random()*0.35+0.05
+      });
+    }
   }
+  initParticles();
+
+  window.addEventListener('doomsday:quality-change',function(event){
+    isLite=Boolean(event.detail&&event.detail.lowPerformanceMode);
+    frameInterval=isLite ? 1000/18 : 1000/30;
+    particleCount=isLite ? 36 : 72;
+    initParticles();
+  });
 
   function draw(now){
     if(document.hidden){

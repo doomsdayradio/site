@@ -14,12 +14,18 @@
     const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
     const hardwareThreads = navigator.hardwareConcurrency || 8;
     const deviceMemory = navigator.deviceMemory || 8;
-    const lowPerformanceMode = prefersReducedMotion
+    let lowPerformanceMode = prefersReducedMotion
         || isMobile
         || coarsePointer
         || hardwareThreads <= 4
         || deviceMemory <= 4
         || window.innerWidth < 900;
+    try {
+        const saved = localStorage.getItem('ddLowQuality');
+        if (saved !== null) {
+            lowPerformanceMode = saved === 'true';
+        }
+    } catch (e) {}
     const quality = lowPerformanceMode
         ? {
             cols: isMobile ? 14 : 28,
