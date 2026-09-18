@@ -393,8 +393,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       const left=Number(spectrum[leftIndex])||0;
       const right=Number(spectrum[rightIndex])||0;
       const level=Math.max(0.06,Math.min(1,left+(right-left)*fraction));
-      bar.style.transform='scaleY('+level.toFixed(2)+')';
-      bar.style.opacity=String(0.5+level*0.5);
+      const boostedLevel=Math.max(0.14,Math.min(1,Math.pow(level,0.55)));
+      bar.style.transform='scaleY('+boostedLevel.toFixed(2)+')';
+      bar.style.opacity=String(0.5+boostedLevel*0.5);
     });
   }
 
