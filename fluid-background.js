@@ -28,6 +28,7 @@ const fxTrebleSpike = fxTriggers.trebleSpike || {};
 const fxNoise = fxTriggers.noise || {};
 const fxBassCoupled = fxTriggers.bassCoupled || {};
 const fxEmission = fxTriggers.emission || {};
+const fxMouse = fxTriggers.mouse || {};
 const fxTreble = fxTriggers.treble || {};
 const bassCoupledEnabled = fxBassCoupled.enabled !== false;
 const heavyBassEnabled = fxHeavyBass.enabled !== false;
@@ -135,13 +136,17 @@ if (host && !prefersReducedMotion) {
 
     function emitTapCloud(event) {
       const angle = Math.random() * Math.PI * 2;
-      const force = 18 + Math.random() * 8;
+      const force = fxNum(fxMouse, 'tapForceMin', 18)
+        + Math.random() * fxNum(fxMouse, 'tapForceRange', 8);
       const tapColor = mousePalette[Math.floor(Math.random() * mousePalette.length)];
 
+      if (fxMouse.enabled === false) return;
       fluid.setConfig({
         colorPalette: [tapColor],
-        brightness: 0.12,
-        splatRadius: lowPerformanceMode ? 0.045 : 0.06,
+        brightness: fxNum(fxMouse, 'tapBrightness', 0.12),
+        splatRadius: lowPerformanceMode
+          ? fxNum(fxMouse, 'tapRadiusLite', 0.045)
+          : fxNum(fxMouse, 'tapRadius', 0.06),
         splatForce: force
       });
       fluid.splatAtLocation(
@@ -371,7 +376,7 @@ if (host && !prefersReducedMotion) {
           );
         }
       }
-      if (pointerActive && pointerX !== null && pointerY !== null) {
+      if (fxMouse.enabled !== false && pointerActive && pointerX !== null && pointerY !== null) {
         if (sprayX === null || sprayY === null) {
           sprayX = pointerX;
           sprayY = pointerY;
@@ -393,14 +398,16 @@ if (host && !prefersReducedMotion) {
           if (movementDistance >= 0.5) {
             fluid.setConfig({
               colorPalette: [mouseColor(now)],
-              brightness: 0.12,
-              splatRadius: 0.035
+              brightness: fxNum(fxMouse, 'brightness', 0.12),
+              splatRadius: lowPerformanceMode
+                ? fxNum(fxMouse, 'radiusLite', 0.045)
+                : fxNum(fxMouse, 'radius', 0.035)
             });
             fluid.splatAtLocation(
               sprayX * (window.devicePixelRatio || 1),
               sprayY,
-              movementX * 0.25,
-              -movementY * 0.25
+              movementX * fxNum(fxMouse, 'forceScale', 0.25),
+              -movementY * fxNum(fxMouse, 'forceScale', 0.25)
             );
           }
         }

@@ -174,6 +174,18 @@ window.doomsdayFxConfig = {
       glitchRadius: 0.30,
       glitchForce: 820
     },
+    mouse: {
+      enabled: true,
+      brightness: 0.20,
+      radius: 0.08,
+      radiusLite: 0.06,
+      forceScale: 0.42,
+      tapBrightness: 0.18,
+      tapRadius: 0.08,
+      tapRadiusLite: 0.06,
+      tapForceMin: 18,
+      tapForceRange: 8
+    },
     treble: {
       enabled: true,
       pipeCount: 12,
