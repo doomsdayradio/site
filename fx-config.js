@@ -100,12 +100,9 @@ window.doomsdayFxConfig = {
       cooldownMs: 300
     },
 
-    /* Static noise overlay: opacity = treble x transient, scaled by
-     * maxOpacity. Screen-blended, so it reads as signal interference. */
+    /* Static noise overlay. Screen-blended, so it reads as signal interference. */
     noise: {
-      enabled: true,
-      maxOpacity: 0.16,
-      boost: 1.6
+      enabled: true
     },
 
     /* Stream sync: the browser hears the stream delayed by its audio buffer

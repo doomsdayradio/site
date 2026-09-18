@@ -137,8 +137,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   });
   const noiseLayer=document.querySelector('.noise');
   const noiseBaseline=fxNoiseEnabled?(document.documentElement.classList.contains('fx-lite')?0.028:0.02):0;
-  const noiseMaxOpacity=Number.isFinite(Number(fxNoiseCfg.maxOpacity))?Number(fxNoiseCfg.maxOpacity):0.16;
-  const noiseBoost=Number.isFinite(Number(fxNoiseCfg.boost))?Number(fxNoiseCfg.boost):1.6;
   let audioContext=null;
   let analyser=null;
   let frequencyData=null;
@@ -229,7 +227,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       'hardBass  '+pct(s.hardBass)+(s.hardBassConfirmed?' CONFIRMED':'')+' (on '+pct(hb.on)+')',
       'fx        bassFrames:'+(fx.hardBassFrames||0)+(fx.hardBassTriggered?' T':'')+' spikeFrames:'+(fx.trebleSpikeFrames||0)+(fx.trebleSpikeReady===false?' cool':'')+' glitch:'+(fx.glitchEmissionBursts||0)+' lastSpray:'+((fx.lastAudioSprayAge!=null?fx.lastAudioSprayAge+'ms':'-')),
       lastKickDebug?('kickdet  sub:'+lastKickDebug.sub.toFixed(2)+' fast:'+lastKickDebug.fast.toFixed(2)+' seq:'+lastKickDebug.seq+' strength:'+lastKickDebug.strength.toFixed(2)):'kickdet  -',
-      'thresh    heavyBass:'+pct(hb.on)+'/'+pct(hb.off)+' highLevel:'+pct(hl.on)+' spike:'+pct(ts.on)+' +transient:'+pct(ts.transientOn)+' noiseMax:'+(nz.maxOpacity!=null?nz.maxOpacity:'-')+' delay:'+(wsDelayMs/1000)+'s',
+      'thresh    heavyBass:'+pct(hb.on)+'/'+pct(hb.off)+' highLevel:'+pct(hl.on)+' spike:'+pct(ts.on)+' +transient:'+pct(ts.transientOn)+' noise:'+(nz.enabled===false?'off':'on')+' delay:'+(wsDelayMs/1000)+'s',
     ];
     if(vizDebugLines.length) lines.push('-- log --', vizDebugLines.join('\n'));
     if(debugHistory.length>4) lines.push(

@@ -10,7 +10,7 @@
     heavyBass: { enabled: true, on: 0.85, off: 0.76, confirmFrames: 3, glitchCooldownMs: 1200, glitchBursts: 3, glitchMs: 520, emissionScale: 0.12 },
     highLevel: { enabled: true, on: 0.88 },
     softPulse: { enabled: true, transientOn: 0.14, intervalMs: 240, intervalMsLite: 360, burstIntervalMs: 125, burstIntervalMsLite: 170, levelFloor: 0.30 },
-    noise: { enabled: true, maxOpacity: 0.16, boost: 1.6 },
+    noise: { enabled: true },
     trebleSpike: { enabled: true, on: 0.16, off: 0.10, transientOn: 0.05, requireTransient: false, confirmFrames: 2, intervalMs: 140, intervalMsLite: 240, cooldownMs: 300 },
     bassCoupled: { enabled: true, subFloor: 0.04, subCeil: 0.45, subGateOn: 0.08, subGateScale: 0.10, kickSubMin: 0.34, kickRiseFloor: 0.01, kickRiseRange: 0.05, kickRiseOn: 0.35, kickRearm: 0.25, kickCooldownMs: 140, glitchOn: 0.85, minIntervalMs: 90, maxIntervalMs: 460, intensityExponent: 1.8 },
     sync: { delayMs: 5500 },
@@ -45,10 +45,8 @@
     ['softPulse', 'levelFloor', 'Attack level floor', 0, 1, 0.01],
     ['softPulse', 'intervalMs', 'Attack interval ms', 20, 2000, 10],
     ['softPulse', 'intervalMsLite', 'Attack interval lite ms', 20, 2000, 10],
-    ['softPulse', 'burstIntervalMs', 'Burst interval ms', 20, 2000, 10],
-    ['softPulse', 'burstIntervalMsLite', 'Burst interval lite ms', 20, 2000, 10],
-    ['noise', 'maxOpacity', 'Noise max strength', 0, 1, 0.01],
-    ['noise', 'boost', 'Noise boost', 0, 4, 0.05],
+    ['softPulse', 'burstIntervalMs', 'Kick-Burst Abstand ms', 20, 2000, 10],
+    ['softPulse', 'burstIntervalMsLite', 'Kick-Burst Abstand lite ms', 20, 2000, 10],
     ['section', 'Höhen-Splats'],
     ['trebleSpike', 'on', 'Höhen an', 0, 1, 0.01],
     ['trebleSpike', 'off', 'Höhen aus', 0, 1, 0.01],
@@ -59,10 +57,10 @@
     ['trebleSpike', 'intervalMsLite', 'Höhen interval lite ms', 20, 2000, 10],
     ['trebleSpike', 'cooldownMs', 'Höhen cooldown ms', 0, 5000, 50],
     ['section', 'Sub & Kick'],
-    ['bassCoupled', 'subFloor', 'Sub floor', 0, 1, 0.01],
+    ['bassCoupled', 'subFloor', 'Sub-Aktivität ab', 0, 1, 0.01],
     ['bassCoupled', 'subCeil', 'Sub ceiling', 0, 1, 0.01],
-    ['bassCoupled', 'subGateOn', 'Gate an', 0, 1, 0.01],
-    ['bassCoupled', 'subGateScale', 'Gate range', 0.01, 1, 0.01],
+    ['bassCoupled', 'subGateOn', 'Sub-Gate Start', 0, 1, 0.01],
+    ['bassCoupled', 'subGateScale', 'Sub-Gate Übergang', 0.01, 1, 0.01],
     ['bassCoupled', 'kickSubMin', 'Kick Sub minimum', 0, 1, 0.01],
     ['bassCoupled', 'kickRiseFloor', 'Kick rise floor', 0, 1, 0.01],
     ['bassCoupled', 'kickRiseRange', 'Kick rise range', 0.001, 1, 0.01],
@@ -125,7 +123,10 @@
     'heavyBass.on': 'Ab diesem Hardbass-Wert startet ein Kick-Glitch.',
     'heavyBass.off': 'Unter diesem Wert wird der nächste Hardbass-Glitch wieder freigegeben.',
     'softPulse.transientOn': 'Mindeststärke eines kurzen Signals für einen normalen Attack-Splat.',
-    'softPulse.levelFloor': 'Unter diesem Gesamtpegel werden Attack-Splats abgeschwächt.',
+    'softPulse.levelFloor': 'Unter diesem Gesamtpegel werden normale Attack-Splats abgeschwächt.',
+    'softPulse.burstIntervalMs': 'Abstand zwischen starken Fluid-Splats während eines Kick-Bursts.',
+    'softPulse.burstIntervalMsLite': 'Wie oben, wenn der reduzierte Fluid-Modus aktiv ist.',
+    'noise.enabled': 'Schaltet das statische Vollflächen-Störsignal im Hintergrund ein oder aus.',
     'trebleSpike.on': 'Mindeststärke der Höhen, damit eine Höhenphase aktiv wird.',
     'trebleSpike.off': 'Unter diesem Höhenwert wird die nächste Höhenphase wieder freigegeben.',
     'trebleSpike.transientOn': 'Mindeststärke des Attack-Signals für Höhen-Pipes.',
@@ -133,10 +134,10 @@
     'trebleSpike.confirmFrames': 'Anzahl aufeinanderfolgender Frames vor einer Höhen-Attacke.',
     'trebleSpike.intervalMs': 'Mindestabstand zwischen einzelnen Höhen-Splats.',
     'trebleSpike.cooldownMs': 'Sperrzeit nach einer abgeschlossenen Höhenphase.',
-    'bassCoupled.subFloor': 'Sub-Pegel ohne Emission.',
+    'bassCoupled.subFloor': 'Harte Untergrenze: Unter diesem Sub-Pegel bleibt die normale Sub-Emission aus.',
     'bassCoupled.subCeil': 'Sub-Pegel, bei dem die normale Emission maximal wird.',
-    'bassCoupled.subGateOn': 'Absolute Sub-Schwelle, ab der Emissionen einsetzen.',
-    'bassCoupled.subGateScale': 'Breite des weichen Übergangs vom Gate zur vollen Sub-Wirkung.',
+    'bassCoupled.subGateOn': 'Weicher Startpunkt innerhalb der Sub-Kurve. Darunter wird die Emission zusätzlich abgeschwächt.',
+    'bassCoupled.subGateScale': 'Breite des weichen Übergangs vom Sub-Gate bis zur vollen Gate-Wirkung.',
     'bassCoupled.kickSubMin': 'Minimaler normalisierter Sub-Pegel für einen Kick.',
     'bassCoupled.kickRiseFloor': 'Anstiegsanteil, der vor der Kick-Berechnung ignoriert wird.',
     'bassCoupled.kickRiseRange': 'Anstiegsbereich bis zur maximalen Kick-Stärke.',
@@ -202,6 +203,7 @@
 
   function applyStored() {
     copyDefaults();
+    var removedLegacyNoiseSettings = false;
     try {
       var stored = JSON.parse(localStorage.getItem(storageKey) || 'null');
       if (!stored || !stored.triggers) return;
@@ -225,6 +227,17 @@
     } catch (error) {
       console.warn('[debug-config] stored config ignored', error);
     }
+    if (trigger.noise) {
+      if (Object.prototype.hasOwnProperty.call(trigger.noise, 'maxOpacity')) {
+        delete trigger.noise.maxOpacity;
+        removedLegacyNoiseSettings = true;
+      }
+      if (Object.prototype.hasOwnProperty.call(trigger.noise, 'boost')) {
+        delete trigger.noise.boost;
+        removedLegacyNoiseSettings = true;
+      }
+    }
+    if (removedLegacyNoiseSettings) save();
     Object.keys(analysisDefaults).forEach(function (bandName) {
       var band = analysisBands[bandName];
       if (!band) return;
