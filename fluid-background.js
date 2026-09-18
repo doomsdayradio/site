@@ -345,22 +345,23 @@ if (host && !prefersReducedMotion) {
         fluid.setConfig({
           colorPalette: [sparkColor],
           brightness: 0.28,
-          splatRadius: fxNum(fxTreble, 'radius', 0.018) + treble * fxNum(fxTreble, 'radiusScale', 0.02),
-          splatForce: fxNum(fxTreble, 'force', 22) + treble * fxNum(fxTreble, 'forceScale', 34)
+          splatRadius: fxNum(fxTreble, 'radius', 0.006) + treble * fxNum(fxTreble, 'radiusScale', 0.008),
+          splatForce: fxNum(fxTreble, 'force', 10) + treble * fxNum(fxTreble, 'forceScale', 18)
         });
         const sparkEmitters = logoEmitters(0.06 + Math.sin(now * 0.004) * 0.04);
-        const pipeCount = Math.max(1, Math.round(fxNum(fxTreble, 'pipeCount', 3)));
-        const pipeSpacing = fxNum(fxTreble, 'pipeSpacing', 0.04) * (sparkEmitters.rightX - sparkEmitters.leftX);
+        const pipeCount = Math.max(1, Math.round(fxNum(fxTreble, 'pipeCount', 12)));
+        const pipeSpacing = fxNum(fxTreble, 'pipeSpacing', 0.025) * (sparkEmitters.rightX - sparkEmitters.leftX);
         const pipeCenter = (sparkEmitters.leftX + sparkEmitters.rightX) * 0.5;
-        const sparkForce = fxNum(fxTreble, 'force', 22) + treble * fxNum(fxTreble, 'forceScale', 34) + transient * 18;
+        const sparkForce = fxNum(fxTreble, 'force', 10) + treble * fxNum(fxTreble, 'forceScale', 18) + transient * 10;
+        const angleSpread = fxNum(fxTreble, 'angleSpread', 0.55);
         for(let pipeIndex=0;pipeIndex<pipeCount;pipeIndex++){
           const pipeOffset=(pipeIndex-(pipeCount-1)*0.5)*pipeSpacing;
-          const pipeDirection=pipeIndex%2===0?-1:1;
+          const angle=Math.PI/2+(Math.random()*2-1)*angleSpread;
           fluid.splatAtLocation(
             pipeCenter+pipeOffset,
             sparkEmitters.y,
-            pipeDirection*sparkForce*0.12,
-            -sparkForce*fxNum(fxTreble, 'lift', 1)
+            Math.cos(angle)*sparkForce*0.35,
+            Math.sin(angle)*sparkForce*fxNum(fxTreble, 'lift', 1)
           );
         }
       }

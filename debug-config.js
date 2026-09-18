@@ -11,7 +11,7 @@
     glow: { enabled: true, midWeight: 0.6, trebleWeight: 0.8, floor: 0.10, range: 0.70, innerAlpha: 0.50, outerAlpha: 0.22, innerRadius: 15, outerRadius: 36 },
     glitch: { enabled: true, durationMs: 240, topOpacity: 0.78, bottomOpacity: 0.70, fragmentDurationMs: 260 },
     emission: { enabled: true, normalRadius: 0.06, normalRadiusScale: 0.16, normalForce: 520, glitchRadius: 0.22, glitchForce: 520 },
-    treble: { enabled: true, pipeCount: 3, pipeSpacing: 0.04, radius: 0.018, radiusScale: 0.02, force: 22, forceScale: 34, lift: 1 }
+    treble: { enabled: true, pipeCount: 12, pipeSpacing: 0.025, radius: 0.006, radiusScale: 0.008, force: 10, forceScale: 18, lift: 1, angleSpread: 0.55 }
   };
   var fields = [
     ['heavyBass', 'enabled', 'Hardbass aktiv', false],
@@ -58,7 +58,8 @@
     ['treble', 'radiusScale', 'Hoehen size scale', 0, 0.2, 0.005],
     ['treble', 'force', 'Hoehen force', 0, 200, 1],
     ['treble', 'forceScale', 'Hoehen force scale', 0, 200, 1],
-    ['treble', 'lift', 'Hoehen lift', 0, 2, 0.05]
+    ['treble', 'lift', 'Hoehen lift', 0, 2, 0.05],
+    ['treble', 'angleSpread', 'Hoehen Winkelstreuung', 0, 1.2, 0.05]
   ];
   var descriptions = {
     'heavyBass.on': 'Ab diesem Hardbass-Wert startet ein Kick-Glitch.',

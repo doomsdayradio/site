@@ -171,13 +171,14 @@ window.doomsdayFxConfig = {
     },
     treble: {
       enabled: true,
-      pipeCount: 3,
-      pipeSpacing: 0.04,
-      radius: 0.018,
-      radiusScale: 0.02,
-      force: 22,
-      forceScale: 34,
-      lift: 1
+      pipeCount: 12,
+      pipeSpacing: 0.025,
+      radius: 0.006,
+      radiusScale: 0.008,
+      force: 10,
+      forceScale: 18,
+      lift: 1,
+      angleSpread: 0.55
     },
 
     /* Bass shaping: ramps that translate the raw bass value into punch.
