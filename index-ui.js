@@ -207,14 +207,14 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const baseSignalLevel=0.74;
   const urlParams=new URLSearchParams(location.search);
   const isDebugPage=/\/(?:ios-)?debug\.html$/.test(location.pathname);
-  const forceServerLevelsDebug=false;
+  const forceServerLevelsDebug=isDebugPage;
   if(isDebugPage) wsDelayMs=0;
     /* Debug pages are intentionally usable from localhost as well. The normal
       page starts with the local analyser; only ios-debug.html forces levels. */
     const canAnalyzeAudio=location.hostname==='doomsday.radio'||isDebugPage;
   const isAppleMobile=/iP(?:hone|ad|od)/.test(navigator.userAgent)
     || (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  const useServerLevelsFallback=!isDebugPage&&isAppleMobile&&/AppleWebKit/.test(navigator.userAgent);
+  const useServerLevelsFallback=isDebugPage||(isAppleMobile&&/AppleWebKit/.test(navigator.userAgent));
   /* ?debug shows the full player debug panel; ?viz-debug stays supported and
      behaves like ?debug (log lines included). */
     const debugMode=isDebugPage||urlParams.has('debug')||urlParams.has('viz-debug');
@@ -510,7 +510,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   },80);
 
   function applyLevelsPayload(payload){
-    if(audio.paused || !isPlaying) return;
+    if((audio.paused && !isDebugPage) || !isPlaying) return;
     const bands=payload.bands;
     /* Levels arrive as integers 0..1000 (milli-units) because liquidsoap
        cannot reliably format decimal floats into JSON. */
@@ -936,10 +936,15 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       await audio.play();
       if(analyser && !visualizerFrame) visualizerFrame=requestAnimationFrame(drawEqualizer);
     }catch(error){
-      isPlaying=false;
-      stopFallbackSignal();
-      status.textContent='SIGNAL NICHT ERREICHBAR';
-      setActive(false);
+      if(isDebugPage&&wsSocket){
+        status.textContent='SERVER-LEVELS AKTIV';
+        setActive(true);
+      }else{
+        isPlaying=false;
+        stopFallbackSignal();
+        status.textContent='SIGNAL NICHT ERREICHBAR';
+        setActive(false);
+      }
     }finally{
       toggle.disabled=false;
     }
@@ -968,6 +973,13 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   });
 
   audio.addEventListener('pause',function(){
+    if(isDebugPage&&wsSocket){
+      isPlaying=true;
+      window.doomsdayAudioSignal.playing=true;
+      setActive(true);
+      status.textContent='SERVER-LEVELS AKTIV';
+      return;
+    }
     isPlaying=false;
     stopFallbackSignal();
     if(noiseLayer) noiseLayer.style.opacity=String(noiseBaseline);
@@ -979,6 +991,13 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   audio.addEventListener('waiting',function(){status.textContent='PUFFERE SIGNAL...'});
   audio.addEventListener('error',function(){
+    if(isDebugPage&&wsSocket){
+      isPlaying=true;
+      window.doomsdayAudioSignal.playing=true;
+      setActive(true);
+      status.textContent='SERVER-LEVELS AKTIV';
+      return;
+    }
     window.doomsdayAudioSignal.playing=false;
     setActive(false);
     status.textContent='SIGNAL NICHT ERREICHBAR';
