@@ -134,13 +134,13 @@ if (host && !prefersReducedMotion) {
 
     function emitTapCloud(event) {
       const angle = Math.random() * Math.PI * 2;
-      const force = 58 + Math.random() * 24;
+      const force = 18 + Math.random() * 8;
       const tapColor = mousePalette[Math.floor(Math.random() * mousePalette.length)];
 
       fluid.setConfig({
         colorPalette: [tapColor],
-        brightness: 0.28,
-        splatRadius: lowPerformanceMode ? 0.16 : 0.22,
+        brightness: 0.12,
+        splatRadius: lowPerformanceMode ? 0.045 : 0.06,
         splatForce: force
       });
       fluid.splatAtLocation(
@@ -389,14 +389,14 @@ if (host && !prefersReducedMotion) {
           if (movementDistance >= 0.5) {
             fluid.setConfig({
               colorPalette: [mouseColor(now)],
-              brightness: 0.28,
-              splatRadius: 0.12
+              brightness: 0.12,
+              splatRadius: 0.035
             });
             fluid.splatAtLocation(
               sprayX * (window.devicePixelRatio || 1),
               sprayY,
-              movementX * 0.55,
-              -movementY * 0.55
+              movementX * 0.25,
+              -movementY * 0.25
             );
           }
         }
