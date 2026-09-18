@@ -337,7 +337,8 @@ if (host && !prefersReducedMotion) {
       const trebleSpikeOn = fxNum(fxTrebleSpike, 'on', 0.45);
       const trebleSpikeOff = fxNum(fxTrebleSpike, 'off', 0.32);
       const trebleSpikeTransientOn = fxNum(fxTrebleSpike, 'transientOn', 0.15);
-      if (trebleEnabled && isPlaying && treble >= trebleSpikeOn && transient >= trebleSpikeTransientOn) {
+      if (trebleEnabled && isPlaying && treble >= trebleSpikeOn
+        && (transient >= trebleSpikeTransientOn || trebleSpikeFrames > 0)) {
         trebleSpikeFrames += 1;
       } else if (treble < trebleSpikeOff) {
         if (trebleSpikeFrames > 0) lastTrebleSpikeEnd = now;
