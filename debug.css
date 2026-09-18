@@ -22,7 +22,7 @@
 .audio-spectrum-band b { display: block; color: #f5efe4 !important; font-weight: 400; }
 .audio-spectrum-band small { display: block; overflow: hidden; color: #c4cec7 !important; font-size: 9px; white-space: nowrap; text-overflow: ellipsis; }
 .audio-spectrum-band i { display: block; height: 8px; overflow: hidden; background: rgba(245, 239, 228, .12); border: 1px solid rgba(245, 239, 228, .2); }
-.audio-spectrum-band em { display: block; width: 0; height: 100%; background: #ff9d2f; box-shadow: 0 0 10px rgba(255, 157, 47, .8); transition: width 70ms linear; }
+.audio-spectrum-band em { display: block; width: 0; height: 100%; background: #ff9d2f; box-shadow: 0 0 10px rgba(255, 157, 47, .8); }
 .audio-spectrum-band[data-spectrum-band="mid"] em { background: #ffd166; }
 .audio-spectrum-band[data-spectrum-band="treble"] em { background: #83ffab; box-shadow: 0 0 10px rgba(131, 255, 171, .8); }
 .audio-spectrum-band[data-spectrum-band="transient"] em { background: #f5efe4; }

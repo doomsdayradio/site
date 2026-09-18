@@ -336,7 +336,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     analyser.fftSize=1024;
     analyser.minDecibels=-100;
     analyser.maxDecibels=0;
-    analyser.smoothingTimeConstant=0.55;
+    analyser.smoothingTimeConstant=0;
     frequencyData=new Uint8Array(analyser.frequencyBinCount);
     floatFrequencyData=new Float32Array(analyser.frequencyBinCount);
     const source=audioContext.createMediaElementSource(audio);
@@ -373,12 +373,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     };
     Object.keys(spectrumBands).forEach(function(name){
       const value=Math.max(0,Math.min(1,values[name]));
-      const previous=Number(spectrumBands[name].fill.dataset.value||0);
-      const smoothing=name==='transient'?0.08:0.045;
-      const next=previous+(value-previous)*smoothing;
-      spectrumBands[name].fill.dataset.value=String(next);
-      spectrumBands[name].fill.style.width=Math.round(next*100)+'%';
-      spectrumBands[name].readout.value=Math.round(next*100).toString().padStart(2,'0')+'%';
+      spectrumBands[name].fill.dataset.value=String(value);
+      spectrumBands[name].fill.style.width=Math.round(value*100)+'%';
+      spectrumBands[name].readout.value=Math.round(value*100).toString().padStart(2,'0')+'%';
     });
     const width=spectrumChart.width;
     const height=spectrumChart.height;
@@ -692,7 +689,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       analyser.fftSize=1024;
       analyser.minDecibels=-100;
       analyser.maxDecibels=0;
-      analyser.smoothingTimeConstant=0.55;
+      analyser.smoothingTimeConstant=0;
       frequencyData=new Uint8Array(analyser.frequencyBinCount);
       floatFrequencyData=new Float32Array(analyser.frequencyBinCount);
       captureStream=audio.captureStream?audio.captureStream():audio.mozCaptureStream();
@@ -803,14 +800,13 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       lastKickDebug={sub:localSub,fast:localSubFast,seq:localKickSequence,strength:signal.bassOnset};
     }
     signal.playing=true;
-    if(!meydaAnalyzer){
-      updateSpectrumDisplay({
-        bass:signal.bass,
-        mid:signal.mid,
-        treble:signal.treble,
-        transient:signal.transient
-      },displaySpectrum);
-    }
+    updateSpectrumDisplay({
+      bass:signal.bass,
+      mid:signal.mid,
+      treble:signal.treble,
+      transient:signal.transient,
+      bassOnset:signal.bassOnset
+    },displaySpectrum);
     /* Silence watchdog: some mobile browsers feed the analyser only zeros
        (or sub-audible dither) while the time-domain level still moves.
        Treat the spectrum as silent when its average bin value stays near
