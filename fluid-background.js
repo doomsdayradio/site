@@ -397,8 +397,8 @@ if (host && !prefersReducedMotion) {
         lastTrebleSpray = now;
         trebleSpikeReady = false;
         const sparkColor = trebleSparkPalette[Math.floor(Math.random() * trebleSparkPalette.length)];
-        const pipeRadius = Math.min(0.5,
-          fxNum(fxTreble, 'radius', 0.0531) + treble * fxNum(fxTreble, 'radiusScale', 0.1961));
+        const pipeRadius = Math.min(0.008,
+          fxNum(fxTreble, 'radius', 0.0018) + treble * fxNum(fxTreble, 'radiusScale', 0.001));
         fluid.setConfig({
           colorPalette: [sparkColor],
           brightness: 0.72,

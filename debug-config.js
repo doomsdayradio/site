@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var storageKey = 'ddDebugFxConfigV6';
+  var storageKey = 'ddDebugFxConfigV7';
   var base = window.doomsdayFxConfig || { version: 1, triggers: {} };
   var trigger = base.triggers || (base.triggers = {});
   var analysis = base.audioAnalysis || (base.audioAnalysis = {});
@@ -18,7 +18,7 @@
     glitch: { enabled: true, durationMs: 170, topOpacity: 0.78, bottomOpacity: 0.7, fragmentDurationMs: 260 },
     emission: { enabled: true, normalRadius: 0.01, normalRadiusScale: 0.4, normalForce: 400, glitchRadius: 0.19, glitchForce: 950 },
     mouse: { enabled: true, brightness: 0.11, radius: 0.1, radiusLite: 0.06, forceScale: 0.42, tapBrightness: 0.69, tapRadius: 0.16, tapRadiusLite: 0.06, tapForceMin: 26, tapForceRange: 85 },
-    treble: { enabled: true, pipeCount: 1, pipeSpacing: 0, radius: 0.0531, radiusScale: 0.1961, force: 9, forceScale: 105, lift: 1, direction: 'down', angleSpread: 1.2 },
+    treble: { enabled: true, pipeCount: 1, pipeSpacing: 0, radius: 0.0018, radiusScale: 0.001, force: 9, forceScale: 105, lift: 1, direction: 'down', angleSpread: 1.2 },
     bass: { softFloor: 0.25, hardFloor: 0.38 },
     colors: { bassWeight: 1.5, midWeight: 1.2, trebleWeight: 0.9 }
   };
@@ -107,8 +107,8 @@
     ['section', 'Höhen-Geometrie'],
     ['treble', 'pipeCount', 'Hoehen pipe count', 1, 8, 1],
     ['treble', 'pipeSpacing', 'Hoehen pipe spacing', 0, 0.2, 0.01],
-    ['treble', 'radius', 'Hoehen pipe size', 0.0001, 0.2, 0.0005],
-    ['treble', 'radiusScale', 'Hoehen size scale', 0.0001, 0.2, 0.0005],
+    ['treble', 'radius', 'Hoehen pipe size', 0.0001, 0.02, 0.0002],
+    ['treble', 'radiusScale', 'Hoehen size scale', 0.0001, 0.02, 0.0002],
     ['treble', 'force', 'Hoehen force', 0, 200, 1],
     ['treble', 'forceScale', 'Hoehen force scale', 0, 200, 1],
     ['treble', 'direction', 'Hoehen Richtung', 'up', 'down'],
