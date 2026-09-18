@@ -142,7 +142,8 @@ window.doomsdayFxConfig = {
       glitchOn: 0.85,
       minIntervalMs: 35,
       maxIntervalMs: 180,
-      intensityExponent: 1.8
+      intensityExponent: 1.8,
+      subRadiusScale: 0.30
     },
 
     /* Logo glow and bass glitch presentation. */

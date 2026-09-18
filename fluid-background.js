@@ -304,7 +304,7 @@ if (host && !prefersReducedMotion) {
           const cloudColor = soundWaveColor(now, bass, mid, treble, emissionPunch);
           const kickEmission = hasLocalKick || bcActivityRise >= bcRiseOn || glitchBurstActive;
           const normalRadius = Math.max(0.006, fxNum(fxEmission, 'normalRadius', 0.06));
-          const normalRadiusScale = Math.max(0.025, fxNum(fxEmission, 'normalRadiusScale', 0.16));
+          const normalRadiusScale = Math.max(0, fxNum(fxBassCoupled, 'subRadiusScale', 0.30));
           const normalForce = fxNum(fxEmission, 'normalForce', 520);
           const kickRadius = Math.min(0.16, Math.max(0.025, fxNum(fxEmission, 'glitchRadius', 0.22) * 0.5));
           fluid.setConfig({
