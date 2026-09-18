@@ -282,15 +282,20 @@ if (host && !prefersReducedMotion) {
         if (isPlaying && (bcAttack || glitchBurstActive) && now - lastAudioSpray > emitInterval) {
           lastAudioSpray = now;
           const cloudColor = soundWaveColor(now, bass, mid, treble, emissionPunch);
+          const kickEmission = hasLocalKick || bcActivityRise >= bcRiseOn || glitchBurstActive;
+          const normalRadius = Math.max(0.006, fxNum(fxEmission, 'normalRadius', 0.06));
+          const normalRadiusScale = Math.max(0.025, fxNum(fxEmission, 'normalRadiusScale', 0.16));
+          const normalForce = fxNum(fxEmission, 'normalForce', 520);
+          const kickRadius = Math.min(0.16, Math.max(0.025, fxNum(fxEmission, 'glitchRadius', 0.22) * 0.5));
           fluid.setConfig({
             colorPalette: [cloudColor],
             brightness: 0.28,
-            splatRadius: Math.min(0.5, fxNum(fxEmission, 'normalRadius', 0.06) * (0.35 + emissionPunch * 0.65)
-              + emissionPunch * fxNum(fxEmission, 'normalRadiusScale', 0.16)
-              + (glitchBurstActive ? fxNum(fxEmission, 'glitchRadius', 0.22) * 0.35 : 0)),
-            splatForce: glitchBurstActive
-              ? fxNum(fxEmission, 'normalForce', 520) * (0.35 + fxNum(fxEmission, 'glitchForce', 520) / 520 * 0.65)
-              : fxNum(fxEmission, 'normalForce', 520) * (0.18 + emissionPunch * 0.82)
+            splatRadius: kickEmission
+              ? kickRadius
+              : Math.min(0.08, normalRadius + punch * normalRadiusScale),
+            splatForce: kickEmission
+              ? fxNum(fxEmission, 'glitchForce', 520)
+              : normalForce * (0.12 + punch * 0.48)
           });
           const emitters = logoEmitters(0.44 + Math.sin(now * 0.002) * 0.06);
           const emitY = emitters.y + Math.cos(now * 0.003) * 4;
@@ -364,7 +369,9 @@ if (host && !prefersReducedMotion) {
       const trebleSpikeInterval = lowPerformanceMode
         ? fxNum(fxTrebleSpike, 'intervalMsLite', 240)
         : fxNum(fxTrebleSpike, 'intervalMs', 160);
-      if (trebleEnabled && isPlaying && trebleSpikeReady
+      const trebleSpikeCooldown = fxNum(fxTrebleSpike, 'cooldownMs', 500);
+      if (trebleEnabled && isPlaying
+        && (trebleSpikeReady || (!trebleSpikeRequiresTransient && now - lastTrebleSpray > trebleSpikeCooldown))
         && trebleSpikeFrames >= fxNum(fxTrebleSpike, 'confirmFrames', 2)
         && now - lastTrebleSpray > trebleSpikeInterval) {
         lastTrebleSpray = now;
