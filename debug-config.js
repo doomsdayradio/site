@@ -1,23 +1,26 @@
 (function () {
   'use strict';
 
-  var storageKey = 'ddDebugFxConfigV5';
+  var storageKey = 'ddDebugFxConfigV6';
   var base = window.doomsdayFxConfig || { version: 1, triggers: {} };
   var trigger = base.triggers || (base.triggers = {});
   var analysis = base.audioAnalysis || (base.audioAnalysis = {});
   var analysisBands = analysis.bands || (analysis.bands = {});
   var defaults = {
-    heavyBass: { enabled: true, on: 0.85, off: 0.76, confirmFrames: 3, glitchCooldownMs: 1200, glitchBursts: 3, glitchMs: 520, emissionScale: 0.12 },
-    highLevel: { enabled: true, on: 0.88 },
-    softPulse: { enabled: true, transientOn: 0.14, intervalMs: 240, intervalMsLite: 360, burstIntervalMs: 125, burstIntervalMsLite: 170, levelFloor: 0.30 },
+    heavyBass: { enabled: true, on: 0.8, off: 0.43, confirmFrames: 3, glitchCooldownMs: 1200, glitchBursts: 6, glitchMs: 760, emissionScale: 0.24 },
+    highLevel: { enabled: true, on: 0.83 },
+    softPulse: { enabled: true, transientOn: 0.41, intervalMs: 240, intervalMsLite: 360, burstIntervalMs: 130, burstIntervalMsLite: 170, levelFloor: 0.3 },
     noise: { enabled: true },
-    trebleSpike: { enabled: true, on: 0.16, off: 0.10, transientOn: 0.05, requireTransient: false, confirmFrames: 2, intervalMs: 140, intervalMsLite: 240, cooldownMs: 300 },
-    bassCoupled: { enabled: true, subFloor: 0.04, subCeil: 0.45, subGateOn: 0.08, subGateScale: 0.10, kickSubMin: 0.34, kickRiseFloor: 0.01, kickRiseRange: 0.05, kickRiseOn: 0.35, kickRearm: 0.25, kickCooldownMs: 140, glitchOn: 0.85, minIntervalMs: 90, maxIntervalMs: 460, intensityExponent: 1.8, subRadiusScale: 0.30 },
+    trebleSpike: { enabled: true, on: 0.47, off: 0.02, transientOn: 0.14, requireTransient: false, confirmFrames: 2, intervalMs: 20, intervalMsLite: 20, cooldownMs: 150 },
+    bassCoupled: { enabled: true, subFloor: 0.48, subCeil: 0.79, subGateOn: 0.43, subGateScale: 0.93, kickSubMin: 0.75, kickRiseFloor: 0.01, kickRiseRange: 0.241, kickRiseOn: 0.35, kickRearm: 0, kickCooldownMs: 500, glitchOn: 0.85, minIntervalMs: 80, maxIntervalMs: 2000, intensityExponent: 3.3, subRadiusScale: 0.5 },
     sync: { delayMs: 5500 },
-    glow: { enabled: true, midWeight: 0.6, trebleWeight: 0.8, floor: 0.10, range: 0.70, innerAlpha: 0.50, outerAlpha: 0.22, innerRadius: 15, outerRadius: 36 },
-    glitch: { enabled: true, durationMs: 240, topOpacity: 0.78, bottomOpacity: 0.70, fragmentDurationMs: 260 },
-    emission: { enabled: true, normalRadius: 0.06, normalRadiusScale: 0.16, normalForce: 520, glitchRadius: 0.22, glitchForce: 520 },
-    treble: { enabled: true, pipeCount: 8, pipeSpacing: 0.025, radius: 0.0018, radiusScale: 0.001, force: 10, forceScale: 18, lift: 1, direction: 'down', angleSpread: 0.9 }
+    glow: { enabled: true, midWeight: 1.85, trebleWeight: 0.2, floor: 0.49, range: 1, innerAlpha: 1, outerAlpha: 0.37, innerRadius: 32, outerRadius: 85 },
+    glitch: { enabled: true, durationMs: 170, topOpacity: 0.78, bottomOpacity: 0.7, fragmentDurationMs: 260 },
+    emission: { enabled: true, normalRadius: 0.01, normalRadiusScale: 0.4, normalForce: 400, glitchRadius: 0.19, glitchForce: 950 },
+    mouse: { enabled: true, brightness: 0.11, radius: 0.1, radiusLite: 0.06, forceScale: 0.42, tapBrightness: 0.69, tapRadius: 0.16, tapRadiusLite: 0.06, tapForceMin: 26, tapForceRange: 85 },
+    treble: { enabled: true, pipeCount: 1, pipeSpacing: 0, radius: 0.0531, radiusScale: 0.1961, force: 9, forceScale: 105, lift: 1, direction: 'down', angleSpread: 1.2 },
+    bass: { softFloor: 0.25, hardFloor: 0.38 },
+    colors: { bassWeight: 1.5, midWeight: 1.2, trebleWeight: 0.9 }
   };
   var analysisDefaults = {};
   Object.keys(analysisBands).forEach(function (bandName) {

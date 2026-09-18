@@ -3,10 +3,10 @@
   'use strict';
 
   var defaults = {
-    bass: {fromHz: 35, toHz: 160, levelMin: 0.18, levelMax: 0.80},
-    mid: {fromHz: 160, toHz: 2200, levelMin: 0.18, levelMax: 0.80},
-    treble: {fromHz: 10000, toHz: 16000, levelMin: 0.18, levelMax: 0.80},
-    sub: {fromHz: 0, toHz: 120, levelMin: 0.25, levelMax: 0.95}
+    sub: {fromHz: 0, toHz: 120, levelMin: 0.3, levelMax: 1},
+    bass: {fromHz: 35, toHz: 160, levelMin: 0.2, levelMax: 1},
+    mid: {fromHz: 160, toHz: 2200, levelMin: 0.18, levelMax: 0.8},
+    treble: {fromHz: 11000, toHz: 16000, levelMin: 0, levelMax: 0.2}
   };
 
   function finite(value, fallback) {

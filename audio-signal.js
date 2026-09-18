@@ -32,7 +32,7 @@
     var hardBassActivity = flags.heavyBass && flags.bassCoupled
       ? (flags.hasLocalKick ? 1 : (Number(source.bassOnset) >= number(bassCoupled, 'glitchOn', 0.85) ? Number(source.bassOnset) : 0))
       : (source.hardBassConfirmed ? hardBass : 0);
-    var hardBassEmission = clamp((hardBassActivity - number(heavyBass, 'on', 0.88)) / number(heavyBass, 'emissionScale', 0.12));
+    var hardBassEmission = clamp((hardBassActivity - number(heavyBass, 'on', 0.80)) / number(heavyBass, 'emissionScale', 0.24));
     var bassPunch = Math.max(
       bassActivity * bassActivity,
       bassHardActivity * bassHardActivity,
@@ -41,7 +41,7 @@
     var levelFloor = number(softPulse, 'levelFloor', 0.30);
     var volumeActivity = clamp((level - levelFloor) / (1 - levelFloor));
     var volumePulse = flags.softPulse ? transient * (0.08 + volumeActivity * 0.34) : 0;
-    var levelOn = number(highLevel, 'on', 0.88);
+    var levelOn = number(highLevel, 'on', 0.83);
     var levelPunch = flags.highLevel ? clamp((level - levelOn) / (1 - levelOn)) : 0;
 
     return {

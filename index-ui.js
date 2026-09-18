@@ -74,7 +74,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const fxHeavyBass=((window.doomsdayFxConfig||{}).triggers||{}).heavyBass||{};
   const getFxHardBassOn=function(){
     const value=Number(fxHeavyBass.on);
-    return Number.isFinite(value)?value:0.88;
+    return Number.isFinite(value)?value:0.8;
   };
   const fxNoiseCfg=((window.doomsdayFxConfig||{}).triggers||{}).noise||{};
   const fxSyncCfg=((window.doomsdayFxConfig||{}).triggers||{}).sync||{};
@@ -83,6 +83,13 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const fxGlitchCfg=((window.doomsdayFxConfig||{}).triggers||{}).glitch||{};
   const fxNoiseEnabled=fxNoiseCfg.enabled!==false;
   const fxGlowEnabled=fxGlowCfg.enabled!==false;
+
+  document.documentElement.style.setProperty('--fx-glitch-duration',Math.max(20,Number(fxGlitchCfg.durationMs)||170)+'ms');
+  document.documentElement.style.setProperty('--fx-glitch-top-opacity',Math.max(0,Math.min(1,Number(fxGlitchCfg.topOpacity)||0.78)));
+  document.documentElement.style.setProperty('--fx-glitch-bottom-opacity',Math.max(0,Math.min(1,Number(fxGlitchCfg.bottomOpacity)||0.70)));
+  document.documentElement.style.setProperty('--fx-glitch-fragment-duration',Math.max(20,Number(fxGlitchCfg.fragmentDurationMs)||260)+'ms');
+  document.documentElement.style.setProperty('--fx-glow-inner-radius',Math.max(0,Number(fxGlowCfg.innerRadius)||32)+'px');
+  document.documentElement.style.setProperty('--fx-glow-outer-radius',Math.max(0,Number(fxGlowCfg.outerRadius)||85)+'px');
   const cfgNum=function(group,key,fallback){
     const value=Number(group[key]);
     return Number.isFinite(value)?value:fallback;
@@ -492,52 +499,71 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       return total/(to-from);
     };
     const rawLevel=milli(payload.level);
-    /* Band RMS values are absolutely normalized and the top bands are almost
-       always near-empty on our material, so "vs the band average" still reads
-       bass-dominant during loud midrange songs. Measure each range against
-       the strongest OTHER range instead — bass is only "dominant" when it
-       beats the mids and treble outright. Absolute floors keep quiet
-       passages at zero. */
     const clamp01=function(value){return Math.max(0,Math.min(1,value))};
     const rawBass=avg(1,3);
     const rawMid=avg(2,6);
     const rawTreble=avg(6,8);
-    const bass=clamp01((rawBass-0.10)/0.45);
-    const mid=clamp01((rawMid-0.08)/0.38);
-    const treble=clamp01((rawTreble-0.02)/0.12);
+    const bass=audioAnalysis.normalizeBandLevel(rawBass,analysisBand.bass);
+    const mid=audioAnalysis.normalizeBandLevel(rawMid,analysisBand.mid);
+    const treble=audioAnalysis.normalizeBandLevel(rawTreble,analysisBand.treble);
     wsRawLevel=rawLevel;
+    const sub=audioAnalysis.normalizeBandLevel(milli(bands[0]),analysisBand.sub);
+    lastSubLevel=sub;
+    const fastSub=milli(payload.sub_fast);
+    const subRise=Math.max(0,sub-localSubFast);
+    localSubFast+=(sub-localSubFast)*0.28;
     /* Transient: rise above a FAST follower of the level, so it fires on
      * attacks and decays smoothly instead of pegging at 100%. */
-    const transient=Math.max(0,Math.min(1,(rawLevel-wsFastLevel)/0.08));
+    const transient=Math.max(0,Math.min(1,Math.max((rawLevel-wsFastLevel)/0.08,subRise/0.12)));
     wsFastLevel+=(rawLevel-wsFastLevel)*0.5;
+
+    const now=performance.now();
+    const kickRiseFloor=Math.max(0,Math.min(1,cfgNum(fxBassCoupledCfg,'kickRiseFloor',0.01)));
+    const kickRiseRange=Math.max(0.001,Math.min(1-kickRiseFloor,cfgNum(fxBassCoupledCfg,'kickRiseRange',0.241)));
+    const kickStrengthCalc=Math.max(0,Math.min(1,(subRise-kickRiseFloor)/kickRiseRange));
+    const kickRearm=cfgNum(fxBassCoupledCfg,'kickRearm',0);
+    const kickMinimum=cfgNum(fxBassCoupledCfg,'kickSubMin',0.75);
+    const kickThreshold=cfgNum(fxBassCoupledCfg,'kickRiseOn',0.35);
+    const kickCooldown=cfgNum(fxBassCoupledCfg,'kickCooldownMs',500);
+    if((kickRearm<=0 && sub<=localSubFast)||(kickRearm>0 && sub<kickRearm)) localKickArmed=true;
+    if(localKickArmed&&now>=localKickCooldownUntil&&sub>=kickMinimum&&kickStrengthCalc>=kickThreshold){
+      localKickArmed=false;
+      localKickCooldownUntil=now+kickCooldown;
+      localKickSequence+=1;
+      signal.kickSequence=localKickSequence;
+      signal.bassOnset=1;
+    }
+
+    const kick=payload.kick&&typeof payload.kick==='object'?payload.kick:null;
+    const kickSequence=kick&&Number.isFinite(Number(kick.seq))?Number(kick.seq):null;
+    const kickStrength=kick&&Number.isFinite(Number(kick.strength))?clamp01(Number(kick.strength)):0;
+    const hasNewKick=kickSequence!==null&&lastKickSequence!==null&&kickSequence>lastKickSequence;
+    if(kickSequence!==null) lastKickSequence=kickSequence;
+    if(hasNewKick){
+      localKickSequence=Math.max(localKickSequence+1,kickSequence);
+      signal.kickSequence=localKickSequence;
+      signal.bassOnset=Math.max(signal.bassOnset||0,kickStrength||1);
+    }
+    lastKickDebug={sub:sub,fast:fastSub||localSubFast,seq:localKickSequence||0,strength:signal.bassOnset||0};
+
     /* WS bass values are RMS-based and top out around 60% of the 0..1 range,
        so an absolute 0.88 threshold would never fire. Track a slow baseline
        and measure bass as a spike ratio against it: "hardest hit of the
        song". The absolute floor keeps quiet passages from glitching. */
     wsBassBaseline+=(bass-wsBassBaseline)*0.008;
-    const sub=audioAnalysis.normalizeBandLevel(milli(bands[0]),analysisBand.sub);
-    lastSubLevel=sub;
-    const fastSub=milli(payload.sub_fast);
-    const kick=payload.kick&&typeof payload.kick==='object'?payload.kick:null;
-    const kickSequence=kick&&Number.isFinite(Number(kick.seq))?Number(kick.seq):null;
-    const kickStrength=kick&&Number.isFinite(Number(kick.strength))?clamp01(Number(kick.strength)):0;
-    const hasNewKick=kickSequence!==null&&lastKickSequence!==null&&kickSequence>lastKickSequence;
-    const hasQualifiedKick=hasNewKick;
-    if(kickSequence!==null) lastKickSequence=kickSequence;
-    lastKickDebug={sub:sub,fast:fastSub,seq:kickSequence||0,strength:hasQualifiedKick?kickStrength:0};
     const bassSpikeRatio=bass/Math.max(0.15,wsBassBaseline*1.7);
     signal.bass+=(bass-signal.bass)*0.15;
     signal.mid+=(mid-signal.mid)*0.10;
     signal.treble+=(treble-signal.treble)*0.10;
     signal.level+=(rawLevel-signal.level)*0.20;
     signal.sub+=(sub-signal.sub)*0.25;
+    signal.lowBass=sub;
     signal.transient+=(transient-signal.transient)*0.4;
     signal.hardBass=Math.max(0,Math.min(1,(bassSpikeRatio-1.2)/0.8));
-    signal.hardBassConfirmed=signal.hardBass>=getFxHardBassOn()&&bass>=0.3;
+    signal.hardBassConfirmed=(signal.hardBass>=getFxHardBassOn()&&bass>=0.3)||bass>=getFxHardBassOn();
      /* The server retains the latest sequenced event in every payload, so the
        delayed queue may coalesce packets without losing a kick attack. */
-    signal.bassOnset=Number.isFinite(Number(signal.bassOnset))?Number(signal.bassOnset)*0.62:0;
-     if(hasQualifiedKick) signal.bassOnset=Math.max(signal.bassOnset,kickStrength);
+    signal.bassOnset=Number.isFinite(Number(signal.bassOnset))?Number(signal.bassOnset)*0.72:0;
     signal.playing=true;
     if(spectrumSource) spectrumSource.textContent='LEVELS / SERVER';
     const displaySpectrum=[];
@@ -715,9 +741,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const b=Math.round((4*wOrange + 171*wGreen + 228*wWhite)/totalWeight);
 
     const lvl=Math.max(0,Math.min(1,signal.level));
-    const glowMid=(signal.mid||0)*cfgNum(fxGlowCfg,'midWeight',0.65);
-    const glowTreble=(signal.treble||0)*cfgNum(fxGlowCfg,'trebleWeight',0.80);
-    const glowSpectrum=Math.max(0,Math.min(1,(glowMid+glowTreble-cfgNum(fxGlowCfg,'floor',0.10))/cfgNum(fxGlowCfg,'range',0.70)));
+    const glowMid=(signal.mid||0)*cfgNum(fxGlowCfg,'midWeight',1.85);
+    const glowTreble=(signal.treble||0)*cfgNum(fxGlowCfg,'trebleWeight',0.2);
+    const glowSpectrum=Math.max(0,Math.min(1,(glowMid+glowTreble-cfgNum(fxGlowCfg,'floor',0.49))/cfgNum(fxGlowCfg,'range',1)));
       const glowTarget=fxGlowEnabled&&signal.playing&&signal.level>=0.06
         ? glowSpectrum
         : 0;
@@ -725,10 +751,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       const nextGlow=previousGlow+(glowTarget-previousGlow)*0.06;
       const glowActivity=Math.abs(nextGlow-previousGlow)<0.008?previousGlow:nextGlow;
       document.documentElement.dataset.glowActivity=glowActivity.toFixed(4);
-    const innerAlpha=(glowActivity*cfgNum(fxGlowCfg,'innerAlpha',0.50)).toFixed(2);
-    const outerAlpha=(glowActivity*cfgNum(fxGlowCfg,'outerAlpha',0.22)).toFixed(2);
-    const innerR=(glowActivity*cfgNum(fxGlowCfg,'innerRadius',15)).toFixed(1)+'px';
-    const outerR=(glowActivity*cfgNum(fxGlowCfg,'outerRadius',36)).toFixed(1)+'px';
+    const innerAlpha=(glowActivity*cfgNum(fxGlowCfg,'innerAlpha',1)).toFixed(2);
+    const outerAlpha=(glowActivity*cfgNum(fxGlowCfg,'outerAlpha',0.37)).toFixed(2);
+    const innerR=(glowActivity*cfgNum(fxGlowCfg,'innerRadius',32)).toFixed(1)+'px';
+    const outerR=(glowActivity*cfgNum(fxGlowCfg,'outerRadius',85)).toFixed(1)+'px';
 
     const innerColor='rgba('+r+','+g+','+b+','+innerAlpha+')';
     const outerColor='rgba('+r+','+g+','+b+','+outerAlpha+')';

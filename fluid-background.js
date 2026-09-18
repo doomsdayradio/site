@@ -17,10 +17,10 @@ const fxNum = function(group, key, fallback) {
   return Number.isFinite(value) ? value : fallback;
 };
 const fxHeavyBass = fxTriggers.heavyBass || {};
-const getFxHeavyBassOn = () => fxNum(fxHeavyBass, 'on', 0.88);
-const getFxHeavyBassOff = () => fxNum(fxHeavyBass, 'off', 0.72);
+const getFxHeavyBassOn = () => fxNum(fxHeavyBass, 'on', 0.8);
+const getFxHeavyBassOff = () => fxNum(fxHeavyBass, 'off', 0.43);
 const fxHighLevel = fxTriggers.highLevel || {};
-const fxHighLevelOn = fxNum(fxHighLevel, 'on', 0.88);
+const fxHighLevelOn = fxNum(fxHighLevel, 'on', 0.83);
 const fxSoftPulse = fxTriggers.softPulse || {};
 const fxBass = fxTriggers.bass || {};
 const fxColors = fxTriggers.colors || {};
@@ -150,17 +150,17 @@ if (host && !prefersReducedMotion) {
 
     function emitTapCloud(event) {
       const angle = Math.random() * Math.PI * 2;
-      const force = fxNum(fxMouse, 'tapForceMin', 18)
-        + Math.random() * fxNum(fxMouse, 'tapForceRange', 8);
+      const force = fxNum(fxMouse, 'tapForceMin', 26)
+        + Math.random() * fxNum(fxMouse, 'tapForceRange', 85);
       const tapColor = mousePalette[Math.floor(Math.random() * mousePalette.length)];
 
       if (fxMouse.enabled === false) return;
       fluid.setConfig({
         colorPalette: [tapColor],
-        brightness: fxNum(fxMouse, 'tapBrightness', 0.12),
+        brightness: fxNum(fxMouse, 'tapBrightness', 0.69),
         splatRadius: lowPerformanceMode
-          ? fxNum(fxMouse, 'tapRadiusLite', 0.045)
-          : fxNum(fxMouse, 'tapRadius', 0.06),
+          ? fxNum(fxMouse, 'tapRadiusLite', 0.06)
+          : fxNum(fxMouse, 'tapRadius', 0.16),
         splatForce: force
       });
       fluid.splatAtLocation(
@@ -242,46 +242,46 @@ if (host && !prefersReducedMotion) {
       if (logoStage && glitchEnabled && hasBassPeak && now - lastLogoGlitch > fxNum(fxHeavyBass, 'glitchCooldownMs', 1200)) {
         lastLogoGlitch = now;
         hardBassTriggered = true;
-        glitchEmissionBursts = hasLocalKick ? 1 : fxNum(fxHeavyBass, 'glitchBursts', 3);
-        glitchEmissionUntil = now + fxNum(fxHeavyBass, 'glitchMs', 520);
+        glitchEmissionBursts = hasLocalKick ? 1 : fxNum(fxHeavyBass, 'glitchBursts', 6);
+        glitchEmissionUntil = now + fxNum(fxHeavyBass, 'glitchMs', 760);
         logoStage.classList.remove('logo-bass-hit');
         void logoStage.offsetWidth;
         logoStage.classList.add('logo-bass-hit');
         window.setTimeout(function() {
           logoStage.classList.remove('logo-bass-hit');
-        }, 260);
+        }, fxNum(fxTriggers.glitch, 'durationMs', 170));
       }
 
       if (bassCoupledEnabled && emissionEnabled) {
         /* The ordinary emissions follow raw sub intensity. A qualifying kick
          * starts a short burst at full strength, handled separately below. */
         const bcSub = signal && Number.isFinite(signal.sub) ? signal.sub : bass * 0.4;
-        const bcSubFloor = fxNum(fxBassCoupled, 'subFloor', 0.10);
-        const bcSubCeil = fxNum(fxBassCoupled, 'subCeil', 0.55);
+        const bcSubFloor = fxNum(fxBassCoupled, 'subFloor', 0.48);
+        const bcSubCeil = fxNum(fxBassCoupled, 'subCeil', 0.79);
         const bcSubActivity = Math.max(0, Math.min(1, (bcSub - bcSubFloor) / (bcSubCeil - bcSubFloor)));
         const subFloorPassed = bcSub >= bcSubFloor;
         const bcSubGate = Math.max(0, Math.min(1,
-          (bcSub - fxNum(fxBassCoupled, 'subGateOn', 0.18)) / fxNum(fxBassCoupled, 'subGateScale', 0.12)
+          (bcSub - fxNum(fxBassCoupled, 'subGateOn', 0.43)) / fxNum(fxBassCoupled, 'subGateScale', 0.93)
         ));
         const bcActivity = bcSubActivity * bcSubGate;
         const bcActivityRise = bcActivity - lastBassCoupledActivity;
         lastBassCoupledActivity = isPlaying ? bcActivity : 0;
         /* Exponential strength curve: quiet parts stay subtle, loud bass
          * explodes. intensityExponent controls how aggressive the top end is. */
-        const bcK = fxNum(fxBassCoupled, 'intensityExponent', 2.5);
+        const bcK = fxNum(fxBassCoupled, 'intensityExponent', 3.3);
         const bcExpK = Math.exp(bcK);
         const punch = (Math.exp(bcK * bcActivity) - 1) / (bcExpK - 1);
-        const bcMinInterval = fxNum(fxBassCoupled, 'minIntervalMs', 90);
-        const bcMaxInterval = fxNum(fxBassCoupled, 'maxIntervalMs', 460);
+        const bcMinInterval = fxNum(fxBassCoupled, 'minIntervalMs', 80);
+        const bcMaxInterval = fxNum(fxBassCoupled, 'maxIntervalMs', 2000);
         const glitchBurstActive = glitchEmissionBursts > 0 && now < glitchEmissionUntil;
         const emitInterval = glitchBurstActive
-          ? (lowPerformanceMode ? fxNum(fxSoftPulse, 'burstIntervalMsLite', 170) : fxNum(fxSoftPulse, 'burstIntervalMs', 125))
+          ? (lowPerformanceMode ? fxNum(fxSoftPulse, 'burstIntervalMsLite', 170) : fxNum(fxSoftPulse, 'burstIntervalMs', 130))
           : bcMaxInterval + (bcMinInterval - bcMaxInterval) * bcActivity;
-        const transientOn = fxNum(fxSoftPulse, 'transientOn', 0.14);
+        const transientOn = fxNum(fxSoftPulse, 'transientOn', 0.41);
         const attackActivity = softPulseEnabled && transient >= transientOn
           ? Math.max(0, Math.min(1, (transient - transientOn) / Math.max(0.01, 1 - transientOn)))
           : 0;
-        const levelFloor = fxNum(fxSoftPulse, 'levelFloor', 0.30);
+        const levelFloor = fxNum(fxSoftPulse, 'levelFloor', 0.3);
         const volumeActivity = softPulseEnabled
           ? Math.max(0, Math.min(1, (level - levelFloor) / Math.max(0.01, 1 - levelFloor)))
           : 0;
@@ -296,25 +296,25 @@ if (host && !prefersReducedMotion) {
           ? Math.min(emitInterval, attackInterval)
           : emitInterval;
         const emissionPunch = glitchBurstActive ? 1 : Math.max(punch, hardBassActivity, softActivity * 0.65);
-        const bcRiseOn = fxNum(fxBassCoupled, 'kickRiseOn', 0.18);
+        const bcRiseOn = fxNum(fxBassCoupled, 'kickRiseOn', 0.35);
         const shouldEmitBass = hasLocalKick || glitchBurstActive
           || (subFloorPassed && (bcActivity > 0 || softActivity > 0));
         if (isPlaying && shouldEmitBass && now - lastAudioSpray > effectiveEmitInterval) {
           lastAudioSpray = now;
           const cloudColor = soundWaveColor(now, bass, mid, treble, emissionPunch);
           const kickEmission = hasLocalKick || bcActivityRise >= bcRiseOn || glitchBurstActive;
-          const normalRadius = Math.max(0.006, fxNum(fxEmission, 'normalRadius', 0.06));
-          const normalRadiusScale = Math.max(0, fxNum(fxBassCoupled, 'subRadiusScale', 0.30));
-          const normalForce = fxNum(fxEmission, 'normalForce', 520);
-          const kickRadius = Math.min(0.16, Math.max(0.025, fxNum(fxEmission, 'glitchRadius', 0.22) * 0.5));
+          const normalRadius = Math.max(0.001, fxNum(fxEmission, 'normalRadius', 0.01));
+          const normalRadiusScale = Math.max(0, fxNum(fxBassCoupled, 'subRadiusScale', 0.5));
+          const normalForce = fxNum(fxEmission, 'normalForce', 400);
+          const kickRadius = Math.max(0.01, fxNum(fxEmission, 'glitchRadius', 0.19));
           fluid.setConfig({
             colorPalette: [cloudColor],
             brightness: 0.28,
             splatRadius: kickEmission
               ? kickRadius
-              : Math.min(0.08, normalRadius + punch * normalRadiusScale),
+              : Math.min(0.6, normalRadius + punch * normalRadiusScale),
             splatForce: kickEmission
-              ? fxNum(fxEmission, 'glitchForce', 520)
+              ? fxNum(fxEmission, 'glitchForce', 950)
               : normalForce * (0.12 + punch * 0.48)
           });
           const emitters = logoEmitters(0.44 + Math.sin(now * 0.002) * 0.06);
@@ -329,10 +329,10 @@ if (host && !prefersReducedMotion) {
 
       // Volume adds occasional light puffs; only bass can create a strong emission.
       const glitchBurstActive = glitchEmissionBursts > 0 && now < glitchEmissionUntil;
-      const transientOn = fxNum(fxSoftPulse, 'transientOn', 0.14);
+      const transientOn = fxNum(fxSoftPulse, 'transientOn', 0.41);
       const shouldEmitAudio = emissionEnabled && isPlaying && (glitchBurstActive || (softPulseEnabled && transient >= transientOn) || (heavyBassEnabled && hardBassActivity >= getFxHeavyBassOn()) || (highLevelEnabled && level >= fxHighLevelOn));
       const audioInterval = glitchBurstActive
-        ? (lowPerformanceMode ? fxNum(fxSoftPulse, 'burstIntervalMsLite', 170) : fxNum(fxSoftPulse, 'burstIntervalMs', 125))
+        ? (lowPerformanceMode ? fxNum(fxSoftPulse, 'burstIntervalMsLite', 170) : fxNum(fxSoftPulse, 'burstIntervalMs', 130))
         : (lowPerformanceMode ? fxNum(fxSoftPulse, 'intervalMsLite', 360) : fxNum(fxSoftPulse, 'intervalMs', 240));
 
       if (shouldEmitAudio && now - lastAudioSpray > audioInterval) {
@@ -348,11 +348,11 @@ if (host && !prefersReducedMotion) {
           colorPalette: [cloudColor],
           brightness: 0.28,
           splatRadius: glitchBurstActive
-            ? fxNum(fxEmission, 'glitchRadius', 0.22)
-            : Math.min(0.5, fxNum(fxEmission, 'normalRadius', 0.06) + emissionPunch * fxNum(fxEmission, 'normalRadiusScale', 0.16)),
+            ? fxNum(fxEmission, 'glitchRadius', 0.19)
+            : Math.min(0.6, fxNum(fxEmission, 'normalRadius', 0.01) + emissionPunch * fxNum(fxEmission, 'normalRadiusScale', 0.4)),
           splatForce: glitchBurstActive
-            ? fxNum(fxEmission, 'glitchForce', 520)
-            : fxNum(fxEmission, 'normalForce', 520)
+            ? fxNum(fxEmission, 'glitchForce', 950)
+            : fxNum(fxEmission, 'normalForce', 400)
         });
 
         // Emitter alternates between left and right broadcast arches with gentle drift
@@ -372,9 +372,9 @@ if (host && !prefersReducedMotion) {
 
       /* Treble spikes: sharp, small, cool-colored splashes at the top of the
        * logo. Gated on treble + transient so only real attacks fire. */
-      const trebleSpikeOn = fxNum(fxTrebleSpike, 'on', 0.28);
-      const trebleSpikeOff = fxNum(fxTrebleSpike, 'off', 0.18);
-      const trebleSpikeTransientOn = fxNum(fxTrebleSpike, 'transientOn', 0.05);
+      const trebleSpikeOn = fxNum(fxTrebleSpike, 'on', 0.47);
+      const trebleSpikeOff = fxNum(fxTrebleSpike, 'off', 0.02);
+      const trebleSpikeTransientOn = fxNum(fxTrebleSpike, 'transientOn', 0.14);
       const trebleSpikeRequiresTransient = fxTrebleSpike.requireTransient === true;
       const trebleRise = Math.max(0, treble - lastTrebleSignal);
       lastTrebleSignal = treble;
@@ -384,12 +384,12 @@ if (host && !prefersReducedMotion) {
       } else if (treble < trebleSpikeOff) {
         if (trebleSpikeFrames > 0) lastTrebleSpikeEnd = now;
         trebleSpikeFrames = 0;
-        if (now - lastTrebleSpikeEnd > fxNum(fxTrebleSpike, 'cooldownMs', 500)) trebleSpikeReady = true;
+        if (now - lastTrebleSpikeEnd > fxNum(fxTrebleSpike, 'cooldownMs', 150)) trebleSpikeReady = true;
       }
       const trebleSpikeInterval = lowPerformanceMode
-        ? fxNum(fxTrebleSpike, 'intervalMsLite', 240)
-        : fxNum(fxTrebleSpike, 'intervalMs', 160);
-      const trebleSpikeCooldown = fxNum(fxTrebleSpike, 'cooldownMs', 500);
+        ? fxNum(fxTrebleSpike, 'intervalMsLite', 20)
+        : fxNum(fxTrebleSpike, 'intervalMs', 20);
+      const trebleSpikeCooldown = fxNum(fxTrebleSpike, 'cooldownMs', 150);
       if (trebleEnabled && isPlaying
         && (trebleSpikeReady || (!trebleSpikeRequiresTransient && now - lastTrebleSpray > trebleSpikeCooldown))
         && trebleSpikeFrames >= fxNum(fxTrebleSpike, 'confirmFrames', 2)
@@ -397,25 +397,25 @@ if (host && !prefersReducedMotion) {
         lastTrebleSpray = now;
         trebleSpikeReady = false;
         const sparkColor = trebleSparkPalette[Math.floor(Math.random() * trebleSparkPalette.length)];
-        const pipeRadius = Math.min(0.004,
-          fxNum(fxTreble, 'radius', 0.0018) + treble * fxNum(fxTreble, 'radiusScale', 0.001));
+        const pipeRadius = Math.min(0.5,
+          fxNum(fxTreble, 'radius', 0.0531) + treble * fxNum(fxTreble, 'radiusScale', 0.1961));
         fluid.setConfig({
           colorPalette: [sparkColor],
           brightness: 0.72,
           splatRadius: pipeRadius,
-          splatForce: fxNum(fxTreble, 'force', 10) + treble * fxNum(fxTreble, 'forceScale', 18)
+          splatForce: fxNum(fxTreble, 'force', 9) + treble * fxNum(fxTreble, 'forceScale', 105)
         });
         const topEmitters = logoEmitters(0.02);
         const bottomEmitters = logoEmitters(0.98);
-        const pipeCount = Math.max(1, Math.round(fxNum(fxTreble, 'pipeCount', 12)));
-        const pipeSpacing = fxNum(fxTreble, 'pipeSpacing', 0.025)
+        const pipeCount = Math.max(1, Math.round(fxNum(fxTreble, 'pipeCount', 1)));
+        const pipeSpacing = fxNum(fxTreble, 'pipeSpacing', 0)
           * (topEmitters.rightX - topEmitters.leftX);
         const pipeCenter = (topEmitters.leftX + topEmitters.rightX) * 0.5;
-        const sparkForce = (fxNum(fxTreble, 'force', 10)
-          + treble * fxNum(fxTreble, 'forceScale', 18) + transient * 10) * 6;
+        const sparkForce = (fxNum(fxTreble, 'force', 9)
+          + treble * fxNum(fxTreble, 'forceScale', 105) + transient * 10) * 6;
         const direction = fxTreble.direction === 'down' ? 1 : -1;
         const sparkEmitters = direction < 0 ? topEmitters : bottomEmitters;
-        const angleSpread = Math.min(Math.PI / 2, Math.max(0, fxNum(fxTreble, 'angleSpread', 0.55)));
+        const angleSpread = Math.min(Math.PI / 2, Math.max(0, fxNum(fxTreble, 'angleSpread', 1.2)));
         for (let pipeIndex = 0; pipeIndex < pipeCount; pipeIndex += 1) {
           const pipeOffset = (pipeIndex - (pipeCount - 1) * 0.5) * pipeSpacing;
           const randomAngle = (Math.random() * 2 - 1) * angleSpread;
@@ -449,16 +449,16 @@ if (host && !prefersReducedMotion) {
           if (movementDistance >= 0.5) {
             fluid.setConfig({
               colorPalette: [mouseColor(now)],
-              brightness: fxNum(fxMouse, 'brightness', 0.12),
+              brightness: fxNum(fxMouse, 'brightness', 0.11),
               splatRadius: lowPerformanceMode
-                ? fxNum(fxMouse, 'radiusLite', 0.045)
-                : fxNum(fxMouse, 'radius', 0.035)
+                ? fxNum(fxMouse, 'radiusLite', 0.06)
+                : fxNum(fxMouse, 'radius', 0.1)
             });
             fluid.splatAtLocation(
               sprayX * (window.devicePixelRatio || 1),
               sprayY,
-              movementX * fxNum(fxMouse, 'forceScale', 0.25),
-              -movementY * fxNum(fxMouse, 'forceScale', 0.25)
+              movementX * fxNum(fxMouse, 'forceScale', 0.42),
+              -movementY * fxNum(fxMouse, 'forceScale', 0.42)
             );
           }
         }

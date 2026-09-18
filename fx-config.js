@@ -17,10 +17,10 @@ window.doomsdayFxConfig = {
    * level range is the normalized analyser peak mapped to 0..100%. */
   audioAnalysis: {
     bands: {
-      sub: {fromHz: 0, toHz: 120, levelMin: 0.25, levelMax: 0.95},
-      bass: {fromHz: 35, toHz: 160, levelMin: 0.18, levelMax: 0.80},
-      mid: {fromHz: 160, toHz: 2200, levelMin: 0.18, levelMax: 0.80},
-      treble: {fromHz: 180, toHz: 12000, levelMin: 0.18, levelMax: 0.80}
+      sub: {fromHz: 0, toHz: 120, levelMin: 0.3, levelMax: 1},
+      bass: {fromHz: 35, toHz: 160, levelMin: 0.2, levelMax: 1},
+      mid: {fromHz: 160, toHz: 2200, levelMin: 0.18, levelMax: 0.8},
+      treble: {fromHz: 11000, toHz: 16000, levelMin: 0, levelMax: 0.2}
     }
   },
 
@@ -42,13 +42,13 @@ window.doomsdayFxConfig = {
      */
     heavyBass: {
       enabled: true,
-      on: 0.85,
-      off: 0.76,
+      on: 0.8,
+      off: 0.43,
       confirmFrames: 3,
       glitchCooldownMs: 1200,
       glitchBursts: 6,
       glitchMs: 760,
-      emissionScale: 0.12
+      emissionScale: 0.24
     },
 
     /* High overall level zone: level punch + strong emissions when the whole
@@ -56,7 +56,7 @@ window.doomsdayFxConfig = {
      * logo — that is heavyBass-only. */
     highLevel: {
       enabled: true,
-      on: 0.88
+      on: 0.83
     },
 
     /* Soft zone: gentle puffs on transients and volume, active whenever none
@@ -70,12 +70,12 @@ window.doomsdayFxConfig = {
      */
     softPulse: {
       enabled: true,
-      transientOn: 0.14,
+      transientOn: 0.41,
       intervalMs: 240,
       intervalMsLite: 360,
-      burstIntervalMs: 125,
+      burstIntervalMs: 130,
       burstIntervalMsLite: 170,
-      levelFloor: 0.30
+      levelFloor: 0.3
     },
 
     /* Treble spike zone: sharp sparks at the top of the logo plus static
@@ -90,14 +90,14 @@ window.doomsdayFxConfig = {
      */
     trebleSpike: {
       enabled: true,
-      on: 0.16,
-      off: 0.10,
-      transientOn: 0.05,
+      on: 0.47,
+      off: 0.02,
+      transientOn: 0.14,
       requireTransient: false,
       confirmFrames: 2,
-      intervalMs: 140,
-      intervalMsLite: 170,
-      cooldownMs: 300
+      intervalMs: 20,
+      intervalMsLite: 20,
+      cooldownMs: 150
     },
 
     /* Static noise overlay. Screen-blended, so it reads as signal interference. */
@@ -129,73 +129,73 @@ window.doomsdayFxConfig = {
      */
     bassCoupled: {
       enabled: true,
-      subFloor: 0.04,
-      subCeil: 0.45,
-      subGateOn: 0.08,
-      subGateScale: 0.10,
-      kickSubMin: 0.28,
+      subFloor: 0.48,
+      subCeil: 0.79,
+      subGateOn: 0.43,
+      subGateScale: 0.93,
+      kickSubMin: 0.75,
       kickRiseFloor: 0.01,
-      kickRiseRange: 0.05,
-      kickRiseOn: 0.18,
-      kickRearm: 0.25,
-      kickCooldownMs: 140,
+      kickRiseRange: 0.241,
+      kickRiseOn: 0.35,
+      kickRearm: 0,
+      kickCooldownMs: 500,
       glitchOn: 0.85,
-      minIntervalMs: 35,
-      maxIntervalMs: 180,
-      intensityExponent: 1.8,
-      subRadiusScale: 0.30
+      minIntervalMs: 80,
+      maxIntervalMs: 2000,
+      intensityExponent: 3.3,
+      subRadiusScale: 0.5
     },
 
     /* Logo glow and bass glitch presentation. */
     glow: {
       enabled: true,
-      midWeight: 0.6,
-      trebleWeight: 0.8,
-      floor: 0.10,
-      range: 0.70,
-      innerAlpha: 0.50,
-      outerAlpha: 0.22,
-      innerRadius: 15,
-      outerRadius: 36
+      midWeight: 1.85,
+      trebleWeight: 0.2,
+      floor: 0.49,
+      range: 1,
+      innerAlpha: 1,
+      outerAlpha: 0.37,
+      innerRadius: 32,
+      outerRadius: 85
     },
     glitch: {
       enabled: true,
-      durationMs: 240,
+      durationMs: 170,
       topOpacity: 0.78,
-      bottomOpacity: 0.70,
+      bottomOpacity: 0.7,
       fragmentDurationMs: 260
     },
     emission: {
       enabled: true,
-      normalRadius: 0.13,
-      normalRadiusScale: 0.30,
-      normalForce: 1100,
-      glitchRadius: 0.30,
-      glitchForce: 820
+      normalRadius: 0.01,
+      normalRadiusScale: 0.4,
+      normalForce: 400,
+      glitchRadius: 0.19,
+      glitchForce: 950
     },
     mouse: {
       enabled: true,
-      brightness: 0.20,
-      radius: 0.08,
+      brightness: 0.11,
+      radius: 0.1,
       radiusLite: 0.06,
       forceScale: 0.42,
-      tapBrightness: 0.18,
-      tapRadius: 0.08,
+      tapBrightness: 0.69,
+      tapRadius: 0.16,
       tapRadiusLite: 0.06,
-      tapForceMin: 18,
-      tapForceRange: 8
+      tapForceMin: 26,
+      tapForceRange: 85
     },
     treble: {
       enabled: true,
-      pipeCount: 8,
-      pipeSpacing: 0.025,
-      radius: 0.0018,
-      radiusScale: 0.001,
-      force: 24,
-      forceScale: 28,
+      pipeCount: 1,
+      pipeSpacing: 0,
+      radius: 0.0531,
+      radiusScale: 0.1961,
+      force: 9,
+      forceScale: 105,
       lift: 1,
       direction: 'down',
-      angleSpread: 0.9
+      angleSpread: 1.2
     },
 
     /* Bass shaping: ramps that translate the raw bass value into punch.
