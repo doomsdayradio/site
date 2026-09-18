@@ -108,7 +108,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     bass:{fromHz:35,toHz:160,levelMin:0.18,levelMax:0.80},
     mid:{fromHz:160,toHz:2200,levelMin:0.18,levelMax:0.80},
     treble:{fromHz:10000,toHz:16000,levelMin:0.18,levelMax:0.80},
-    sub:{fromHz:0,toHz:120,levelMin:cfgNum(fxBassCoupledCfg,'subFloor',0.04),levelMax:cfgNum(fxBassCoupledCfg,'subCeil',0.45)}
+    sub:{fromHz:0,toHz:120,levelMin:0.18,levelMax:0.80}
   };
   let analysisBand={};
   const resolveAnalysisBands=function(){
