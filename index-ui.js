@@ -393,11 +393,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
         count++;
       }
       const target=spectrumLevelFromRms(count?Math.sqrt(energy/count):0,features&&features._spectrumScale==='db');
-      const previous=spectrumDisplayLevels[bar]||0;
-      const smoothing=target>previous?0.22:0.10;
-      const value=previous+(target-previous)*smoothing;
-      spectrumDisplayLevels[bar]=value;
-      const barHeight=Math.max(2,value*height);
+      spectrumDisplayLevels[bar]=target;
+      const barHeight=Math.max(2,target*height);
       const ratio=bar/(barCount-1);
       spectrumContext.fillStyle=ratio<0.3?'#ff9d2f':ratio<0.62?'#ffd166':'#83ffab';
       spectrumContext.fillRect(Math.round(bar*barWidth+2),height-barHeight,Math.max(3,Math.round(barWidth-4)),barHeight);
@@ -415,26 +412,13 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const barCount=bars.length;
     const sourceLength=spectrum.length;
     bars.forEach(function(bar,index){
-      let start;
-      let end;
-      if(sourceLength===barCount){
-        start=index;
-        end=index+1;
-      }else{
-        start=Math.floor(Math.pow(sourceLength,index/barCount));
-        end=Math.max(start+1,Math.floor(Math.pow(sourceLength,(index+1)/barCount)));
-      }
-      let total=0;
-      let count=0;
-      for(let sourceIndex=start;sourceIndex<Math.min(end,sourceLength);sourceIndex++){
-        total+=Number(spectrum[sourceIndex])||0;
-        count++;
-      }
-      const target=Math.max(0.06,Math.min(1,count?total/count:0));
-      const previous=Number(bar.dataset.level||0.06);
-      const smoothing=target>previous?0.18:0.08;
-      const level=previous+(target-previous)*smoothing;
-      bar.dataset.level=String(level);
+      const sourcePosition=(index+0.5)*sourceLength/barCount-0.5;
+      const leftIndex=Math.max(0,Math.floor(sourcePosition));
+      const rightIndex=Math.min(sourceLength-1,leftIndex+1);
+      const fraction=Math.max(0,sourcePosition-leftIndex);
+      const left=Number(spectrum[leftIndex])||0;
+      const right=Number(spectrum[rightIndex])||0;
+      const level=Math.max(0.06,Math.min(1,left+(right-left)*fraction));
       bar.style.transform='scaleY('+level.toFixed(2)+')';
       bar.style.opacity=String(0.5+level*0.5);
     });

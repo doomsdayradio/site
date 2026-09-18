@@ -233,7 +233,7 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
   background:linear-gradient(to top,#b44b2f 0 32%,#d1ff45 34% 72%,#f0ba92 74%);
   box-shadow:0 0 7px rgba(209,255,69,0.28);
   opacity:0.62;
-  transition:transform 90ms linear,opacity 180ms ease;
+  transition:none;
 }
 
 .player-controls{
