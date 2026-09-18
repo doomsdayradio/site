@@ -11,7 +11,7 @@ const lowPerformanceMode = prefersReducedMotion
 document.documentElement.classList.toggle('fx-lite', lowPerformanceMode);
 document.documentElement.classList.toggle('reduced-motion', prefersReducedMotion);
 document.documentElement.classList.toggle('bass-debug', new URLSearchParams(location.search).has('bass-debug'));
-window.doomsdayAudioSignal={bass:0,mid:0,treble:0,sub:0,level:0,transient:0,hardBass:0,bassOnset:0,playing:false};
+window.doomsdayAudioSignal={bass:0,mid:0,treble:0,sub:0,level:0,transient:0,hardBass:0,bassOnset:0,kickSequence:0,playing:false};
 document.documentElement.style.setProperty('--audio-level','0');
 document.documentElement.style.setProperty('--audio-bass','0');
 document.documentElement.style.setProperty('--audio-mid','0');
@@ -432,11 +432,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   function updateMeydaFeatures(features){
     const spectrum=features.amplitudeSpectrum||[];
     if(!spectrum.length || !audioContext) return;
-    const binWidth=audioContext.sampleRate/(2*spectrum.length);
-    const bassRatio=spectrumBandLevel(spectrum,analysisBand.bass,binWidth);
-    const midRatio=spectrumBandLevel(spectrum,analysisBand.mid,binWidth);
-    const trebleRatio=spectrumBandLevel(spectrum,analysisBand.treble,binWidth);
-    const subRatio=spectrumBandLevel(spectrum,analysisBand.sub,binWidth);
     const rms=Math.max(0,Math.min(1,(features.rms||0)*4));
     const rmsRise=Math.max(0,rms-previousMeydaRms);
     previousMeydaRms=rms;
@@ -451,16 +446,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     previousMeydaSpectrum=Array.prototype.slice.call(spectrum);
     const flux=Math.max(0,Math.min(1,(fluxTotal/fluxDenominator)*2.5));
     meydaFeatures={
-      bass:bassRatio,
-      mid:midRatio,
-      treble:trebleRatio,
-      sub:subRatio,
       level:rms,
-      transient:Math.max(flux,rmsRise*4),
-      hardBass:bassRatio,
-      hardBassConfirmed:bassRatio>=getFxHardBassOn()
+      transient:Math.max(flux,rmsRise*4)
     };
-    updateSpectrumDisplay(meydaFeatures,spectrum);
   }
 
     /* iOS WebKit can feed a cross-origin MediaElementSource only zeros. The
@@ -740,6 +728,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       localKickArmed=false;
       localKickSequence+=1;
       signal.bassOnset=Math.max(0.90,localKickStrength);
+      signal.kickSequence=localKickSequence;
       lastKickDebug={sub:sub,fast:localSubFast,seq:localKickSequence,strength:signal.bassOnset};
     }
     signal.hardBass=bass;

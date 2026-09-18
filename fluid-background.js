@@ -95,6 +95,7 @@ if (host && !prefersReducedMotion) {
     let lastPointerSpray = 0;
     let lastAudioSpray = 0;
     let lastLogoGlitch = 0;
+    let lastLocalKickSequence = 0;
     let hardBassFrames = 0;
     let hardBassTriggered = false;
     let trebleSpikeFrames = 0;
@@ -187,13 +188,16 @@ if (host && !prefersReducedMotion) {
       const transient = Math.max(0, Math.min(1, signal ? (signal.transient || 0) : 0));
       const bass = Math.max(0, Math.min(1, signal ? (signal.bass || level) : level));
       const hardBass = Math.max(0, Math.min(1, signal ? (signal.hardBass || 0) : 0));
+      const localKickSequence = signal && Number.isFinite(Number(signal.kickSequence)) ? Number(signal.kickSequence) : 0;
+      const hasLocalKick = localKickSequence > lastLocalKickSequence;
+      if (hasLocalKick) lastLocalKickSequence = localKickSequence;
       const mid = Math.max(0, Math.min(1, signal ? (signal.mid || level) : level));
       const treble = Math.max(0, Math.min(1, signal ? (signal.treble || level) : level));
       const bassActivity = Math.max(0, Math.min(1, (bass - fxNum(fxBass, 'softFloor', 0.25)) / (1 - fxNum(fxBass, 'softFloor', 0.25))));
       const bassHardThreshold = fxNum(fxBass, 'hardFloor', 0.38);
       const bassHardActivity = Math.max(0, Math.min(1, (bass - bassHardThreshold) / (1 - bassHardThreshold)));
       const hardBassActivity = heavyBassEnabled && bassCoupledEnabled
-        ? (signal && (signal.bassOnset || 0) >= fxNum(fxBassCoupled, 'glitchOn', 0.85) ? signal.bassOnset : 0)
+        ? (hasLocalKick ? 1 : (signal && (signal.bassOnset || 0) >= fxNum(fxBassCoupled, 'glitchOn', 0.85) ? signal.bassOnset : 0))
         : (signal && signal.hardBassConfirmed ? hardBass : 0);
       const hardBassEmission = Math.max(0, Math.min(1, (hardBassActivity - getFxHeavyBassOn()) / fxNum(fxHeavyBass, 'emissionScale', 0.12)));
       const bassPunch = Math.max(
@@ -212,7 +216,7 @@ if (host && !prefersReducedMotion) {
         hardBassTriggered = false;
       }
       const hasBassPeak = heavyBassEnabled && (bassCoupledEnabled
-        ? hardBassActivity >= getFxHeavyBassOn() && !hardBassTriggered
+        ? (hasLocalKick || hardBassActivity >= getFxHeavyBassOn()) && !hardBassTriggered
         : hardBassFrames >= fxNum(fxHeavyBass, 'confirmFrames', 3) && !hardBassTriggered);
 
       /* Logo glitch fires only on the hardest bass hits; a loud overall level
