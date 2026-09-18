@@ -215,6 +215,17 @@
       analysisBands.treble.toHz = 12000;
       save();
     }
+    if (trigger.treble
+      && trigger.treble.radius === 0.005
+      && trigger.treble.radiusScale === 0.005
+      && trigger.treble.force === 10
+      && trigger.treble.forceScale === 18) {
+      trigger.treble.radius = 0.012;
+      trigger.treble.radiusScale = 0.010;
+      trigger.treble.force = 24;
+      trigger.treble.forceScale = 28;
+      save();
+    }
   }
 
   function save() {
