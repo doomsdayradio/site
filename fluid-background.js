@@ -242,7 +242,7 @@ if (host && !prefersReducedMotion) {
       if (logoStage && glitchEnabled && hasBassPeak && now - lastLogoGlitch > fxNum(fxHeavyBass, 'glitchCooldownMs', 1200)) {
         lastLogoGlitch = now;
         hardBassTriggered = true;
-        glitchEmissionBursts = fxNum(fxHeavyBass, 'glitchBursts', 3);
+        glitchEmissionBursts = hasLocalKick ? 1 : fxNum(fxHeavyBass, 'glitchBursts', 3);
         glitchEmissionUntil = now + fxNum(fxHeavyBass, 'glitchMs', 520);
         logoStage.classList.remove('logo-bass-hit');
         void logoStage.offsetWidth;
@@ -278,8 +278,8 @@ if (host && !prefersReducedMotion) {
           : bcMaxInterval + (bcMinInterval - bcMaxInterval) * bcActivity;
         const emissionPunch = glitchBurstActive ? 1 : Math.max(punch, hardBassActivity);
         const bcRiseOn = fxNum(fxBassCoupled, 'kickRiseOn', 0.18);
-        const bcAttack = hasLocalKick || bcActivityRise >= bcRiseOn;
-        if (isPlaying && (bcAttack || glitchBurstActive) && now - lastAudioSpray > emitInterval) {
+        const shouldEmitBass = bcActivity > 0 || hasLocalKick || glitchBurstActive;
+        if (isPlaying && shouldEmitBass && now - lastAudioSpray > emitInterval) {
           lastAudioSpray = now;
           const cloudColor = soundWaveColor(now, bass, mid, treble, emissionPunch);
           const kickEmission = hasLocalKick || bcActivityRise >= bcRiseOn || glitchBurstActive;
@@ -392,7 +392,7 @@ if (host && !prefersReducedMotion) {
           * (topEmitters.rightX - topEmitters.leftX);
         const pipeCenter = (topEmitters.leftX + topEmitters.rightX) * 0.5;
         const sparkForce = (fxNum(fxTreble, 'force', 10)
-          + treble * fxNum(fxTreble, 'forceScale', 18) + transient * 10) * 1.35;
+          + treble * fxNum(fxTreble, 'forceScale', 18) + transient * 10) * 1.8;
         const direction = fxTreble.direction === 'down' ? 1 : -1;
         const sparkEmitters = direction < 0 ? topEmitters : bottomEmitters;
         const angleSpread = Math.min(Math.PI / 2, Math.max(0, fxNum(fxTreble, 'angleSpread', 0.55)));
@@ -402,7 +402,7 @@ if (host && !prefersReducedMotion) {
           fluid.splatAtLocation(
             pipeCenter + pipeOffset,
             sparkEmitters.y,
-            Math.cos(angle) * sparkForce * 0.35,
+            Math.cos(angle) * sparkForce,
             Math.sin(angle) * sparkForce * fxNum(fxTreble, 'lift', 1)
           );
         }
