@@ -38,3 +38,16 @@ subfolder deployments from other repositories are preserved). CDN cache purging
 is deliberately not part of this setup; it can be added later with a separate Pull
 Zone API secret. Bunny credentials are never written to the repository or emitted
 in the workflow log.
+
+## Local audio visualisation debug
+
+The debug pages use the real stream through a same-origin proxy so WebAudio can
+run the actual FFT on localhost. Start it from the repository root:
+
+```sh
+python3 site/tools/audio_proxy.py
+```
+
+Then open `http://localhost:8765/debug.html?debug`. Debug playback is routed
+through WebAudio with gain `0`, so it remains silent while the analyser receives
+the live stream. The production page continues to use the public stream directly.

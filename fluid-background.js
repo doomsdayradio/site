@@ -109,6 +109,7 @@ if (host && !prefersReducedMotion) {
     let lastAudioSpray = 0;
     let lastLogoGlitch = 0;
     let lastLocalKickSequence = 0;
+    let lastBassCoupledActivity = 0;
     let hardBassFrames = 0;
     let hardBassTriggered = false;
     let trebleSpikeFrames = 0;
@@ -199,38 +200,33 @@ if (host && !prefersReducedMotion) {
 
     function sprayAtPointer(now) {
       if (pointerActive && now - lastPointerMove > 180) pointerActive = false;
-      const signal = window.doomsdayAudioSignal;
-      const isPlaying = Boolean(signal && signal.playing && (
-        (signal.level || 0) >= 0.02
-        || (signal.sub || 0) >= 0.12
-        || (signal.bass || 0) >= 0.12
-      ));
-      const level = Math.max(0, Math.min(1, signal ? (signal.level || 0) : 0));
-      const transient = Math.max(0, Math.min(1, signal ? (signal.transient || 0) : 0));
-      const bass = Math.max(0, Math.min(1, signal ? (signal.bass || level) : level));
-      const hardBass = Math.max(0, Math.min(1, signal ? (signal.hardBass || 0) : 0));
-      const localKickSequence = signal && Number.isFinite(Number(signal.kickSequence)) ? Number(signal.kickSequence) : 0;
+      const signal = window.doomsdayAudioSignal || {};
+      const localKickSequence = Number.isFinite(Number(signal.kickSequence)) ? Number(signal.kickSequence) : 0;
       const hasLocalKick = localKickSequence > lastLocalKickSequence;
       if (hasLocalKick) lastLocalKickSequence = localKickSequence;
-      const mid = Math.max(0, Math.min(1, signal ? (signal.mid || level) : level));
-      const treble = Math.max(0, Math.min(1, signal ? (signal.treble || level) : level));
-      const bassActivity = Math.max(0, Math.min(1, (bass - fxNum(fxBass, 'softFloor', 0.25)) / (1 - fxNum(fxBass, 'softFloor', 0.25))));
-      const bassHardThreshold = fxNum(fxBass, 'hardFloor', 0.38);
-      const bassHardActivity = Math.max(0, Math.min(1, (bass - bassHardThreshold) / (1 - bassHardThreshold)));
-      const hardBassActivity = heavyBassEnabled && bassCoupledEnabled
-        ? (hasLocalKick ? 1 : (signal && (signal.bassOnset || 0) >= fxNum(fxBassCoupled, 'glitchOn', 0.85) ? signal.bassOnset : 0))
-        : (signal && signal.hardBassConfirmed ? hardBass : 0);
-      const hardBassEmission = Math.max(0, Math.min(1, (hardBassActivity - getFxHeavyBassOn()) / fxNum(fxHeavyBass, 'emissionScale', 0.12)));
-      const bassPunch = Math.max(
-        bassActivity * bassActivity,
-        bassHardActivity * bassHardActivity,
-        hardBassActivity * hardBassActivity
-      );
-      const levelFloor = fxNum(fxSoftPulse, 'levelFloor', 0.30);
-      const volumeActivity = Math.max(0, Math.min(1, (level - levelFloor) / (1 - levelFloor)));
-      const volumePulse = softPulseEnabled ? transient * (0.08 + volumeActivity * 0.34) : 0;
-      const levelPunch = highLevelEnabled ? Math.max(0, Math.min(1, (level - fxHighLevelOn) / (1 - fxHighLevelOn))) : 0;
-      const visualPunch = Math.min(1, Math.max(bassPunch, volumePulse, levelPunch * 0.82));
+      const derived = window.doomsdayAudioSignalMath.derive(signal, fxTriggers, {
+        bassCoupled: bassCoupledEnabled,
+        heavyBass: heavyBassEnabled,
+        highLevel: highLevelEnabled,
+        softPulse: softPulseEnabled,
+        hasLocalKick: hasLocalKick
+      });
+      const isPlaying = derived.isPlaying;
+      const level = derived.level;
+      const transient = derived.transient;
+      const bass = derived.bass;
+      const hardBass = derived.hardBass;
+      const mid = derived.mid;
+      const treble = derived.treble;
+      const bassActivity = derived.bassActivity;
+      const bassHardActivity = derived.bassHardActivity;
+      const hardBassActivity = hasLocalKick ? 1 : derived.hardBassActivity;
+      const hardBassEmission = derived.hardBassEmission;
+      const bassPunch = derived.bassPunch;
+      const volumeActivity = derived.volumeActivity;
+      const volumePulse = derived.volumePulse;
+      const levelPunch = derived.levelPunch;
+      const visualPunch = derived.visualPunch;
       if (isPlaying && hardBassActivity >= getFxHeavyBassOn()) hardBassFrames += 1;
       else if (hardBassActivity < getFxHeavyBassOff()) {
         hardBassFrames = 0;
@@ -266,6 +262,8 @@ if (host && !prefersReducedMotion) {
           (bcSub - fxNum(fxBassCoupled, 'subGateOn', 0.18)) / fxNum(fxBassCoupled, 'subGateScale', 0.12)
         ));
         const bcActivity = bcSubActivity * bcSubGate;
+        const bcActivityRise = bcActivity - lastBassCoupledActivity;
+        lastBassCoupledActivity = isPlaying ? bcActivity : 0;
         /* Exponential strength curve: quiet parts stay subtle, loud bass
          * explodes. intensityExponent controls how aggressive the top end is. */
         const bcK = fxNum(fxBassCoupled, 'intensityExponent', 2.5);
@@ -278,7 +276,9 @@ if (host && !prefersReducedMotion) {
           ? (lowPerformanceMode ? fxNum(fxSoftPulse, 'burstIntervalMsLite', 170) : fxNum(fxSoftPulse, 'burstIntervalMs', 125))
           : bcMaxInterval + (bcMinInterval - bcMaxInterval) * bcActivity;
         const emissionPunch = glitchBurstActive ? 1 : punch;
-        if (isPlaying && (bcActivity > 0.02 || glitchBurstActive) && now - lastAudioSpray > emitInterval) {
+        const bcRiseOn = fxNum(fxBassCoupled, 'kickRiseOn', 0.18);
+        const bcAttack = hasLocalKick || bcActivityRise >= bcRiseOn;
+        if (isPlaying && (bcAttack || glitchBurstActive) && now - lastAudioSpray > emitInterval) {
           lastAudioSpray = now;
           const cloudColor = soundWaveColor(now, bass, mid, treble, emissionPunch);
           fluid.setConfig({

@@ -87,43 +87,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const value=Number(group[key]);
     return Number.isFinite(value)?value:fallback;
   };
-  const audioAnalysisCfg=(window.doomsdayFxConfig||{}).audioAnalysis||{};
-  const analysisBands=audioAnalysisCfg.bands||{};
-  const getAnalysisBand=function(name,defaults){
-    const configured=analysisBands[name]||{};
-    const fromHz=Number(configured.fromHz);
-    const toHz=Number(configured.toHz);
-    const levelMin=Number(configured.levelMin);
-    const levelMax=Number(configured.levelMax);
-    const resolvedFromHz=Number.isFinite(fromHz)?Math.max(0,fromHz):defaults.fromHz;
-    const resolvedToHz=Number.isFinite(toHz)?Math.max(resolvedFromHz,toHz):defaults.toHz;
-    const resolvedLevelMin=Number.isFinite(levelMin)?levelMin:defaults.levelMin;
-    return {
-      name:name,
-      fromHz:resolvedFromHz,
-      toHz:resolvedToHz,
-      levelMin:resolvedLevelMin,
-      levelMax:Number.isFinite(levelMax)?Math.max(resolvedLevelMin+0.001,levelMax):defaults.levelMax
-    };
-  };
-  const analysisBandDefaults={
-    bass:{fromHz:35,toHz:160,levelMin:0.18,levelMax:0.80},
-    mid:{fromHz:160,toHz:2200,levelMin:0.18,levelMax:0.80},
-    treble:{fromHz:10000,toHz:16000,levelMin:0.18,levelMax:0.80},
-    sub:{fromHz:0,toHz:120,levelMin:0.04,levelMax:0.45}
-  };
+  const audioAnalysis=window.doomsdayAudioAnalysis;
+  const analysisBands=((window.doomsdayFxConfig||{}).audioAnalysis||{}).bands||{};
   let analysisBand={};
   const resolveAnalysisBands=function(){
-    analysisBand={
-      bass:getAnalysisBand('bass',analysisBandDefaults.bass),
-      mid:getAnalysisBand('mid',analysisBandDefaults.mid),
-      treble:getAnalysisBand('treble',analysisBandDefaults.treble),
-      sub:getAnalysisBand('sub',analysisBandDefaults.sub)
-    };
-    if(analysisBand.sub.fromHz===analysisBand.bass.fromHz&&analysisBand.sub.toHz===analysisBand.bass.toHz){
-      analysisBand.sub.levelMin=analysisBand.bass.levelMin;
-      analysisBand.sub.levelMax=analysisBand.bass.levelMax;
-    }
+    analysisBand=audioAnalysis.resolveBands({bands:analysisBands});
   };
   resolveAnalysisBands();
   const formatSpectrumHz=function(value){
@@ -137,9 +105,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     });
   };
   updateSpectrumBandLabels();
-  const normalizeBandLevel=function(rawLevel,band){
-    return Math.max(0,Math.min(1,(rawLevel-band.levelMin)/(band.levelMax-band.levelMin)));
-  };
   let wsDelayMs=Number.isFinite(Number(fxSyncCfg.delayMs))?Math.max(0,Number(fxSyncCfg.delayMs)):4000;
   try{
     const savedDelay=Number(localStorage.getItem('ddSyncDelayMs'));
@@ -180,8 +145,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let floatFrequencyData=null;
   let outputGain=null;
   let visualizerFrame=0;
-  let fallbackFrame=0;
-  let fallbackTimer=0;
   let isPlaying=false;
   let hasStarted=false;
   let silentFrames=0;
@@ -206,16 +169,28 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let lastKickSequence=null;
   const levelsUrl='wss://stream.doomsday.radio/levels';
   const baseSignalLevel=0.74;
+  const audioSignal=window.doomsdayAudioSignal;
+  const resetAudioSignal=function(overrides){
+    Object.assign(audioSignal,{
+      bass:0,mid:0,treble:0,sub:0,level:0,transient:0,
+      hardBass:0,hardBassConfirmed:false,bassOnset:0,kickSequence:0,playing:false
+    },overrides||{});
+    return audioSignal;
+  };
   const urlParams=new URLSearchParams(location.search);
   const isDebugPage=/\/(?:ios-)?debug\.html$/.test(location.pathname);
   const forceServerLevelsDebug=/\/ios-debug\.html$/.test(location.pathname);
   if(isDebugPage) wsDelayMs=0;
-    /* Debug pages are intentionally usable from localhost as well. The normal
-      page starts with the local analyser; only ios-debug.html forces levels. */
-    const canAnalyzeAudio=location.hostname==='doomsday.radio'||isDebugPage;
+    /* Localhost cannot use a MediaElementSource because the stream only
+      permits the production origin for CORS. Debug pages use the real
+      server-level feed and keep the audio output at volume zero. */
+    const canAnalyzeAudio=location.hostname==='doomsday.radio'
+      ||(isDebugPage&&location.hostname==='localhost'&&audio.dataset.src==='/live');
   const isAppleMobile=/iP(?:hone|ad|od)/.test(navigator.userAgent)
     || (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  const useServerLevelsFallback=forceServerLevelsDebug||(isAppleMobile&&/AppleWebKit/.test(navigator.userAgent));
+  const muteDebugAudio=isDebugPage;
+  const useServerLevels=(!canAnalyzeAudio&&isDebugPage)
+    ||(isAppleMobile&&/AppleWebKit/.test(navigator.userAgent));
   /* ?debug shows the full player debug panel; ?viz-debug stays supported and
      behaves like ?debug (log lines included). */
     const debugMode=isDebugPage||urlParams.has('debug')||urlParams.has('viz-debug');
@@ -320,7 +295,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   for(let index=0;index<32;index++){
     const bar=document.createElement('span');
-    bar.className='equalizer-bar is-fallback';
+    bar.className='equalizer-bar is-neutral';
     bar.style.setProperty('--idle-height',(0.08+Math.sin((index+2)*0.55)*0.08+index%3*0.025).toFixed(2));
     equalizer.appendChild(bar);
     bars.push(bar);
@@ -328,7 +303,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   if(canAnalyzeAudio) audio.crossOrigin='anonymous';
   audio.src=audio.dataset.src;
-  audio.volume=Number(volume.value);
+  audio.muted=false;
+  audio.volume=muteDebugAudio?0:Number(volume.value);
 
   function setupAnalyser(){
     if(analyser) return;
@@ -344,11 +320,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     floatFrequencyData=new Float32Array(analyser.frequencyBinCount);
     const source=audioContext.createMediaElementSource(audio);
     outputGain=audioContext.createGain();
-    outputGain.gain.value=Number(volume.value);
+    outputGain.gain.value=muteDebugAudio?0:Number(volume.value);
     source.connect(analyser);
     source.connect(outputGain).connect(audioContext.destination);
     audio.volume=1;
-    bars.forEach(function(bar){bar.classList.remove('is-fallback')});
+    bars.forEach(function(bar){bar.classList.remove('is-neutral')});
     vizMode='element';
     vizLog('element tap active');
   }
@@ -424,30 +400,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     });
   }
 
-  function spectrumBandRawLevel(spectrum,band,binWidth){
-    const start=Math.max(1,Math.floor(band.fromHz/binWidth));
-    const end=Math.min(spectrum.length,Math.ceil(band.toHz/binWidth));
-    let energy=0;
-    let sum=0;
-    let count=0;
-    for(let index=start;index<end;index++){
-      const sample=spectrum[index]||0;
-      energy+=sample*sample;
-      sum+=sample;
-      count++;
-    }
-    if(band.name==='sub'){
-      const expectedBins=Math.max(1,Math.ceil((band.toHz-band.fromHz)/binWidth));
-      return sum/expectedBins;
-    }
-    const bandRms=count?Math.sqrt(energy/count):0;
-    return bandRms;
-  }
-  function spectrumBandLevel(spectrum,band,binWidth){
-    const bandRms=spectrumBandRawLevel(spectrum,band,binWidth);
-    return Math.max(0,Math.min(1,(bandRms-band.levelMin)/(band.levelMax-band.levelMin)));
-  }
-
     /* iOS WebKit can feed a cross-origin MediaElementSource only zeros. The
       server-level feed is reserved for that failed local-analysis path. */
   function scheduleWsReconnect(){
@@ -461,22 +413,20 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   function stopLocalVisualizer(){
     if(visualizerFrame){cancelAnimationFrame(visualizerFrame);visualizerFrame=0}
-    stopFallbackSignal();
   }
 
   function resumeLocalVisualizer(){
-    if(analyser && vizMode!=='fallback'){
+    if(analyser && vizMode!=='ws'){
       vizMode='element';
       silentFrames=0;
       if(!visualizerFrame) visualizerFrame=requestAnimationFrame(drawEqualizer);
     }else if(!analyser){
-      if(vizMode==='ws'||vizMode==='off') vizMode='fallback';
-      startFallbackSignal();
+      if(vizMode==='ws'||vizMode==='off') vizMode='off';
     }
   }
 
   function ensureWebSocketViz(){
-    if(wsSocket || wsReconnectTimer || !canAnalyzeAudio) return;
+    if(wsSocket || wsReconnectTimer || (!canAnalyzeAudio && !useServerLevels)) return;
     let socket;
     try{socket=new WebSocket(levelsUrl)}
     catch(error){
@@ -568,7 +518,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
        and measure bass as a spike ratio against it: "hardest hit of the
        song". The absolute floor keeps quiet passages from glitching. */
     wsBassBaseline+=(bass-wsBassBaseline)*0.008;
-    const sub=normalizeBandLevel(milli(bands[0]),analysisBand.sub);
+    const sub=audioAnalysis.normalizeBandLevel(milli(bands[0]),analysisBand.sub);
     lastSubLevel=sub;
     const fastSub=milli(payload.sub_fast);
     const kick=payload.kick&&typeof payload.kick==='object'?payload.kick:null;
@@ -592,7 +542,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     signal.bassOnset=Number.isFinite(Number(signal.bassOnset))?Number(signal.bassOnset)*0.62:0;
      if(hasQualifiedKick) signal.bassOnset=Math.max(signal.bassOnset,kickStrength);
     signal.playing=true;
-    if(spectrumSource) spectrumSource.textContent='LEVELS / SERVER-FALLBACK';
+    if(spectrumSource) spectrumSource.textContent='LEVELS / SERVER';
     const displaySpectrum=[];
     for(let index=0;index<32;index++){
       const position=index*7/31;
@@ -608,19 +558,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     if(!isDebugPage) updateSignalVisualization(signal);
     pushDebugSample();
     updateEqualizerBars(spectrumDisplayLevels);
-  }
-
-  function startFallbackSignal(){
-    if(fallbackTimer || vizMode==='ws') return;
-    vizLog('fallback START');
-    fallbackFrame=1;
-    fallbackTimer=window.setInterval(function(){drawFallbackSignal(performance.now())},50);
-  }
-
-  function stopFallbackSignal(){
-    if(fallbackTimer) window.clearInterval(fallbackTimer);
-    fallbackTimer=0;
-    fallbackFrame=0;
   }
 
   function teardownElementTap(){
@@ -644,10 +581,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     visualizerFrame=0;
   }
 
-  function enterFallbackMode(){
-    vizMode='fallback';
+  function enterNoAnalysisMode(){
+    vizMode='off';
     analyserBroken=true;
-    bars.forEach(function(bar){bar.classList.add('is-fallback')});
+    bars.forEach(function(bar){bar.classList.add('is-neutral')});
   }
 
   function setupCaptureAnalyser(){
@@ -681,36 +618,19 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   const LOCAL_DB_FLOOR=-72;
   const LOCAL_DB_CEILING=-18;
-  function localBandLevel(db){
-    return Math.max(0,Math.min(1,(db-LOCAL_DB_FLOOR)/(LOCAL_DB_CEILING-LOCAL_DB_FLOOR)));
-  }
-  function localBandDb(spectrum,band,binWidth){
-    const start=Math.max(1,Math.floor(band.fromHz/binWidth));
-    const end=Math.min(spectrum.length,Math.ceil(band.toHz/binWidth));
-    let power=0;
-    let count=0;
-    for(let index=start;index<end;index++){
-      const db=spectrum[index];
-      if(Number.isFinite(db)){
-        power+=Math.pow(10,db/10);
-        count++;
-      }
-    }
-    return count?10*Math.log10(power/count):LOCAL_DB_FLOOR;
-  }
   function drawEqualizer(){
     if(vizMode==='ws'){visualizerFrame=0;return}
     if(!analyser || !floatFrequencyData || audio.paused){visualizerFrame=0;return}
     analyser.getFloatFrequencyData(floatFrequencyData);
     const binWidth=audioContext.sampleRate/analyser.fftSize;
-    const subDb=localBandDb(floatFrequencyData,analysisBand.sub,binWidth);
-    const bassDb=localBandDb(floatFrequencyData,analysisBand.bass,binWidth);
-    const midDb=localBandDb(floatFrequencyData,analysisBand.mid,binWidth);
-    const trebleDb=localBandDb(floatFrequencyData,analysisBand.treble,binWidth);
-    const sub=localBandLevel(subDb);
-    const bass=localBandLevel(bassDb);
-    const mid=localBandLevel(midDb);
-    const treble=localBandLevel(trebleDb);
+    const subDb=audioAnalysis.db(floatFrequencyData,analysisBand.sub,binWidth,LOCAL_DB_FLOOR);
+    const bassDb=audioAnalysis.db(floatFrequencyData,analysisBand.bass,binWidth,LOCAL_DB_FLOOR);
+    const midDb=audioAnalysis.db(floatFrequencyData,analysisBand.mid,binWidth,LOCAL_DB_FLOOR);
+    const trebleDb=audioAnalysis.db(floatFrequencyData,analysisBand.treble,binWidth,LOCAL_DB_FLOOR);
+    const sub=audioAnalysis.clamp((subDb-LOCAL_DB_FLOOR)/(LOCAL_DB_CEILING-LOCAL_DB_FLOOR),0,1);
+    const bass=audioAnalysis.clamp((bassDb-LOCAL_DB_FLOOR)/(LOCAL_DB_CEILING-LOCAL_DB_FLOOR),0,1);
+    const mid=audioAnalysis.clamp((midDb-LOCAL_DB_FLOOR)/(LOCAL_DB_CEILING-LOCAL_DB_FLOOR),0,1);
+    const treble=audioAnalysis.clamp((trebleDb-LOCAL_DB_FLOOR)/(LOCAL_DB_CEILING-LOCAL_DB_FLOOR),0,1);
     const signal=window.doomsdayAudioSignal;
     const previousSub=Number.isFinite(Number(signal.sub))?Number(signal.sub):0;
     const rawLevel=Math.max(bass,mid,treble);
@@ -757,9 +677,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
             return;
           }
         }
-        enterFallbackMode();
-        startFallbackSignal();
-        if(useServerLevelsFallback) ensureWebSocketViz();
+        enterNoAnalysisMode();
+        if(useServerLevels) ensureWebSocketViz();
         return;
       }
     }else{
@@ -772,43 +691,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       return Math.max(0,Math.min(1,(db-LOCAL_DB_FLOOR)/(LOCAL_DB_CEILING-LOCAL_DB_FLOOR)));
     }));
     visualizerFrame=requestAnimationFrame(drawEqualizer);
-  }
-
-  function drawFallbackSignal(now){
-    if(vizMode==='ws') return;
-    if(!isPlaying && audio.paused){
-      stopFallbackSignal();
-      return;
-    }
-    isPlaying=true;
-    const signal=window.doomsdayAudioSignal;
-    const pulse=0.24+Math.max(0,Math.sin(now*0.008))*0.28+Math.max(0,Math.sin(now*0.013+1.8))*0.16;
-    signal.level+=(pulse-signal.level)*0.32;
-    signal.playing=true;
-    document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
-    signal.bass+=(signal.level-signal.bass)*0.18;
-    signal.mid+=(pulse*0.86-signal.mid)*0.18;
-    signal.treble+=(pulse*0.62-signal.treble)*0.18;
-    signal.lowBass=signal.bass;
-    signal.hardBass=0;
-    signal.hardBassConfirmed=false;
-    signal.transient=Math.max(0,Math.min(1,(pulse-0.24)/0.44));
-    document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
-    document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
-    document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
-    /* Keep the full-screen noise layer static. Treble spikes use their own
-     * localized fluid effect and must not flash the entire background. */
-    if(noiseLayer){
-      noiseLayer.style.opacity=noiseBaseline.toFixed(3);
-    }
-    updateSignalVisualization(signal);
-    bars.forEach(function(bar,index){
-      const profile=0.24+0.5*Math.abs(Math.sin(index*0.46+0.7));
-      const travellingWave=0.18*Math.max(0,Math.sin(now*0.006-index*0.52));
-      const level=Math.max(0.1,Math.min(1,signal.level*(profile+travellingWave)));
-      bar.style.transform='scaleY('+level.toFixed(2)+')';
-      bar.style.opacity=String(0.5+level*0.5);
-    });
   }
 
   function updateSignalVisualization(signal){
@@ -884,26 +766,16 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   function updateAmbientMeter(){
     if(!analyser && audio && !audio.paused){
       isPlaying=true;
-      startFallbackSignal();
       return;
     }
-    if(isPlaying && (analyser || fallbackFrame)) return;
+    if(isPlaying && analyser) return;
     const level=0;
     const bass=0;
     const mid=0;
     const treble=0;
-    window.doomsdayAudioSignal={
-      bass:bass,
-      mid:mid,
-      treble:treble,
-      level:level,
-      transient:0,
-      hardBass:0,
-      hardBassConfirmed:false,
-      playing:false
-    };
+    resetAudioSignal({bass:bass,mid:mid,treble:treble,level:level});
     document.documentElement.style.setProperty('--audio-level',level.toFixed(3));
-    if(!isDebugPage) updateSignalVisualization(window.doomsdayAudioSignal);
+    if(!isDebugPage) updateSignalVisualization(audioSignal);
   }
 
   setInterval(updateAmbientMeter,85);
@@ -926,8 +798,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     setActive(true);
     toggle.disabled=true;
     try{
+      if(useServerLevels) ensureWebSocketViz();
       if(canAnalyzeAudio && !analyserBroken){
-        if(forceServerLevelsDebug) ensureWebSocketViz();
         try{setupAnalyser()}catch(error){
           analyser=null;frequencyData=null;
           vizLog('setup FAILED: '+(error&&error.message?error.message:String(error)));
@@ -937,7 +809,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       vizLog('play ctx:'+(audioContext?audioContext.state:'none')+' analyser:'+!!analyser);
       silentFrames=0;
       isPlaying=true;
-      if(!analyser) startFallbackSignal();
       await audio.play();
       if(analyser && !visualizerFrame) visualizerFrame=requestAnimationFrame(drawEqualizer);
     }catch(error){
@@ -946,7 +817,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
         setActive(true);
       }else{
         isPlaying=false;
-        stopFallbackSignal();
         status.textContent='SIGNAL NICHT ERREICHBAR';
         setActive(false);
       }
@@ -961,8 +831,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   });
 
   volume.addEventListener('input',function(){
-    if(outputGain) outputGain.gain.value=Number(volume.value);
-    else audio.volume=Number(volume.value);
+    if(outputGain) outputGain.gain.value=muteDebugAudio?0:Number(volume.value);
+    else audio.volume=muteDebugAudio?0:Number(volume.value);
   });
 
   audio.addEventListener('playing',function(){
@@ -974,7 +844,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
        resume it whenever playback actually starts. */
     if(audioContext && audioContext.state==='suspended'){audioContext.resume().catch(function(){})}
     if(analyser && !visualizerFrame){silentFrames=0;visualizerFrame=requestAnimationFrame(drawEqualizer)}
-    if(!analyser) startFallbackSignal();
   });
 
   audio.addEventListener('pause',function(){
@@ -986,7 +855,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       return;
     }
     isPlaying=false;
-    stopFallbackSignal();
     if(noiseLayer) noiseLayer.style.opacity=String(noiseBaseline);
     window.doomsdayAudioSignal.playing=false;
     updateAmbientMeter();

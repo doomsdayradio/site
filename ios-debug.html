@@ -34,7 +34,7 @@
         <img class="hero-logo" src="./ddd_radio_logo.png" alt="Doomsday Radio">
       </div>
       <section class="radio-player module-card" aria-label="iOS Visualisations-Debug Stream">
-        <audio id="radio-stream" preload="none" data-src="https://stream.doomsday.radio/live"></audio>
+        <audio id="radio-stream" preload="none" data-src="/live"></audio>
         <div id="equalizer" class="equalizer" aria-hidden="true"></div>
         <div class="player-controls">
           <div class="stream-action">
@@ -42,7 +42,7 @@
               <span class="stream-icon transport-icon" aria-hidden="true">▶</span>
             </button>
             <div class="stream-copy" aria-live="polite">
-              <strong>iOS FALLBACK DEBUG</strong>
+              <strong>iOS SERVER-LEVEL DEBUG</strong>
               <span id="stream-status">SIGNAL BEREIT</span>
             </div>
           </div>
@@ -64,7 +64,7 @@
       <div class="meter-meta"><span class="sample-label">SIGNAL</span><output id="signal-led-readout" class="meter-readout">00%</output></div>
       <div id="signal-led-row" class="led-row" aria-hidden="true"></div>
     </div>
-    <div id="weather-status" class="weather-status" role="status" aria-live="polite"><span id="weather-summary">iOS SERVER FALLBACK</span></div>
+    <div id="weather-status" class="weather-status" role="status" aria-live="polite"><span id="weather-summary">iOS SERVER LEVELS</span></div>
     <span id="clock">00:00:00</span>
     <span>FREQ:107.END</span>
   </div>
@@ -73,7 +73,9 @@
 
   <script src="./fx-config.js?v=25"></script>
   <script src="./debug-config.js?v=14"></script>
-  <script src="./index-ui.js?v=20260918-local-fft4"></script>
-  <script type="module" src="./fluid-background.js?v=20260918-emission15"></script>
+  <script src="./audio-analysis.js?v=2"></script>
+  <script src="./index-ui.js?v=20260918-local-proxy1"></script>
+  <script src="./audio-signal.js?v=1"></script>
+  <script type="module" src="./fluid-background.js?v=20260918-emission16"></script>
 </body>
 </html>
