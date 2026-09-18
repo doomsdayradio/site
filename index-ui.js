@@ -618,6 +618,15 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   const LOCAL_DB_FLOOR=-72;
   const LOCAL_DB_CEILING=-18;
+  const normalizeLocalBand=function(dbValue,band){
+    const globalLevel=audioAnalysis.clamp((dbValue-LOCAL_DB_FLOOR)/(LOCAL_DB_CEILING-LOCAL_DB_FLOOR),0,1);
+    const levelMin=Number(band&&band.levelMin);
+    const levelMax=Number(band&&band.levelMax);
+    if(Number.isFinite(levelMin)&&Number.isFinite(levelMax)&&levelMin>=0&&levelMax>levelMin&&levelMax<=1){
+      return audioAnalysis.normalizeBandLevel(globalLevel,band);
+    }
+    return globalLevel;
+  };
   function drawEqualizer(){
     if(vizMode==='ws'){visualizerFrame=0;return}
     if(!analyser || !floatFrequencyData || audio.paused){visualizerFrame=0;return}
@@ -627,10 +636,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const bassDb=audioAnalysis.db(floatFrequencyData,analysisBand.bass,binWidth,LOCAL_DB_FLOOR);
     const midDb=audioAnalysis.db(floatFrequencyData,analysisBand.mid,binWidth,LOCAL_DB_FLOOR);
     const trebleDb=audioAnalysis.db(floatFrequencyData,analysisBand.treble,binWidth,LOCAL_DB_FLOOR);
-    const sub=audioAnalysis.clamp((subDb-LOCAL_DB_FLOOR)/(LOCAL_DB_CEILING-LOCAL_DB_FLOOR),0,1);
-    const bass=audioAnalysis.clamp((bassDb-LOCAL_DB_FLOOR)/(LOCAL_DB_CEILING-LOCAL_DB_FLOOR),0,1);
-    const mid=audioAnalysis.clamp((midDb-LOCAL_DB_FLOOR)/(LOCAL_DB_CEILING-LOCAL_DB_FLOOR),0,1);
-    const treble=audioAnalysis.clamp((trebleDb-LOCAL_DB_FLOOR)/(LOCAL_DB_CEILING-LOCAL_DB_FLOOR),0,1);
+    const sub=normalizeLocalBand(subDb,analysisBand.sub);
+    const bass=normalizeLocalBand(bassDb,analysisBand.bass);
+    const mid=normalizeLocalBand(midDb,analysisBand.mid);
+    const treble=normalizeLocalBand(trebleDb,analysisBand.treble);
     const signal=window.doomsdayAudioSignal;
     const previousSub=Number.isFinite(Number(signal.sub))?Number(signal.sub):0;
     const rawLevel=Math.max(bass,mid,treble);

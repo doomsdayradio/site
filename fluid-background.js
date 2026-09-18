@@ -116,6 +116,7 @@ if (host && !prefersReducedMotion) {
     let trebleSpikeReady = true;
     let lastTrebleSpray = 0;
     let lastTrebleSpikeEnd = 0;
+    let lastTrebleSignal = 0;
     let glitchEmissionBursts = 0;
     let glitchEmissionUntil = 0;
     let audioSideToggle = 0;
@@ -351,8 +352,10 @@ if (host && !prefersReducedMotion) {
       const trebleSpikeOff = fxNum(fxTrebleSpike, 'off', 0.18);
       const trebleSpikeTransientOn = fxNum(fxTrebleSpike, 'transientOn', 0.05);
       const trebleSpikeRequiresTransient = fxTrebleSpike.requireTransient === true;
+      const trebleRise = Math.max(0, treble - lastTrebleSignal);
+      lastTrebleSignal = treble;
       if (trebleEnabled && isPlaying && treble >= trebleSpikeOn
-        && (!trebleSpikeRequiresTransient || transient >= trebleSpikeTransientOn || trebleSpikeFrames > 0)) {
+        && (!trebleSpikeRequiresTransient || transient >= trebleSpikeTransientOn || trebleRise >= trebleSpikeTransientOn || trebleSpikeFrames > 0)) {
         trebleSpikeFrames += 1;
       } else if (treble < trebleSpikeOff) {
         if (trebleSpikeFrames > 0) lastTrebleSpikeEnd = now;
