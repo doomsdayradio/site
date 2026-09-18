@@ -393,40 +393,6 @@ if (host && !prefersReducedMotion) {
         trebleSpikeFrames = 0;
         if (now - lastTrebleSpikeEnd > fxNum(fxTrebleSpike, 'cooldownMs', 500)) trebleSpikeReady = true;
       }
-      const trebleSpikeInterval = lowPerformanceMode
-        ? fxNum(fxTrebleSpike, 'intervalMsLite', 240)
-        : fxNum(fxTrebleSpike, 'intervalMs', 160);
-        if (trebleEnabled && emissionEnabled && isPlaying && trebleSpikeReady && trebleSpikeFrames >= fxNum(fxTrebleSpike, 'confirmFrames', 2) && now - lastTrebleSpray > trebleSpikeInterval) {
-        lastTrebleSpray = now;
-        trebleSpikeReady = false;
-        const sparkColor = trebleSparkPalette[Math.floor(Math.random() * trebleSparkPalette.length)];
-        const pipeRadius = Math.min(0.025,
-          fxNum(fxTreble, 'radius', 0.003) + treble * fxNum(fxTreble, 'radiusScale', 0.003));
-        fluid.setConfig({
-          colorPalette: [sparkColor],
-          brightness: 0.28,
-          splatRadius: pipeRadius,
-          splatForce: fxNum(fxTreble, 'force', 10) + treble * fxNum(fxTreble, 'forceScale', 18)
-        });
-        // Keep the treble spray above the opaque logo so the individual pipes
-        // remain visible instead of being deposited behind the artwork.
-        const sparkEmitters = logoEmitters(-0.04 + Math.sin(now * 0.004) * 0.02);
-        const pipeCount = Math.max(1, Math.round(fxNum(fxTreble, 'pipeCount', 12)));
-        const pipeSpacing = fxNum(fxTreble, 'pipeSpacing', 0.025) * (sparkEmitters.rightX - sparkEmitters.leftX);
-        const pipeCenter = (sparkEmitters.leftX + sparkEmitters.rightX) * 0.5;
-        const sparkForce = fxNum(fxTreble, 'force', 10) + treble * fxNum(fxTreble, 'forceScale', 18) + transient * 10;
-        const angleSpread = fxNum(fxTreble, 'angleSpread', 0.55);
-        for(let pipeIndex=0;pipeIndex<pipeCount;pipeIndex++){
-          const pipeOffset=(pipeIndex-(pipeCount-1)*0.5)*pipeSpacing;
-          const angle=Math.PI/2+(Math.random()*2-1)*angleSpread;
-          fluid.splatAtLocation(
-            pipeCenter+pipeOffset,
-            sparkEmitters.y,
-            Math.cos(angle)*sparkForce*0.35,
-            Math.sin(angle)*sparkForce*fxNum(fxTreble, 'lift', 1)
-          );
-        }
-      }
       if (fxMouse.enabled !== false && pointerActive && pointerX !== null && pointerY !== null) {
         if (sprayX === null || sprayY === null) {
           sprayX = pointerX;
