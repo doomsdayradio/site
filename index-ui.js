@@ -108,7 +108,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     bass:{fromHz:35,toHz:160,levelMin:0.18,levelMax:0.80},
     mid:{fromHz:160,toHz:2200,levelMin:0.18,levelMax:0.80},
     treble:{fromHz:10000,toHz:16000,levelMin:0.18,levelMax:0.80},
-    sub:{fromHz:0,toHz:120,levelMin:0.30,levelMax:1.00}
+    sub:{fromHz:0,toHz:120,levelMin:0.04,levelMax:0.45}
   };
   let analysisBand={};
   const resolveAnalysisBands=function(){
@@ -420,11 +420,17 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const start=Math.max(1,Math.floor(band.fromHz/binWidth));
     const end=Math.min(spectrum.length,Math.ceil(band.toHz/binWidth));
     let energy=0;
+    let sum=0;
     let count=0;
     for(let index=start;index<end;index++){
       const sample=spectrum[index]||0;
       energy+=sample*sample;
+      sum+=sample;
       count++;
+    }
+    if(band===analysisBand.sub){
+      const expectedBins=Math.max(1,Math.ceil((band.toHz-band.fromHz)/binWidth));
+      return sum/expectedBins;
     }
     const bandRms=count?Math.sqrt(energy/count):0;
     return bandRms;

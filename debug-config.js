@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var storageKey = 'ddDebugFxConfigV3';
+  var storageKey = 'ddDebugFxConfigV4';
   var base = window.doomsdayFxConfig || { version: 1, triggers: {} };
   var trigger = base.triggers || (base.triggers = {});
   var analysis = base.audioAnalysis || (base.audioAnalysis = {});
