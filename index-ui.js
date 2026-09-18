@@ -80,6 +80,12 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const fxBassCoupledCfg=((window.doomsdayFxConfig||{}).triggers||{}).bassCoupled||{};
   const fxGlowCfg=((window.doomsdayFxConfig||{}).triggers||{}).glow||{};
   const fxGlitchCfg=((window.doomsdayFxConfig||{}).triggers||{}).glitch||{};
+  const fxNoiseEnabled=fxNoiseCfg.enabled!==false;
+  const fxGlowEnabled=fxGlowCfg.enabled!==false;
+  const cfgNum=function(group,key,fallback){
+    const value=Number(group[key]);
+    return Number.isFinite(value)?value:fallback;
+  };
   const audioAnalysisCfg=(window.doomsdayFxConfig||{}).audioAnalysis||{};
   const analysisBands=audioAnalysisCfg.bands||{};
   const getAnalysisBand=function(name,defaults){
@@ -101,16 +107,17 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const analysisBandDefaults={
     bass:{fromHz:35,toHz:160,levelMin:0.18,levelMax:0.80},
     mid:{fromHz:160,toHz:2200,levelMin:0.18,levelMax:0.80},
-    treble:{fromHz:10000,toHz:16000,levelMin:0.18,levelMax:0.80}
+    treble:{fromHz:10000,toHz:16000,levelMin:0.18,levelMax:0.80},
+    sub:{fromHz:0,toHz:120,levelMin:cfgNum(fxBassCoupledCfg,'subFloor',0.04),levelMax:cfgNum(fxBassCoupledCfg,'subCeil',0.45)}
   };
   const analysisBand={
     bass:getAnalysisBand('bass',analysisBandDefaults.bass),
     mid:getAnalysisBand('mid',analysisBandDefaults.mid),
-    treble:getAnalysisBand('treble',analysisBandDefaults.treble)
+    treble:getAnalysisBand('treble',analysisBandDefaults.treble),
+    sub:getAnalysisBand('sub',analysisBandDefaults.sub)
   };
-  const cfgNum=function(group,key,fallback){
-    const value=Number(group[key]);
-    return Number.isFinite(value)?value:fallback;
+  const normalizeSubLevel=function(rawLevel){
+    return Math.max(0,Math.min(1,(rawLevel-analysisBand.sub.levelMin)/(analysisBand.sub.levelMax-analysisBand.sub.levelMin)));
   };
   let wsDelayMs=Number.isFinite(Number(fxSyncCfg.delayMs))?Math.max(0,Number(fxSyncCfg.delayMs)):4000;
   try{
@@ -135,7 +142,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     document.documentElement.style.setProperty('--fx-glow-outer-radius',Math.max(0,Number(glow.outerRadius)||0)+'px');
   });
   const noiseLayer=document.querySelector('.noise');
-  const noiseBaseline=document.documentElement.classList.contains('fx-lite')?0.028:0.02;
+  const noiseBaseline=fxNoiseEnabled?(document.documentElement.classList.contains('fx-lite')?0.028:0.02):0;
   const noiseMaxOpacity=Number.isFinite(Number(fxNoiseCfg.maxOpacity))?Number(fxNoiseCfg.maxOpacity):0.16;
   const noiseBoost=Number.isFinite(Number(fxNoiseCfg.boost))?Number(fxNoiseCfg.boost):1.6;
   let audioContext=null;
@@ -334,6 +341,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const binWidth=audioContext?audioContext.sampleRate/(spectrum.length*2):24000/(spectrum.length*2);
     const liveSignal=window.doomsdayAudioSignal||{};
     const values={
+      sub:Math.max(0,Math.min(1,Number(liveSignal.sub)||0)),
       bass:spectrumBandLevel(spectrum,analysisBand.bass,binWidth),
       mid:spectrumBandLevel(spectrum,analysisBand.mid,binWidth),
       treble:spectrumBandLevel(spectrum,analysisBand.treble,binWidth),
@@ -559,7 +567,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
        and measure bass as a spike ratio against it: "hardest hit of the
        song". The absolute floor keeps quiet passages from glitching. */
     wsBassBaseline+=(bass-wsBassBaseline)*0.008;
-    const sub=milli(bands[0]);
+    const sub=normalizeSubLevel(milli(bands[0]));
     lastSubLevel=sub;
     const fastSub=milli(payload.sub_fast);
     const kick=payload.kick&&typeof payload.kick==='object'?payload.kick:null;
@@ -722,7 +730,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     signal.lowBass=lowBass;
     /* The local analyser has no server kick event. Normalize its low band
        against a quiet floor, then detect short rises against a slow envelope. */
-    const localSub=Math.max(0,Math.min(1,(lowBass-0.008)/0.10));
+    const localSub=normalizeSubLevel(lowBass);
     const localSubRise=Math.max(0,localSub-localSubFast);
     localSubFast+=(localSub-localSubFast)*0.38;
     localSubBaseline+=(localSub-localSubBaseline)*0.012;
@@ -893,7 +901,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
     const lvl=Math.max(0,Math.min(1,signal.level));
      const glowSpectrum=Math.max(0,Math.min(1,(((signal.bass||0)*0.45+(signal.mid||0)*0.65+(signal.treble||0)*0.85)-cfgNum(fxGlowCfg,'floor',0.10))/cfgNum(fxGlowCfg,'range',0.70)));
-      const glowTarget=signal.playing&&signal.level>=0.06
+      const glowTarget=fxGlowEnabled&&signal.playing&&signal.level>=0.06
         ? Math.max(0,Math.min(1,((signal.transient||0)*0.7+(signal.level||0)*0.3)*glowSpectrum))
         : 0;
       const previousGlow=Number(document.documentElement.dataset.glowActivity||0);

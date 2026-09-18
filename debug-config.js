@@ -5,15 +5,25 @@
   var base = window.doomsdayFxConfig || { version: 1, triggers: {} };
   var trigger = base.triggers || (base.triggers = {});
   var defaults = {
-    heavyBass: { on: 0.85, off: 0.76, glitchCooldownMs: 1200, glitchBursts: 3, glitchMs: 520, emissionScale: 0.12 },
+    heavyBass: { enabled: true, on: 0.85, off: 0.76, glitchCooldownMs: 1200, glitchBursts: 3, glitchMs: 520, emissionScale: 0.12 },
     bassCoupled: { enabled: true, subFloor: 0.04, subCeil: 0.45, subGateOn: 0.08, subGateScale: 0.10, glitchOn: 0.85, minIntervalMs: 90, maxIntervalMs: 460, intensityExponent: 1.8 },
     sync: { delayMs: 5500 },
-    glow: { midWeight: 0.6, trebleWeight: 0.8, floor: 0.10, range: 0.70, innerAlpha: 0.50, outerAlpha: 0.22, innerRadius: 15, outerRadius: 36 },
-    glitch: { durationMs: 240, topOpacity: 0.78, bottomOpacity: 0.70, fragmentDurationMs: 260 },
-    emission: { normalRadius: 0.06, normalRadiusScale: 0.16, normalForce: 520, glitchRadius: 0.22, glitchForce: 520 },
+    glow: { enabled: true, midWeight: 0.6, trebleWeight: 0.8, floor: 0.10, range: 0.70, innerAlpha: 0.50, outerAlpha: 0.22, innerRadius: 15, outerRadius: 36 },
+    glitch: { enabled: true, durationMs: 240, topOpacity: 0.78, bottomOpacity: 0.70, fragmentDurationMs: 260 },
+    emission: { enabled: true, normalRadius: 0.06, normalRadiusScale: 0.16, normalForce: 520, glitchRadius: 0.22, glitchForce: 520 },
     treble: { enabled: true, pipeCount: 3, pipeSpacing: 0.04, radius: 0.018, radiusScale: 0.02, force: 22, forceScale: 34, lift: 1 }
   };
   var fields = [
+    ['heavyBass', 'enabled', 'Hardbass aktiv', false],
+    ['highLevel', 'enabled', 'Lautstärke-Effekt aktiv', true],
+    ['softPulse', 'enabled', 'Soft-Pulse aktiv', true],
+    ['trebleSpike', 'enabled', 'Höhen-Pipes aktiv', true],
+    ['noise', 'enabled', 'Noise aktiv', true],
+    ['bassCoupled', 'enabled', 'Sub-Emission aktiv', true],
+    ['glow', 'enabled', 'Glow aktiv', true],
+    ['glitch', 'enabled', 'Glitch aktiv', true],
+    ['emission', 'enabled', 'Fluid-Emission aktiv', true],
+    ['treble', 'enabled', 'Höhen-Pipes aktiv', true],
     ['heavyBass', 'on', 'Hardbass an', 0, 1, 0.01],
     ['heavyBass', 'off', 'Hardbass aus', 0, 1, 0.01],
     ['bassCoupled', 'subFloor', 'Sub floor', 0, 1, 0.01],
@@ -138,15 +148,20 @@
       var row = document.createElement('label');
       row.className = 'debug-config-row';
       var description = descriptions[groupName + '.' + key] || 'Parameter des Effekts.';
-      row.innerHTML = '<span class="debug-config-label">' + field[2] + '<i class="debug-config-help" tabindex="0" data-tooltip="' + description + '" aria-label="' + description + '">?</i></span><input type="range"><output></output>';
+      var isBoolean = typeof trigger[groupName][key] === 'boolean';
+      row.innerHTML = '<span class="debug-config-label">' + field[2] + '<i class="debug-config-help" tabindex="0" data-tooltip="' + description + '" aria-label="' + description + '">?</i></span><input type="' + (isBoolean ? 'checkbox' : 'range') + '"><output></output>';
       var input = row.querySelector('input');
       var output = row.querySelector('output');
-      input.min = field[3]; input.max = field[4]; input.step = field[5];
-      input.value = trigger[groupName][key];
+      if (!isBoolean) {
+        input.min = field[3]; input.max = field[4]; input.step = field[5];
+        input.value = trigger[groupName][key];
+      } else {
+        input.checked = trigger[groupName][key];
+      }
       function update() {
-        var value = Number(input.value);
+        var value = isBoolean ? input.checked : Number(input.value);
         trigger[groupName][key] = value;
-        output.value = key.indexOf('Ms') >= 0 ? Math.round(value) + ' ms' : value.toFixed(2);
+        output.value = isBoolean ? (value ? 'AN' : 'AUS') : (key.indexOf('Ms') >= 0 ? Math.round(value) + ' ms' : value.toFixed(2));
         save();
         fireChange();
       }

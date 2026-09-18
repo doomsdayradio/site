@@ -30,6 +30,12 @@ const fxBassCoupled = fxTriggers.bassCoupled || {};
 const fxEmission = fxTriggers.emission || {};
 const fxTreble = fxTriggers.treble || {};
 const bassCoupledEnabled = fxBassCoupled.enabled !== false;
+const heavyBassEnabled = fxHeavyBass.enabled !== false;
+const highLevelEnabled = fxHighLevel.enabled !== false;
+const softPulseEnabled = fxSoftPulse.enabled !== false;
+const glitchEnabled = (fxTriggers.glitch || {}).enabled !== false;
+const emissionEnabled = fxEmission.enabled !== false;
+const trebleEnabled = fxTreble.enabled !== false && fxTrebleSpike.enabled !== false;
 const trebleSparkPalette = ['#d1ff45', '#e6f2b0', '#f4f0e6', '#e0c09b'];
 
 if (host && !prefersReducedMotion) {
@@ -186,7 +192,7 @@ if (host && !prefersReducedMotion) {
       const bassActivity = Math.max(0, Math.min(1, (bass - fxNum(fxBass, 'softFloor', 0.25)) / (1 - fxNum(fxBass, 'softFloor', 0.25))));
       const bassHardThreshold = fxNum(fxBass, 'hardFloor', 0.38);
       const bassHardActivity = Math.max(0, Math.min(1, (bass - bassHardThreshold) / (1 - bassHardThreshold)));
-      const hardBassActivity = bassCoupledEnabled
+      const hardBassActivity = heavyBassEnabled && bassCoupledEnabled
         ? (signal && (signal.sub || 0) >= fxNum(fxBassCoupled, 'kickSubMin', 0.34) && (signal.bassOnset || 0) >= fxNum(fxBassCoupled, 'glitchOn', 0.85) ? signal.bassOnset : 0)
         : (signal && signal.hardBassConfirmed ? hardBass : 0);
       const hardBassEmission = Math.max(0, Math.min(1, (hardBassActivity - getFxHeavyBassOn()) / fxNum(fxHeavyBass, 'emissionScale', 0.12)));
@@ -197,21 +203,21 @@ if (host && !prefersReducedMotion) {
       );
       const levelFloor = fxNum(fxSoftPulse, 'levelFloor', 0.30);
       const volumeActivity = Math.max(0, Math.min(1, (level - levelFloor) / (1 - levelFloor)));
-      const volumePulse = transient * (0.08 + volumeActivity * 0.34);
-      const levelPunch = Math.max(0, Math.min(1, (level - fxHighLevelOn) / (1 - fxHighLevelOn)));
+      const volumePulse = softPulseEnabled ? transient * (0.08 + volumeActivity * 0.34) : 0;
+      const levelPunch = highLevelEnabled ? Math.max(0, Math.min(1, (level - fxHighLevelOn) / (1 - fxHighLevelOn))) : 0;
       const visualPunch = Math.min(1, Math.max(bassPunch, volumePulse, levelPunch * 0.82));
       if (isPlaying && hardBassActivity >= getFxHeavyBassOn()) hardBassFrames += 1;
       else if (hardBassActivity < getFxHeavyBassOff()) {
         hardBassFrames = 0;
         hardBassTriggered = false;
       }
-      const hasBassPeak = bassCoupledEnabled
+      const hasBassPeak = heavyBassEnabled && (bassCoupledEnabled
         ? hardBassActivity >= getFxHeavyBassOn() && !hardBassTriggered
-        : hardBassFrames >= fxNum(fxHeavyBass, 'confirmFrames', 3) && !hardBassTriggered;
+        : hardBassFrames >= fxNum(fxHeavyBass, 'confirmFrames', 3) && !hardBassTriggered);
 
       /* Logo glitch fires only on the hardest bass hits; a loud overall level
        * still drives emissions/level punch but never glitches the logo. */
-      if (logoStage && hasBassPeak && now - lastLogoGlitch > fxNum(fxHeavyBass, 'glitchCooldownMs', 1200)) {
+      if (logoStage && glitchEnabled && hasBassPeak && now - lastLogoGlitch > fxNum(fxHeavyBass, 'glitchCooldownMs', 1200)) {
         lastLogoGlitch = now;
         hardBassTriggered = true;
         glitchEmissionBursts = fxNum(fxHeavyBass, 'glitchBursts', 3);
@@ -224,7 +230,7 @@ if (host && !prefersReducedMotion) {
         }, 260);
       }
 
-      if (bassCoupledEnabled) {
+      if (bassCoupledEnabled && emissionEnabled) {
         /* The ordinary emissions follow raw sub intensity. A qualifying kick
          * starts a short burst at full strength, handled separately below. */
         const bcSub = signal && Number.isFinite(signal.sub) ? signal.sub : bass * 0.4;
@@ -277,7 +283,7 @@ if (host && !prefersReducedMotion) {
       // Volume adds occasional light puffs; only bass can create a strong emission.
       const glitchBurstActive = glitchEmissionBursts > 0 && now < glitchEmissionUntil;
       const transientOn = fxNum(fxSoftPulse, 'transientOn', 0.14);
-      const shouldEmitAudio = isPlaying && (glitchBurstActive || transient >= transientOn || hardBassActivity >= getFxHeavyBassOn() || level >= fxHighLevelOn);
+      const shouldEmitAudio = emissionEnabled && isPlaying && (glitchBurstActive || (softPulseEnabled && transient >= transientOn) || (heavyBassEnabled && hardBassActivity >= getFxHeavyBassOn()) || (highLevelEnabled && level >= fxHighLevelOn));
       const audioInterval = glitchBurstActive
         ? (lowPerformanceMode ? fxNum(fxSoftPulse, 'burstIntervalMsLite', 170) : fxNum(fxSoftPulse, 'burstIntervalMs', 125))
         : (lowPerformanceMode ? fxNum(fxSoftPulse, 'intervalMsLite', 360) : fxNum(fxSoftPulse, 'intervalMs', 240));
@@ -322,7 +328,7 @@ if (host && !prefersReducedMotion) {
       const trebleSpikeOn = fxNum(fxTrebleSpike, 'on', 0.45);
       const trebleSpikeOff = fxNum(fxTrebleSpike, 'off', 0.32);
       const trebleSpikeTransientOn = fxNum(fxTrebleSpike, 'transientOn', 0.15);
-      if (fxTreble.enabled !== false && isPlaying && treble >= trebleSpikeOn && transient >= trebleSpikeTransientOn) {
+      if (trebleEnabled && isPlaying && treble >= trebleSpikeOn && transient >= trebleSpikeTransientOn) {
         trebleSpikeFrames += 1;
       } else if (treble < trebleSpikeOff) {
         if (trebleSpikeFrames > 0) lastTrebleSpikeEnd = now;
@@ -332,7 +338,7 @@ if (host && !prefersReducedMotion) {
       const trebleSpikeInterval = lowPerformanceMode
         ? fxNum(fxTrebleSpike, 'intervalMsLite', 240)
         : fxNum(fxTrebleSpike, 'intervalMs', 160);
-        if (isPlaying && trebleSpikeReady && trebleSpikeFrames >= fxNum(fxTrebleSpike, 'confirmFrames', 2) && now - lastTrebleSpray > trebleSpikeInterval) {
+        if (trebleEnabled && emissionEnabled && isPlaying && trebleSpikeReady && trebleSpikeFrames >= fxNum(fxTrebleSpike, 'confirmFrames', 2) && now - lastTrebleSpray > trebleSpikeInterval) {
         lastTrebleSpray = now;
         trebleSpikeReady = false;
         const sparkColor = trebleSparkPalette[Math.floor(Math.random() * trebleSparkPalette.length)];

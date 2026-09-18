@@ -17,6 +17,7 @@ window.doomsdayFxConfig = {
    * level range is the normalized analyser peak mapped to 0..100%. */
   audioAnalysis: {
     bands: {
+      sub: {fromHz: 0, toHz: 120},
       bass: {fromHz: 35, toHz: 160, levelMin: 0.18, levelMax: 0.80},
       mid: {fromHz: 160, toHz: 2200, levelMin: 0.18, levelMax: 0.80},
       treble: {fromHz: 10000, toHz: 16000, levelMin: 0.18, levelMax: 0.80}
@@ -40,6 +41,7 @@ window.doomsdayFxConfig = {
      * emissionScale: steepness of the emission ramp above `on` (smaller = sharper)
      */
     heavyBass: {
+      enabled: true,
       on: 0.85,
       off: 0.76,
       confirmFrames: 3,
@@ -53,6 +55,7 @@ window.doomsdayFxConfig = {
      * stream is loud (independent of bass character). Never glitches the
      * logo — that is heavyBass-only. */
     highLevel: {
+      enabled: true,
       on: 0.88
     },
 
@@ -66,6 +69,7 @@ window.doomsdayFxConfig = {
      * levelFloor:   level below which volume pulses fade out
      */
     softPulse: {
+      enabled: true,
       transientOn: 0.14,
       intervalMs: 240,
       intervalMsLite: 360,
@@ -85,6 +89,7 @@ window.doomsdayFxConfig = {
      * cooldownMs:   minimum time between spike phases
      */
     trebleSpike: {
+      enabled: true,
       on: 0.45,
       off: 0.32,
       transientOn: 0.15,
@@ -97,6 +102,7 @@ window.doomsdayFxConfig = {
     /* Static noise overlay: opacity = treble x transient, scaled by
      * maxOpacity. Screen-blended, so it reads as signal interference. */
     noise: {
+      enabled: true,
       maxOpacity: 0.16,
       boost: 1.6
     },
@@ -138,6 +144,7 @@ window.doomsdayFxConfig = {
 
     /* Logo glow and bass glitch presentation. */
     glow: {
+      enabled: true,
       midWeight: 0.6,
       trebleWeight: 0.8,
       floor: 0.10,
@@ -148,12 +155,14 @@ window.doomsdayFxConfig = {
       outerRadius: 36
     },
     glitch: {
+      enabled: true,
       durationMs: 240,
       topOpacity: 0.78,
       bottomOpacity: 0.70,
       fragmentDurationMs: 260
     },
     emission: {
+      enabled: true,
       normalRadius: 0.06,
       normalRadiusScale: 0.16,
       normalForce: 520,
