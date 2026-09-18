@@ -360,8 +360,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   }
 
   function updateSpectrumDisplay(features,spectrum){
-    if(!spectrumChart || !spectrumContext) return;
     updateSpectrumBandLabels();
+    if(!spectrumChart || !spectrumContext) return;
     const binWidth=audioContext?audioContext.sampleRate/(spectrum.length*2):24000/(spectrum.length*2);
     const liveSignal=window.doomsdayAudioSignal||{};
     const values={
@@ -800,8 +800,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       signal.transient=0;
       signal.hardBass=0;
       signal.hardBassConfirmed=false;
-      signal.bassOnset=0;
-      signal.sub=0;
     }
     if(!lastKickDebug||lastKickDebug.seq!==localKickSequence){
       lastKickDebug={sub:localSub,fast:localSubFast,seq:localKickSequence,strength:signal.bassOnset};
