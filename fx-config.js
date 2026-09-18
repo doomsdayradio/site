@@ -189,10 +189,10 @@ window.doomsdayFxConfig = {
     },
     treble: {
       enabled: true,
-      pipeCount: 12,
+      pipeCount: 8,
       pipeSpacing: 0.025,
-      radius: 0.004,
-      radiusScale: 0.004,
+      radius: 0.0015,
+      radiusScale: 0.0015,
       force: 24,
       forceScale: 28,
       lift: 1,

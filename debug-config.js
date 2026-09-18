@@ -17,7 +17,7 @@
     glow: { enabled: true, midWeight: 0.6, trebleWeight: 0.8, floor: 0.10, range: 0.70, innerAlpha: 0.50, outerAlpha: 0.22, innerRadius: 15, outerRadius: 36 },
     glitch: { enabled: true, durationMs: 240, topOpacity: 0.78, bottomOpacity: 0.70, fragmentDurationMs: 260 },
     emission: { enabled: true, normalRadius: 0.06, normalRadiusScale: 0.16, normalForce: 520, glitchRadius: 0.22, glitchForce: 520 },
-    treble: { enabled: true, pipeCount: 12, pipeSpacing: 0.025, radius: 0.004, radiusScale: 0.004, force: 10, forceScale: 18, lift: 1, direction: 'down', angleSpread: 0.55 }
+    treble: { enabled: true, pipeCount: 8, pipeSpacing: 0.025, radius: 0.0015, radiusScale: 0.0015, force: 10, forceScale: 18, lift: 1, direction: 'down', angleSpread: 0.55 }
   };
   var analysisDefaults = {};
   Object.keys(analysisBands).forEach(function (bandName) {
@@ -105,8 +105,8 @@
     ['section', 'Höhen-Geometrie'],
     ['treble', 'pipeCount', 'Hoehen pipe count', 1, 8, 1],
     ['treble', 'pipeSpacing', 'Hoehen pipe spacing', 0, 0.2, 0.01],
-    ['treble', 'radius', 'Hoehen pipe size', 0, 0.2, 0.005],
-    ['treble', 'radiusScale', 'Hoehen size scale', 0, 0.2, 0.005],
+    ['treble', 'radius', 'Hoehen pipe size', 0.0001, 0.2, 0.0005],
+    ['treble', 'radiusScale', 'Hoehen size scale', 0.0001, 0.2, 0.0005],
     ['treble', 'force', 'Hoehen force', 0, 200, 1],
     ['treble', 'forceScale', 'Hoehen force scale', 0, 200, 1],
     ['treble', 'direction', 'Hoehen Richtung', 'up', 'down'],
