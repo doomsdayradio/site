@@ -365,7 +365,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const binWidth=audioContext?audioContext.sampleRate/(spectrum.length*2):24000/(spectrum.length*2);
     const liveSignal=window.doomsdayAudioSignal||{};
     const values={
-      sub:Math.max(0,Math.min(1,Number(liveSignal.sub)||0)),
+      sub:spectrumBandLevel(spectrum,analysisBand.sub,binWidth),
       bass:spectrumBandLevel(spectrum,analysisBand.bass,binWidth),
       mid:spectrumBandLevel(spectrum,analysisBand.mid,binWidth),
       treble:spectrumBandLevel(spectrum,analysisBand.treble,binWidth),
@@ -728,10 +728,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       spectrumSum+=frequencyData[index];
       const amplitude=Math.pow(10,floatFrequencyData[index]/20);
       const frequency=index*binWidth;
+      if(frequency>=analysisBand.sub.fromHz&&frequency<analysisBand.sub.toHz) lowBass+=value;
       if(frequency>=analysisBand.bass.fromHz&&frequency<analysisBand.bass.toHz){
         bass+=value;
         bassEnergy+=amplitude*amplitude;
-        if(frequency>=analysisBand.sub.fromHz&&frequency<analysisBand.sub.toHz) lowBass+=value;
       }else if(frequency>=analysisBand.mid.fromHz&&frequency<analysisBand.mid.toHz){
         mid+=value;
         midEnergy+=value*value;
