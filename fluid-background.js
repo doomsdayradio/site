@@ -334,11 +334,12 @@ if (host && !prefersReducedMotion) {
 
       /* Treble spikes: sharp, small, cool-colored splashes at the top of the
        * logo. Gated on treble + transient so only real attacks fire. */
-      const trebleSpikeOn = fxNum(fxTrebleSpike, 'on', 0.45);
-      const trebleSpikeOff = fxNum(fxTrebleSpike, 'off', 0.32);
-      const trebleSpikeTransientOn = fxNum(fxTrebleSpike, 'transientOn', 0.15);
+      const trebleSpikeOn = fxNum(fxTrebleSpike, 'on', 0.28);
+      const trebleSpikeOff = fxNum(fxTrebleSpike, 'off', 0.18);
+      const trebleSpikeTransientOn = fxNum(fxTrebleSpike, 'transientOn', 0.05);
+      const trebleSpikeRequiresTransient = fxTrebleSpike.requireTransient === true;
       if (trebleEnabled && isPlaying && treble >= trebleSpikeOn
-        && (transient >= trebleSpikeTransientOn || trebleSpikeFrames > 0)) {
+        && (!trebleSpikeRequiresTransient || transient >= trebleSpikeTransientOn || trebleSpikeFrames > 0)) {
         trebleSpikeFrames += 1;
       } else if (treble < trebleSpikeOff) {
         if (trebleSpikeFrames > 0) lastTrebleSpikeEnd = now;

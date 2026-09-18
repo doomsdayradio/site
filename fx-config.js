@@ -93,6 +93,7 @@ window.doomsdayFxConfig = {
       on: 0.28,
       off: 0.18,
       transientOn: 0.05,
+      requireTransient: false,
       confirmFrames: 2,
       intervalMs: 140,
       intervalMsLite: 170,
