@@ -378,17 +378,19 @@ if (host && !prefersReducedMotion) {
           splatRadius: pipeRadius,
           splatForce: fxNum(fxTreble, 'force', 10) + treble * fxNum(fxTreble, 'forceScale', 18)
         });
-        const sparkEmitters = logoEmitters(-0.04);
+        const topEmitters = logoEmitters(0.02);
+        const bottomEmitters = logoEmitters(0.98);
         const pipeCount = Math.max(1, Math.round(fxNum(fxTreble, 'pipeCount', 12)));
         const pipeSpacing = fxNum(fxTreble, 'pipeSpacing', 0.025)
-          * (sparkEmitters.rightX - sparkEmitters.leftX);
-        const pipeCenter = (sparkEmitters.leftX + sparkEmitters.rightX) * 0.5;
+          * (topEmitters.rightX - topEmitters.leftX);
+        const pipeCenter = (topEmitters.leftX + topEmitters.rightX) * 0.5;
         const sparkForce = (fxNum(fxTreble, 'force', 10)
           + treble * fxNum(fxTreble, 'forceScale', 18) + transient * 10) * 1.35;
         const angleSpread = fxNum(fxTreble, 'angleSpread', 0.55);
         for (let pipeIndex = 0; pipeIndex < pipeCount; pipeIndex += 1) {
           const pipeOffset = (pipeIndex - (pipeCount - 1) * 0.5) * pipeSpacing;
           const direction = Math.random() < 0.5 ? -1 : 1;
+          const sparkEmitters = direction < 0 ? topEmitters : bottomEmitters;
           const angle = direction * (Math.PI / 2 + (Math.random() * 2 - 1) * angleSpread);
           fluid.splatAtLocation(
             pipeCenter + pipeOffset,
