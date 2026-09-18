@@ -15,7 +15,7 @@
     glow: { enabled: true, midWeight: 0.6, trebleWeight: 0.8, floor: 0.10, range: 0.70, innerAlpha: 0.50, outerAlpha: 0.22, innerRadius: 15, outerRadius: 36 },
     glitch: { enabled: true, durationMs: 240, topOpacity: 0.78, bottomOpacity: 0.70, fragmentDurationMs: 260 },
     emission: { enabled: true, normalRadius: 0.06, normalRadiusScale: 0.16, normalForce: 520, glitchRadius: 0.22, glitchForce: 520 },
-    treble: { enabled: true, pipeCount: 12, pipeSpacing: 0.025, radius: 0.003, radiusScale: 0.003, force: 10, forceScale: 18, lift: 1, angleSpread: 0.55 }
+    treble: { enabled: true, pipeCount: 12, pipeSpacing: 0.025, radius: 0.004, radiusScale: 0.004, force: 10, forceScale: 18, lift: 1, direction: 'up', angleSpread: 0.55 }
   };
   var analysisDefaults = {};
   Object.keys(analysisBands).forEach(function (bandName) {
@@ -91,6 +91,7 @@
     ['treble', 'radiusScale', 'Hoehen size scale', 0, 0.2, 0.005],
     ['treble', 'force', 'Hoehen force', 0, 200, 1],
     ['treble', 'forceScale', 'Hoehen force scale', 0, 200, 1],
+    ['treble', 'direction', 'Hoehen Richtung', 'up', 'down'],
     ['treble', 'lift', 'Hoehen lift', 0, 2, 0.05],
     ['treble', 'angleSpread', 'Hoehen Winkelstreuung', 0, 1.2, 0.05]
   ];
@@ -160,7 +161,9 @@
     'treble.radiusScale': 'Zusätzliche Größe bei stärkerem Höhen-Signal.',
     'treble.force': 'Grundkraft der Höhen-Splats.',
     'treble.forceScale': 'Zusätzliche Kraft bei stärkerem Höhen-Signal.',
-    'treble.lift': 'Vertikaler Impuls nach oben.'
+    'treble.lift': 'Vertikaler Impuls in der vorgegebenen Richtung.',
+    'treble.direction': 'Grundrichtung aller Höhen-Splats: up oder down.',
+    'treble.angleSpread': 'Zufällige Winkelstreuung innerhalb der vorgegebenen Richtung.'
   };
 
   function copyDefaults() {
@@ -188,7 +191,8 @@
         if (!group || typeof group !== 'object') return;
         var target = trigger[groupName] || (trigger[groupName] = {});
         Object.keys(group).forEach(function (key) {
-          if (typeof group[key] === 'number' || typeof group[key] === 'boolean') target[key] = group[key];
+          if (typeof group[key] === 'number' || typeof group[key] === 'boolean'
+            || (groupName === 'treble' && key === 'direction' && (group[key] === 'up' || group[key] === 'down'))) target[key] = group[key];
         });
       });
       Object.keys(stored.audioAnalysis && stored.audioAnalysis.bands || {}).forEach(function (bandName) {
@@ -221,14 +225,9 @@
       save();
     }
     if (trigger.treble
-      && trigger.treble.radius === 0.005
-      && trigger.treble.radiusScale === 0.005
-      && trigger.treble.force === 10
-      && trigger.treble.forceScale === 18) {
-      trigger.treble.radius = 0.012;
-      trigger.treble.radiusScale = 0.010;
-      trigger.treble.force = 24;
-      trigger.treble.forceScale = 28;
+      && (trigger.treble.radius > 0.006 || trigger.treble.radiusScale > 0.006)) {
+      trigger.treble.radius = 0.004;
+      trigger.treble.radiusScale = 0.004;
       save();
     }
   }
@@ -261,11 +260,17 @@
       row.className = 'debug-config-row' + (isAnalysisField ? ' debug-config-analysis-row' : '');
       var description = descriptions[groupName + '.' + key] || 'Parameter des Effekts.';
       var isBoolean = typeof targetGroup[key] === 'boolean';
+      var isDirection = groupName === 'treble' && key === 'direction';
       var inputType = isBoolean ? 'checkbox' : (isAnalysisField ? 'number' : 'range');
-      row.innerHTML = '<span class="debug-config-label">' + field[2] + '<i class="debug-config-help" tabindex="0" data-tooltip="' + description + '" aria-label="' + description + '">?</i></span><input type="' + inputType + '"><output></output>';
+      row.innerHTML = '<span class="debug-config-label">' + field[2] + '<i class="debug-config-help" tabindex="0" data-tooltip="' + description + '" aria-label="' + description + '">?</i></span>'
+        + (isDirection ? '<select><option value="up">OBEN</option><option value="down">UNTEN</option></select>' : '<input type="' + inputType + '">')
+        + '<output></output>';
       var input = row.querySelector('input');
+      var select = row.querySelector('select');
       var output = row.querySelector('output');
-      if (!isBoolean) {
+      if (isDirection) {
+        select.value = targetGroup[key] === 'down' ? 'down' : 'up';
+      } else if (!isBoolean) {
         input.min = field[3]; input.max = field[4]; input.step = field[5];
         if (isAnalysisField) { input.inputMode = 'decimal'; input.autocomplete = 'off'; }
         input.value = targetGroup[key];
@@ -273,16 +278,16 @@
         input.checked = targetGroup[key];
       }
       function update() {
-        var value = isBoolean ? input.checked : Number(input.value);
+        var value = isDirection ? select.value : (isBoolean ? input.checked : Number(input.value));
         targetGroup[key] = value;
-        output.value = isBoolean ? (value ? 'AN' : 'AUS') : (isAnalysisField
+        output.value = isDirection ? (value === 'down' ? 'UNTEN' : 'OBEN') : (isBoolean ? (value ? 'AN' : 'AUS') : (isAnalysisField
           ? (key.indexOf('Hz') >= 0 ? Math.round(value) + ' Hz' : Math.round(value * 100) + '%')
-          : (key.indexOf('Ms') >= 0 ? Math.round(value) + ' ms' : value.toFixed(2)));
+          : (key.indexOf('Ms') >= 0 ? Math.round(value) + ' ms' : value.toFixed(2))));
         save();
         fireChange();
       }
-      input.addEventListener('input', update);
-      input.addEventListener('change', update);
+      (select || input).addEventListener('input', update);
+      (select || input).addEventListener('change', update);
       update();
       grid.appendChild(row);
     });
@@ -306,7 +311,8 @@
           if (!group || typeof group !== 'object') return;
           var target = trigger[groupName] || (trigger[groupName] = {});
           Object.keys(group).forEach(function (key) {
-            if (typeof group[key] === 'number' || typeof group[key] === 'boolean') target[key] = group[key];
+            if (typeof group[key] === 'number' || typeof group[key] === 'boolean'
+              || (groupName === 'treble' && key === 'direction' && (group[key] === 'up' || group[key] === 'down'))) target[key] = group[key];
           });
         });
         Object.keys(imported.audioAnalysis && imported.audioAnalysis.bands || {}).forEach(function (bandName) {

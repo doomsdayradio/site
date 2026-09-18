@@ -191,11 +191,12 @@ window.doomsdayFxConfig = {
       enabled: true,
       pipeCount: 12,
       pipeSpacing: 0.025,
-      radius: 0.012,
-      radiusScale: 0.010,
+      radius: 0.004,
+      radiusScale: 0.004,
       force: 24,
       forceScale: 28,
       lift: 1,
+      direction: 'up',
       angleSpread: 0.55
     },
 
