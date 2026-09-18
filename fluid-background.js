@@ -275,7 +275,7 @@ if (host && !prefersReducedMotion) {
         const emitInterval = glitchBurstActive
           ? (lowPerformanceMode ? fxNum(fxSoftPulse, 'burstIntervalMsLite', 170) : fxNum(fxSoftPulse, 'burstIntervalMs', 125))
           : bcMaxInterval + (bcMinInterval - bcMaxInterval) * bcActivity;
-        const emissionPunch = glitchBurstActive ? 1 : punch;
+        const emissionPunch = glitchBurstActive ? 1 : Math.max(punch, hardBassActivity);
         const bcRiseOn = fxNum(fxBassCoupled, 'kickRiseOn', 0.18);
         const bcAttack = hasLocalKick || bcActivityRise >= bcRiseOn;
         if (isPlaying && (bcAttack || glitchBurstActive) && now - lastAudioSpray > emitInterval) {
@@ -286,10 +286,11 @@ if (host && !prefersReducedMotion) {
             brightness: 0.28,
             splatRadius: Math.min(0.5, glitchBurstActive
               ? fxNum(fxEmission, 'glitchRadius', 0.22)
-              : fxNum(fxEmission, 'normalRadius', 0.06) + emissionPunch * fxNum(fxEmission, 'normalRadiusScale', 0.16)),
+              : fxNum(fxEmission, 'normalRadius', 0.06) * (0.35 + emissionPunch * 0.65)
+                + emissionPunch * fxNum(fxEmission, 'normalRadiusScale', 0.16)),
             splatForce: glitchBurstActive
               ? fxNum(fxEmission, 'glitchForce', 520)
-              : fxNum(fxEmission, 'normalForce', 520)
+              : fxNum(fxEmission, 'normalForce', 520) * (0.18 + emissionPunch * 0.82)
           });
           const emitters = logoEmitters(0.44 + Math.sin(now * 0.002) * 0.06);
           const emitY = emitters.y + Math.cos(now * 0.003) * 4;
