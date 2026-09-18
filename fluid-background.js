@@ -275,14 +275,11 @@ if (host && !prefersReducedMotion) {
               : fxNum(fxEmission, 'normalForce', 520)
           });
           const emitters = logoEmitters(0.44 + Math.sin(now * 0.002) * 0.06);
-          audioSideToggle = (audioSideToggle + 1) % 2;
-          const isLeft = audioSideToggle === 0;
-          fluid.splatAtLocation(
-            isLeft ? emitters.leftX : emitters.rightX,
-            emitters.y + Math.cos(now * 0.003) * 4,
-            (isLeft ? -1 : 1) * (4 + emissionPunch * 42),
-            -(2 + emissionPunch * 26)
-          );
+          const emitY = emitters.y + Math.cos(now * 0.003) * 4;
+          const emitForceX = 4 + emissionPunch * 42;
+          const emitForceY = -(2 + emissionPunch * 26);
+          fluid.splatAtLocation(emitters.leftX, emitY, -emitForceX, emitForceY);
+          fluid.splatAtLocation(emitters.rightX, emitY, emitForceX, emitForceY);
           if (glitchBurstActive) glitchEmissionBursts -= 1;
         }
       } else {

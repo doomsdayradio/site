@@ -24,7 +24,7 @@ body::before{
 #fluid-background{
   position:fixed;inset:0;z-index:0;
   pointer-events:none;
-  opacity:0.4;
+  opacity:0.72;
   mix-blend-mode:normal;
 }
 
@@ -771,7 +771,7 @@ html.reduced-motion .hero-logo-stage.logo-bass-hit::after{display:none}
 }
 
 @media (max-height:600px){
-  .hero-mark{transform:translateY(-88px) scale(0.78);transform-origin:center top}
+  .hero-mark{transform:none}
 }
 
 @media (max-width:640px){
