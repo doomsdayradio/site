@@ -13,6 +13,16 @@
 window.doomsdayFxConfig = {
   version: 1,
 
+  /* Frequency windows and display zoom for the live spectrum meters. The
+   * level range is the normalized analyser peak mapped to 0..100%. */
+  audioAnalysis: {
+    bands: {
+      bass: {fromHz: 35, toHz: 160, levelMin: 0.18, levelMax: 0.80},
+      mid: {fromHz: 160, toHz: 2200, levelMin: 0.18, levelMax: 0.80},
+      treble: {fromHz: 10000, toHz: 16000, levelMin: 0.18, levelMax: 0.80}
+    }
+  },
+
   triggers: {
 
     /* Heavy bass zone: full logo glitch + strongest smoke emissions.

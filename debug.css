@@ -15,7 +15,7 @@
 .audio-spectrum-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 10px; color: #ffd166 !important; font: 12px/1.2 "Share Tech Mono", monospace; letter-spacing: .08em; }
 .audio-spectrum-head strong { color: #ffd166 !important; }
 .audio-spectrum-head span { color: #83ffab !important; font-size: 10px; }
-.audio-spectrum-bands { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.audio-spectrum-bands { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
 .audio-spectrum-band { min-width: 0; }
 .audio-spectrum-band > span { display: flex; flex-direction: column; gap: 3px; margin-bottom: 5px; font: 11px/1.1 "Share Tech Mono", monospace; }
 .audio-spectrum-band b { display: block; color: #f5efe4 !important; font-weight: 400; }
@@ -25,6 +25,7 @@
 .audio-spectrum-band[data-spectrum-band="mid"] em { background: #ffd166; }
 .audio-spectrum-band[data-spectrum-band="treble"] em { background: #83ffab; box-shadow: 0 0 10px rgba(131, 255, 171, .8); }
 .audio-spectrum-band[data-spectrum-band="transient"] em { background: #f5efe4; }
+.audio-spectrum-band[data-spectrum-band="kick"] em { background: #ff5d5d; box-shadow: 0 0 10px rgba(255, 93, 93, .8); }
 .audio-spectrum-band output { display: block; margin-top: 4px; color: #ffd166 !important; font: 11px/1 "Share Tech Mono", monospace; text-align: right; }
 #audio-spectrum-chart { display: block; width: 100%; height: 112px; margin-top: 14px; background: rgba(0, 0, 0, .2); border-top: 1px solid rgba(245, 239, 228, .14); }
 .audio-spectrum-scale { display: flex; justify-content: space-between; color: #c4cec7 !important; font: 9px/1.2 "Share Tech Mono", monospace; }
