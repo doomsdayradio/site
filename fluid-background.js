@@ -244,8 +244,7 @@ if (host && !prefersReducedMotion) {
         const bcSubGate = Math.max(0, Math.min(1,
           (bcSub - fxNum(fxBassCoupled, 'subGateOn', 0.18)) / fxNum(fxBassCoupled, 'subGateScale', 0.12)
         ));
-        const kickGate = Math.max(0, Math.min(1, signal && Number.isFinite(signal.bassOnset) ? signal.bassOnset : 0));
-        const bcActivity = bcSubActivity * bcSubGate * kickGate;
+        const bcActivity = bcSubActivity * bcSubGate;
         /* Exponential strength curve: quiet parts stay subtle, loud bass
          * explodes. intensityExponent controls how aggressive the top end is. */
         const bcK = fxNum(fxBassCoupled, 'intensityExponent', 2.5);
