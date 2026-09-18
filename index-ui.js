@@ -361,6 +361,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   function updateSpectrumDisplay(features,spectrum){
     if(!spectrumChart || !spectrumContext) return;
+    updateSpectrumBandLabels();
     const binWidth=audioContext?audioContext.sampleRate/(spectrum.length*2):24000/(spectrum.length*2);
     const liveSignal=window.doomsdayAudioSignal||{};
     const values={
@@ -397,7 +398,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
         energy+=sample*sample;
         count++;
       }
-      const value=spectrumLevelFromRms(count?Math.sqrt(energy/count):0);
+      const value=spectrumLevelFromRms(count?Math.sqrt(energy/count):0,features&&features._spectrumScale==='db');
       const barHeight=Math.max(2,value*height);
       const ratio=bar/(barCount-1);
       spectrumContext.fillStyle=ratio<0.3?'#ff9d2f':ratio<0.62?'#ffd166':'#83ffab';
@@ -405,7 +406,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     }
   }
 
-  function spectrumLevelFromRms(rms){
+  function spectrumLevelFromRms(rms,isDbNormalized){
+    if(isDbNormalized) return Math.max(0,Math.min(1,(rms-0.08)/0.68));
     const db=20*Math.log10(Math.max(0.00001,rms));
     return Math.max(0,Math.min(1,(db+60)/72));
   }
@@ -618,7 +620,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     for(let index=0;index<16;index++){
       displaySpectrum.push(index<4?signal.bass:index<10?signal.mid:signal.treble);
     }
-    updateSpectrumDisplay({bass:signal.bass,mid:signal.mid,treble:signal.treble,transient:signal.transient},displaySpectrum);
+    updateSpectrumDisplay({bass:signal.bass,mid:signal.mid,treble:signal.treble,transient:signal.transient,_spectrumScale:'db'},displaySpectrum);
     document.documentElement.style.setProperty('--audio-level',signal.level.toFixed(3));
     if(!isDebugPage) updateSignalVisualization(signal);
     pushDebugSample();
@@ -805,7 +807,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       mid:signal.mid,
       treble:signal.treble,
       transient:signal.transient,
-      bassOnset:signal.bassOnset
+      bassOnset:signal.bassOnset,
+      _spectrumScale:'db'
     },displaySpectrum);
     /* Silence watchdog: some mobile browsers feed the analyser only zeros
        (or sub-audible dither) while the time-domain level still moves.

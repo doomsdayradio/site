@@ -72,7 +72,8 @@
   Object.keys(analysisDefaults).forEach(function (bandName) {
     ['fromHz', 'toHz', 'levelMin', 'levelMax'].forEach(function (key) {
       var isLevel = key.indexOf('level') === 0;
-      fields.push(['audioAnalysis.bands.' + bandName, key, bandName.toUpperCase() + ' ' + key, 0, isLevel ? 1 : 24000, isLevel ? 0.01 : 10]);
+      var isFrom = key === 'fromHz';
+      fields.push(['audioAnalysis.bands.' + bandName, key, bandName.toUpperCase() + ' ' + key, 0, isLevel ? 1 : 24000, isLevel ? 0.01 : (isFrom ? 1 : 1)]);
     });
   });
   var descriptions = {
@@ -188,6 +189,7 @@
       var output = row.querySelector('output');
       if (!isBoolean) {
         input.min = field[3]; input.max = field[4]; input.step = field[5];
+        if (isAnalysisField) { input.inputMode = 'decimal'; input.autocomplete = 'off'; }
         input.value = targetGroup[key];
       } else {
         input.checked = targetGroup[key];
@@ -202,6 +204,7 @@
         fireChange();
       }
       input.addEventListener('input', update);
+      input.addEventListener('change', update);
       update();
       grid.appendChild(row);
     });
