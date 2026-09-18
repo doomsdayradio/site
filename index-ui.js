@@ -759,15 +759,20 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const localSubRise=Math.max(0,localSub-localSubFast);
     localSubFast+=(localSub-localSubFast)*0.38;
     localSubBaseline+=(localSub-localSubBaseline)*0.012;
-    const localRiseActivity=Math.max(0,Math.min(1,(localSubRise-0.02)/0.08));
+    const kickRiseFloor=cfgNum(fxBassCoupledCfg,'kickRiseFloor',0.02);
+    const kickRiseRange=Math.max(0.001,cfgNum(fxBassCoupledCfg,'kickRiseRange',0.08));
+    const localRiseActivity=Math.max(0,Math.min(1,(localSubRise-kickRiseFloor)/kickRiseRange));
     const localKickStrength=localRiseActivity;
     const now=performance.now();
     signal.sub+=(localSub-signal.sub)*0.35;
     signal.bassOnset*=0.72;
-    if(localSub<0.35) localKickArmed=true;
-    const localKickSubMin=Number(fxBassCoupledCfg.kickSubMin)||0.34;
-    if(localSub>=localKickSubMin&&localKickStrength>=0.72&&localKickArmed&&now>=localKickCooldownUntil){
-      localKickCooldownUntil=now+140;
+    const localKickRearm=cfgNum(fxBassCoupledCfg,'kickRearm',0.35);
+    if(localSub<localKickRearm) localKickArmed=true;
+    const localKickSubMin=cfgNum(fxBassCoupledCfg,'kickSubMin',0.34);
+    const localKickRiseOn=cfgNum(fxBassCoupledCfg,'kickRiseOn',0.72);
+    const localKickCooldownMs=cfgNum(fxBassCoupledCfg,'kickCooldownMs',140);
+    if(localSub>=localKickSubMin&&localKickStrength>=localKickRiseOn&&localKickArmed&&now>=localKickCooldownUntil){
+      localKickCooldownUntil=now+localKickCooldownMs;
       localKickArmed=false;
       localKickSequence+=1;
       signal.bassOnset=Math.max(0.90,localKickStrength);
