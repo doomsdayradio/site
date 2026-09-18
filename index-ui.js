@@ -659,7 +659,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const kickMinimum=cfgNum(fxBassCoupledCfg,'kickSubMin',0.34);
     const kickThreshold=cfgNum(fxBassCoupledCfg,'kickRiseOn',0.35);
     const kickCooldown=cfgNum(fxBassCoupledCfg,'kickCooldownMs',140);
-    if(sub<kickRearm) localKickArmed=true;
+    if((kickRearm <= 0 && sub <= localSubFast) || (kickRearm > 0 && sub<kickRearm)) localKickArmed=true;
     if(localKickArmed&&now>=localKickCooldownUntil&&sub>=kickMinimum&&kickStrength>=kickThreshold){
       localKickArmed=false;
       localKickCooldownUntil=now+kickCooldown;
