@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var storageKey = 'ddDebugFxConfigV4';
+  var storageKey = 'ddDebugFxConfigV5';
   var base = window.doomsdayFxConfig || { version: 1, triggers: {} };
   var trigger = base.triggers || (base.triggers = {});
   var analysis = base.audioAnalysis || (base.audioAnalysis = {});
@@ -181,6 +181,14 @@
     } catch (error) {
       console.warn('[debug-config] stored config ignored', error);
     }
+    Object.keys(analysisDefaults).forEach(function (bandName) {
+      var band = analysisBands[bandName];
+      if (!band) return;
+      if (band.levelMax <= band.levelMin) {
+        band.levelMin = analysisDefaults[bandName].levelMin;
+        band.levelMax = analysisDefaults[bandName].levelMax;
+      }
+    });
   }
 
   function save() {
