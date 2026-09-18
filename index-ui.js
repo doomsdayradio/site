@@ -715,7 +715,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const b=Math.round((4*wOrange + 171*wGreen + 228*wWhite)/totalWeight);
 
     const lvl=Math.max(0,Math.min(1,signal.level));
-     const glowSpectrum=Math.max(0,Math.min(1,(((signal.bass||0)*0.45+(signal.mid||0)*0.65+(signal.treble||0)*0.85)-cfgNum(fxGlowCfg,'floor',0.10))/cfgNum(fxGlowCfg,'range',0.70)));
+    const glowMid=(signal.mid||0)*cfgNum(fxGlowCfg,'midWeight',0.65);
+    const glowSpectrum=Math.max(0,Math.min(1,(glowMid-cfgNum(fxGlowCfg,'floor',0.10))/cfgNum(fxGlowCfg,'range',0.70)));
       const glowTarget=fxGlowEnabled&&signal.playing&&signal.level>=0.06
         ? Math.max(0,Math.min(1,((signal.transient||0)*0.7+(signal.level||0)*0.3)*glowSpectrum))
         : 0;

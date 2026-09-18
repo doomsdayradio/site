@@ -392,7 +392,7 @@ if (host && !prefersReducedMotion) {
           * (topEmitters.rightX - topEmitters.leftX);
         const pipeCenter = (topEmitters.leftX + topEmitters.rightX) * 0.5;
         const sparkForce = (fxNum(fxTreble, 'force', 10)
-          + treble * fxNum(fxTreble, 'forceScale', 18) + transient * 10) * 3.5;
+          + treble * fxNum(fxTreble, 'forceScale', 18) + transient * 10) * 6;
         const direction = fxTreble.direction === 'down' ? 1 : -1;
         const sparkEmitters = direction < 0 ? topEmitters : bottomEmitters;
         const angleSpread = Math.min(Math.PI / 2, Math.max(0, fxNum(fxTreble, 'angleSpread', 0.55)));
@@ -403,7 +403,7 @@ if (host && !prefersReducedMotion) {
             pipeCenter + pipeOffset,
             sparkEmitters.y + (direction > 0 ? 6 : -6),
             Math.cos(angle) * sparkForce,
-            Math.sin(angle) * sparkForce * fxNum(fxTreble, 'lift', 1)
+            direction * Math.abs(Math.sin(angle) * sparkForce * fxNum(fxTreble, 'lift', 1))
           );
         }
       }
