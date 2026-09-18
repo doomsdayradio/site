@@ -181,14 +181,12 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const isDebugPage=/\/(?:ios-)?debug\.html$/.test(location.pathname);
   const forceServerLevelsDebug=/\/ios-debug\.html$/.test(location.pathname);
   if(isDebugPage) wsDelayMs=0;
-    /* Localhost cannot use a MediaElementSource because the stream only
-      permits the production origin for CORS. Debug pages use the real
-      server-level feed and keep the audio output at volume zero. */
+    /* Localhost uses the same-origin proxy for both analysis and playback. */
     const canAnalyzeAudio=location.hostname==='doomsday.radio'
       ||(isDebugPage&&location.hostname==='localhost'&&audio.dataset.src==='/live');
   const isAppleMobile=/iP(?:hone|ad|od)/.test(navigator.userAgent)
     || (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  const muteDebugAudio=isDebugPage;
+  const muteDebugAudio=false;
   const useServerLevels=(!canAnalyzeAudio&&isDebugPage)
     ||(isAppleMobile&&/AppleWebKit/.test(navigator.userAgent));
   /* ?debug shows the full player debug panel; ?viz-debug stays supported and
