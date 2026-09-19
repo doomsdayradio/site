@@ -90,25 +90,6 @@
               <span id="stream-status">SIGNAL BEREIT</span>
             </div>
           </div>
-          <div class="player-subcontrols">
-            <div class="volume-control" id="volume-control">
-              <button id="volume-mute-toggle" class="volume-mute-btn ddd-focus" type="button" aria-label="Lautstärke stummschalten" title="Lautstärke">
-                <span id="volume-icon" class="volume-icon" aria-hidden="true">🔊</span>
-              </button>
-              <div class="volume-slider-wrap">
-                <label class="range-wrap">
-                  <span class="sr-only">Lautstärke</span>
-                  <input id="stream-volume" type="range" min="0" max="1" step="0.05" value="0.8">
-                </label>
-              </div>
-            </div>
-            <div class="quality-control">
-              <label class="hardware-toggle" for="quality-toggle">
-                <input id="quality-toggle" type="checkbox">
-                <i></i><span>SPARMODUS</span>
-              </label>
-            </div>
-          </div>
         </div>
       </section>
       <p id="station-slogan" class="freq" aria-live="polite">Eine Welt, die sich über Radio vermittelt, ordnet und erinnert.</p>
@@ -130,6 +111,25 @@
   </nav>
 
   <div class="status">
+    <div class="status-controls">
+      <div class="volume-control" id="volume-control">
+        <button id="volume-mute-toggle" class="volume-mute-btn ddd-focus" type="button" aria-label="Lautstärke stummschalten" title="Lautstärke">
+          <span id="volume-icon" class="volume-icon" aria-hidden="true">🔊</span>
+        </button>
+        <div class="volume-slider-wrap">
+          <label class="range-wrap">
+            <span class="sr-only">Lautstärke</span>
+            <input id="stream-volume" type="range" min="0" max="1" step="0.05" value="0.8">
+          </label>
+        </div>
+      </div>
+      <div class="quality-control">
+        <label class="hardware-toggle" for="quality-toggle" title="Sparmodus (reduzierte Effekte)">
+          <input id="quality-toggle" type="checkbox">
+          <i></i><span>ECO</span>
+        </label>
+      </div>
+    </div>
     <div class="led-meter-wrapper" role="meter" aria-label="Signalpegel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
       <div class="meter-meta"><span class="sample-label">SIGNAL</span><output id="signal-led-readout" class="meter-readout">00%</output></div>
       <div id="signal-led-row" class="led-row" aria-hidden="true"></div>
@@ -146,7 +146,7 @@
   <script src="./script.js?v=2"></script>
   <script src="./fx-config.js?v=31"></script>
   <script src="./audio-analysis.js?v=3"></script>
-  <script src="./index-ui.js?v=20260919-vol1"></script>
+  <script src="./index-ui.js?v=20260919-status-deck1"></script>
   <script src="./audio-signal.js?v=2"></script>
   <script type="module" src="./fluid-background.js?v=20260919-sub-emission2"></script>
 </body>

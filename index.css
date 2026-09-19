@@ -468,24 +468,22 @@ html.radio-tuning .hero-logo{
 .stream-copy strong{font:700 0.69rem 'Orbitron',sans-serif;letter-spacing:0.12em;color:#d1ff45}
 .stream-copy span{font-size:0.62rem;letter-spacing:0.12em;color:rgba(240,186,146,0.74);white-space:nowrap}
 
-.player-subcontrols{
-  display:flex;
+.status-controls{
+  display:inline-flex;
   align-items:center;
-  justify-content:center;
-  gap:16px;
-  flex-wrap:wrap;
-  padding:0.25rem 0.5rem 0.6rem;
+  gap:8px;
+  flex:0 0 auto;
 }
 
 .volume-control{
   display:inline-flex;
   align-items:center;
   position:relative;
-  background:rgba(24,18,14,0.78);
+  background:rgba(24,18,14,0.85);
   border:1px solid rgba(255,157,47,0.32);
-  border-radius:18px;
-  padding:3px 6px;
-  height:32px;
+  border-radius:14px;
+  padding:2px 5px;
+  height:24px;
   box-shadow:inset 0 0 6px rgba(0,0,0,0.6);
   transition:border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
@@ -494,7 +492,7 @@ html.radio-tuning .hero-logo{
 .volume-control:focus-within,
 .volume-control.is-open{
   border-color:var(--ddd-color-signal,#d1ff45);
-  background:rgba(30,22,16,0.95);
+  background:rgba(30,22,16,0.96);
   box-shadow:0 0 10px rgba(209,255,69,0.18), inset 0 0 6px rgba(0,0,0,0.8);
 }
 
@@ -508,9 +506,9 @@ html.radio-tuning .hero-logo{
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  width:24px;
-  height:24px;
-  font-size:0.95rem;
+  width:18px;
+  height:18px;
+  font-size:0.82rem;
   line-height:1;
   border-radius:50%;
   transition:color 0.2s ease, transform 0.15s ease;
@@ -534,19 +532,19 @@ html.radio-tuning .hero-logo{
   opacity:0;
   overflow:hidden;
   pointer-events:none;
-  transition:width 0.28s cubic-bezier(0.2,0.8,0.2,1), max-width 0.28s cubic-bezier(0.2,0.8,0.2,1), opacity 0.2s ease, margin 0.28s ease;
+  transition:width 0.24s cubic-bezier(0.2,0.8,0.2,1), max-width 0.24s cubic-bezier(0.2,0.8,0.2,1), opacity 0.2s ease, margin 0.24s ease;
   margin-left:0;
 }
 
 .volume-control:hover .volume-slider-wrap,
 .volume-control:focus-within .volume-slider-wrap,
 .volume-control.is-open .volume-slider-wrap{
-  width:92px;
-  max-width:92px;
+  width:72px;
+  max-width:72px;
   opacity:1;
   pointer-events:auto;
-  margin-left:6px;
-  margin-right:4px;
+  margin-left:4px;
+  margin-right:2px;
 }
 
 .volume-slider-wrap .range-wrap{
@@ -557,7 +555,7 @@ html.radio-tuning .hero-logo{
 
 .volume-slider-wrap input[type="range"]{
   width:100%;
-  height:6px;
+  height:5px;
   accent-color:var(--ddd-color-signal,#ff9d2f);
   cursor:pointer;
   margin:0;
@@ -577,12 +575,25 @@ html.radio-tuning .hero-logo{
 .quality-control .hardware-toggle{
   display:inline-flex;
   align-items:center;
-  gap:8px;
+  gap:5px;
   color:var(--ddd-color-signal,#ff9d2f);
-  font:0.72rem/1 var(--ddd-font-mono,"Share Tech Mono",monospace);
-  letter-spacing:0.12em;
+  font:0.62rem/1 var(--ddd-font-mono,"Share Tech Mono",monospace);
+  letter-spacing:0.1em;
   cursor:pointer;
   user-select:none;
+}
+.quality-control .hardware-toggle i{
+  width:22px;
+  height:12px;
+}
+.quality-control .hardware-toggle i::after{
+  width:8px;
+  height:8px;
+  top:1px;
+  left:1px;
+}
+.quality-control .hardware-toggle input:checked + i::after{
+  transform:translateX(10px);
 }
 .quality-control .hardware-toggle input:focus-visible + i{
   outline:2px solid #d1ff45;
@@ -745,35 +756,42 @@ html.radio-tuning .hero-logo{
 
 .status{
   position:fixed;bottom:0;left:0;right:0;z-index:50;
-  padding:0.6rem 1.2rem;
+  padding:0.45rem 1.2rem;
   display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;
   gap:8px 14px;
-  font-size:0.7rem;letter-spacing:0.15em;
+  font-size:0.68rem;letter-spacing:0.12em;
   color:rgba(223,210,194,0.88);
   border-top:1px solid rgba(223,210,194,0.3);
-  background:rgba(80,65,53,0.78);
+  background:rgba(43,33,24,0.88);
+  -webkit-backdrop-filter:blur(6px);
+  backdrop-filter:blur(6px);
 }
-.status > span{white-space:nowrap;flex:1 1 auto;text-align:center}
-.status .led-meter-wrapper{margin:0;flex:1 1 260px;min-width:220px}
-.status .meter-meta{margin:0 0 3px;font-size:0.58rem}
+.status > span{white-space:nowrap;flex:0 1 auto;text-align:center}
+.status .led-meter-wrapper{
+  margin:0;
+  flex:0 1 130px;
+  min-width:105px;
+  max-width:150px;
+}
+.status .meter-meta{margin:0 0 2px;font-size:0.52rem;letter-spacing:0.1em}
 .status .led-row{
   display:grid;
   grid-template-columns:repeat(20,1fr);
-  gap:3px;
+  gap:2px;
   align-items:center;
-  height:24px;
-  padding:5px 6px;
-  border-radius:4px;
+  height:16px;
+  padding:2px 3px;
+  border-radius:3px;
   border:1px solid rgba(255,255,255,0.16);
   background:
     linear-gradient(180deg,rgba(24,18,14,0.95),rgba(12,9,7,0.98)),
-    repeating-linear-gradient(90deg,rgba(255,255,255,0.04),rgba(255,255,255,0.04) 1px,transparent 1px,transparent 12px);
-  box-shadow:inset 0 0 12px rgba(0,0,0,0.8),0 0 16px rgba(180,75,47,0.15);
+    repeating-linear-gradient(90deg,rgba(255,255,255,0.04),rgba(255,255,255,0.04) 1px,transparent 1px,transparent 8px);
+  box-shadow:inset 0 0 8px rgba(0,0,0,0.8),0 0 10px rgba(180,75,47,0.12);
   overflow:visible;
 }
 .status .led-row .led-segment{
-  height:12px;
-  border-radius:2px;
+  height:10px;
+  border-radius:1px;
   background:#2a221b;
   opacity:0.25;
   transition:opacity 0.28s ease-out,background-color 0.28s linear,box-shadow 0.28s ease-out;
@@ -804,7 +822,7 @@ html.radio-tuning .hero-logo{
     0 0 20px rgba(255,90,61,0.55),
     inset 0 0 3px rgba(255,232,232,0.9);
 }
-.weather-status{display:flex;align-items:center;justify-content:center;gap:7px;flex:1 1 190px;min-width:170px;text-align:left}
+.weather-status{display:flex;align-items:center;justify-content:center;gap:7px;flex:0 1 auto;min-width:140px;text-align:left}
 .weather-icon{font-size:1.1rem;line-height:1;color:var(--ddd-color-logo-orange,#f36c04)}
 .weather-copy{display:grid;gap:2px;white-space:nowrap!important;text-align:left!important}
 .weather-location{font-size:0.58rem;letter-spacing:0.16em;color:var(--ddd-color-logo-green,#83ffab)}
@@ -1004,26 +1022,33 @@ html.reduced-motion .hero-logo-stage.logo-bass-hit::after{display:none}
   .status{
     padding:6px 10px calc(6px + env(safe-area-inset-bottom, 0px));
     display:grid;
-    grid-template-columns:minmax(0, 1.2fr) minmax(0, 1.3fr) minmax(0, 1.15fr);
+    grid-template-columns:auto 1fr;
     grid-template-rows:auto auto;
     align-items:center;
-    gap:4px 6px;
+    gap:5px 8px;
     font-size:0.6rem;
     letter-spacing:0.05em;
     border-top:1px solid rgba(223,210,194,0.3);
     background:rgba(43,33,24,0.92);
   }
+  .status-controls{
+    grid-column:1;
+    grid-row:1;
+  }
   .status .led-meter-wrapper{
-    grid-column:1 / -1;
+    grid-column:2;
+    grid-row:1;
     margin:0;
     min-width:0;
+    max-width:none;
     width:100%;
   }
-  .status .meter-meta{margin:0 0 2px;font-size:0.52rem;letter-spacing:0.1em}
-  .status .led-row{height:16px;padding:3px 4px;gap:2px;border-radius:3px}
-  .status .led-row .led-segment{height:8px}
+  .status .meter-meta{margin:0 0 2px;font-size:0.50rem;letter-spacing:0.08em}
+  .status .led-row{height:14px;padding:2px 3px;gap:2px;border-radius:3px}
+  .status .led-row .led-segment{height:7px}
   .weather-status{
     grid-column:1;
+    grid-row:2;
     display:inline-flex;
     align-items:center;
     justify-content:flex-start;
@@ -1039,23 +1064,17 @@ html.reduced-motion .hero-logo-stage.logo-bass-hit::after{display:none}
   #weather-summary{font-size:0.54rem;letter-spacing:0.04em;line-height:1;color:rgba(223,210,194,0.9);white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
   .status #clock{
     grid-column:2;
-    text-align:center;
+    grid-row:2;
+    text-align:right;
     white-space:nowrap;
-    font-size:0.54rem;
+    font-size:0.52rem;
     letter-spacing:0.04em;
     color:var(--ddd-color-signal,#d1ff45);
     overflow:hidden;
     text-overflow:ellipsis;
   }
   .status > span:last-child{
-    grid-column:3;
-    text-align:right;
-    white-space:nowrap;
-    font-size:0.52rem;
-    letter-spacing:0.03em;
-    color:rgba(223,210,194,0.85);
-    overflow:hidden;
-    text-overflow:ellipsis;
+    display:none;
   }
   .corner{display:none}
 }
