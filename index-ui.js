@@ -60,6 +60,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const toggle=document.getElementById('stream-toggle');
   const status=document.getElementById('stream-status');
   const volume=document.getElementById('stream-volume');
+  const volumeControl=document.getElementById('volume-control');
+  const volumeMuteToggle=document.getElementById('volume-mute-toggle');
+  const volumeIcon=document.getElementById('volume-icon');
   const equalizer=document.getElementById('equalizer');
   const ledMeter=document.querySelector('.led-meter-wrapper');
   const ledRow=document.getElementById('signal-led-row');
@@ -1108,8 +1111,25 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     else audio.pause();
   });
 
-  volume.addEventListener('input',function(){
-    const targetVol=muteDebugAudio?0:Number(volume.value);
+  let previousVolume=0.8;
+
+  function updateVolumeIcon(vol){
+    if(!volumeIcon) return;
+    if(vol<=0){
+      volumeIcon.textContent='🔇';
+      if(volumeMuteToggle) volumeMuteToggle.setAttribute('aria-label','Ton einschalten');
+    }else if(vol<0.5){
+      volumeIcon.textContent='🔉';
+      if(volumeMuteToggle) volumeMuteToggle.setAttribute('aria-label','Lautstärke stummschalten');
+    }else{
+      volumeIcon.textContent='🔊';
+      if(volumeMuteToggle) volumeMuteToggle.setAttribute('aria-label','Lautstärke stummschalten');
+    }
+  }
+
+  function applyVolume(val){
+    const targetVol=muteDebugAudio?0:Number(val);
+    updateVolumeIcon(targetVol);
     if(outputGain&&audioContext){
       if(!isTuning){
         outputGain.gain.cancelScheduledValues(audioContext.currentTime);
@@ -1124,7 +1144,43 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       tuningMasterGain.gain.cancelScheduledValues(audioContext.currentTime);
       tuningMasterGain.gain.setValueAtTime(Math.min(0.12,Math.max(0.03,targetVol*0.18)),audioContext.currentTime);
     }
-  });
+  }
+
+  if(volume){
+    updateVolumeIcon(Number(volume.value));
+    volume.addEventListener('input',function(){
+      const val=Number(volume.value);
+      if(val>0) previousVolume=val;
+      applyVolume(val);
+    });
+  }
+
+  if(volumeMuteToggle){
+    volumeMuteToggle.addEventListener('click',function(e){
+      if(coarsePointer&&volumeControl&&!volumeControl.classList.contains('is-open')){
+        volumeControl.classList.add('is-open');
+        return;
+      }
+      const currentVol=volume?Number(volume.value):0.8;
+      if(currentVol>0){
+        previousVolume=currentVol;
+        if(volume) volume.value='0';
+        applyVolume(0);
+      }else{
+        const restoreVol=previousVolume||0.8;
+        if(volume) volume.value=String(restoreVol);
+        applyVolume(restoreVol);
+      }
+    });
+  }
+
+  if(volumeControl){
+    document.addEventListener('click',function(event){
+      if(!volumeControl.contains(event.target)){
+        volumeControl.classList.remove('is-open');
+      }
+    });
+  }
 
   const qualityToggle=document.getElementById('quality-toggle');
   if(qualityToggle){

@@ -23,7 +23,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
   <link rel="stylesheet" href="/design-system.css">
-  <link rel="stylesheet" href="./index.css?v=20260919-tuning6">
+  <link rel="stylesheet" href="./index.css?v=20260919-vol1">
   <script defer src="https://umami.0xfab1.net/recorder.js" data-website-id="14bd4f5c-1aa0-49f5-b171-e0322d4531ff"></script>
   <script defer src="https://umami.0xfab1.net/script.js" data-website-id="14bd4f5c-1aa0-49f5-b171-e0322d4531ff"></script>
 </head>
@@ -90,18 +90,24 @@
               <span id="stream-status">SIGNAL BEREIT</span>
             </div>
           </div>
-          <div class="control-group volume-control">
-            <span class="sample-label">LAUTSTÄRKEREGLER</span>
-            <label class="range-wrap">
-              <span class="sr-only">Lautstärke</span>
-              <input id="stream-volume" type="range" min="0" max="1" step="0.05" value="0.8">
-            </label>
-          </div>
-          <div class="control-group quality-control">
-            <label class="hardware-toggle" for="quality-toggle">
-              <input id="quality-toggle" type="checkbox">
-              <i></i><span>SPARMODUS // LOW QUALITY</span>
-            </label>
+          <div class="player-subcontrols">
+            <div class="volume-control" id="volume-control">
+              <button id="volume-mute-toggle" class="volume-mute-btn ddd-focus" type="button" aria-label="Lautstärke stummschalten" title="Lautstärke">
+                <span id="volume-icon" class="volume-icon" aria-hidden="true">🔊</span>
+              </button>
+              <div class="volume-slider-wrap">
+                <label class="range-wrap">
+                  <span class="sr-only">Lautstärke</span>
+                  <input id="stream-volume" type="range" min="0" max="1" step="0.05" value="0.8">
+                </label>
+              </div>
+            </div>
+            <div class="quality-control">
+              <label class="hardware-toggle" for="quality-toggle">
+                <input id="quality-toggle" type="checkbox">
+                <i></i><span>SPARMODUS</span>
+              </label>
+            </div>
           </div>
         </div>
       </section>
@@ -140,7 +146,7 @@
   <script src="./script.js?v=2"></script>
   <script src="./fx-config.js?v=31"></script>
   <script src="./audio-analysis.js?v=3"></script>
-  <script src="./index-ui.js?v=20260919-tuning5"></script>
+  <script src="./index-ui.js?v=20260919-vol1"></script>
   <script src="./audio-signal.js?v=2"></script>
   <script type="module" src="./fluid-background.js?v=20260919-sub-emission2"></script>
 </body>
