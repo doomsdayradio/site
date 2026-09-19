@@ -219,9 +219,16 @@ html.radio-tuning .noise{
   opacity:0;
   mix-blend-mode:screen;
   transition:opacity 0.85s ease-out;
-  border-radius:4px;
   image-rendering:pixelated;
   image-rendering:crisp-edges;
+  -webkit-mask-image:url("./ddd_radio_logo.png");
+  -webkit-mask-size:100% 100%;
+  -webkit-mask-position:center;
+  -webkit-mask-repeat:no-repeat;
+  mask-image:url("./ddd_radio_logo.png");
+  mask-size:100% 100%;
+  mask-position:center;
+  mask-repeat:no-repeat;
 }
 
 html.radio-tuning .tuning-snow-canvas{
