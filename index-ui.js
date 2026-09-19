@@ -165,6 +165,164 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let tuningStartTime=0;
   let tuningTimer=0;
   let carrierQuality=0;
+
+  function ensureAudioContext(){
+    if(!audioContext){
+      const AudioContextCtor=window.AudioContext||window.webkitAudioContext;
+      if(AudioContextCtor) audioContext=new AudioContextCtor();
+    }
+    return audioContext;
+  }
+
+  /* TV Static Snow Canvas Generator */
+  let snowCanvas=null;
+  let snowContext=null;
+  let snowAnimId=0;
+
+  function setupSnowCanvas(){
+    if(snowCanvas||!logoStage) return;
+    snowCanvas=document.createElement('canvas');
+    snowCanvas.className='tuning-snow-canvas';
+    snowCanvas.setAttribute('aria-hidden','true');
+    snowContext=snowCanvas.getContext('2d');
+    logoStage.appendChild(snowCanvas);
+    resizeSnowCanvas();
+    window.addEventListener('resize',resizeSnowCanvas,{passive:true});
+  }
+
+  function resizeSnowCanvas(){
+    if(!snowCanvas||!logoStage) return;
+    const rect=logoStage.getBoundingClientRect();
+    const w=Math.max(140,Math.round(rect.width||340));
+    const h=Math.max(140,Math.round(rect.height||280));
+    snowCanvas.width=Math.round(w*0.5);
+    snowCanvas.height=Math.round(h*0.5);
+  }
+
+  function renderSnowFrame(){
+    if(!isTuning||!snowContext||!snowCanvas){
+      if(snowAnimId){cancelAnimationFrame(snowAnimId);snowAnimId=0;}
+      return;
+    }
+    const w=snowCanvas.width;
+    const h=snowCanvas.height;
+    if(w>0&&h>0){
+      const imgData=snowContext.createImageData(w,h);
+      const buf=new Uint32Array(imgData.data.buffer);
+      const len=buf.length;
+      for(let i=0;i<len;i++){
+        const v=(Math.random()*255)|0;
+        buf[i]=(235<<24)|(v<<16)|(v<<8)|v;
+      }
+      if(Math.random()<0.45){
+        const bandY=(Math.random()*h)|0;
+        const bandH=((Math.random()*10)+2)|0;
+        const start=bandY*w;
+        const end=Math.min(len,(bandY+bandH)*w);
+        const inv=Math.random()<0.5?255:0;
+        for(let i=start;i<end;i++){
+          buf[i]=(255<<24)|(inv<<16)|(inv<<8)|inv;
+        }
+      }
+      snowContext.putImageData(imgData,0,0);
+    }
+    snowAnimId=requestAnimationFrame(renderSnowFrame);
+  }
+
+  function startSnowEffect(){
+    setupSnowCanvas();
+    if(!snowAnimId){
+      snowAnimId=requestAnimationFrame(renderSnowFrame);
+    }
+  }
+
+  /* Synthesized Analog Radio Tuning Sound (Web Audio API) */
+  let tuningSourceNodes=null;
+  let tuningMasterGain=null;
+
+  function startTuningSound(){
+    const ctx=ensureAudioContext();
+    if(!ctx) return;
+    if(ctx.state==='suspended') ctx.resume().catch(function(){});
+    stopTuningSound(0);
+
+    const sampleRate=ctx.sampleRate||44100;
+    const bufferDuration=2.5;
+    const bufferSize=Math.floor(sampleRate*bufferDuration);
+    const noiseBuffer=ctx.createBuffer(1,bufferSize,sampleRate);
+    const channel=noiseBuffer.getChannelData(0);
+    let lastNoise=0;
+    for(let i=0;i<bufferSize;i++){
+      const white=Math.random()*2-1;
+      const crackle=Math.random()<0.004?(Math.random()*2-1)*2.8:0;
+      lastNoise=(lastNoise*0.84)+(white*0.16)+crackle;
+      channel[i]=Math.max(-1,Math.min(1,lastNoise));
+    }
+
+    const noiseSource=ctx.createBufferSource();
+    noiseSource.buffer=noiseBuffer;
+    noiseSource.loop=true;
+
+    // Bandpass sweep simulating dial search
+    const bandpass=ctx.createBiquadFilter();
+    bandpass.type='bandpass';
+    bandpass.Q.value=3.8;
+    const now=ctx.currentTime;
+    bandpass.frequency.setValueAtTime(1600,now);
+    bandpass.frequency.linearRampToValueAtTime(750,now+0.28);
+    bandpass.frequency.linearRampToValueAtTime(2400,now+0.65);
+    bandpass.frequency.linearRampToValueAtTime(1100,now+0.95);
+
+    // Heterodyne carrier whistle (analog tuner locking in)
+    const carrierOsc=ctx.createOscillator();
+    carrierOsc.type='sine';
+    carrierOsc.frequency.setValueAtTime(2200,now);
+    carrierOsc.frequency.exponentialRampToValueAtTime(440,now+0.55);
+    carrierOsc.frequency.linearRampToValueAtTime(160,now+0.85);
+
+    const carrierGain=ctx.createGain();
+    carrierGain.gain.setValueAtTime(0.045,now);
+    carrierGain.gain.exponentialRampToValueAtTime(0.0001,now+0.85);
+    carrierOsc.connect(carrierGain);
+
+    tuningMasterGain=ctx.createGain();
+    const targetVol=muteDebugAudio?0:Number(volume.value);
+    tuningMasterGain.gain.setValueAtTime(0.0001,now);
+    tuningMasterGain.gain.linearRampToValueAtTime(Math.min(0.32,Math.max(0.08,targetVol*0.4)),now+0.06);
+
+    noiseSource.connect(bandpass);
+    bandpass.connect(tuningMasterGain);
+    carrierGain.connect(tuningMasterGain);
+    tuningMasterGain.connect(ctx.destination);
+
+    noiseSource.start(now);
+    carrierOsc.start(now);
+
+    tuningSourceNodes={
+      noise:noiseSource,
+      osc:carrierOsc,
+      gain:tuningMasterGain
+    };
+  }
+
+  function stopTuningSound(fadeDuration){
+    if(!tuningSourceNodes||!audioContext) return;
+    const nodes=tuningSourceNodes;
+    tuningSourceNodes=null;
+    const now=audioContext.currentTime;
+    const dur=Math.max(0.04,fadeDuration||0.04);
+    try{
+      nodes.gain.gain.cancelScheduledValues(now);
+      nodes.gain.gain.setValueAtTime(nodes.gain.gain.value,now);
+      nodes.gain.gain.linearRampToValueAtTime(0.0001,now+dur);
+      setTimeout(function(){
+        try{nodes.noise.stop();nodes.noise.disconnect();}catch(e){}
+        try{nodes.osc.stop();nodes.osc.disconnect();}catch(e){}
+        try{nodes.gain.disconnect();}catch(e){}
+      },(dur+0.1)*1000);
+    }catch(e){}
+  }
+
   const setTuning=function(active,delayMs){
     if(tuningTimer){clearTimeout(tuningTimer);tuningTimer=0}
     if(!active && delayMs && delayMs>0){
@@ -177,6 +335,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     isTuning=active;
     document.documentElement.classList.toggle('radio-tuning',active);
     if(logoStage) logoStage.classList.toggle('is-tuning',active);
+    if(active){
+      startSnowEffect();
+    }
   };
   let silentFrames=0;
   let analyserBroken=false;
@@ -337,9 +498,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   function setupAnalyser(){
     if(analyser) return;
-    const AudioContext=window.AudioContext||window.webkitAudioContext;
-    if(!AudioContext) return;
-    audioContext=new AudioContext();
+    ensureAudioContext();
+    if(!audioContext) return;
     analyser=audioContext.createAnalyser();
     analyser.fftSize=1024;
     analyser.minDecibels=-100;
@@ -348,7 +508,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     frequencyData=new Uint8Array(analyser.frequencyBinCount);
     floatFrequencyData=new Float32Array(analyser.frequencyBinCount);
     const source=audioContext.createMediaElementSource(audio);
-    outputGain=audioContext.createGain();
+    if(!outputGain) outputGain=audioContext.createGain();
     outputGain.gain.value=muteDebugAudio?0:Number(volume.value);
     source.connect(analyser);
     source.connect(outputGain).connect(audioContext.destination);
@@ -885,6 +1045,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     hasStarted=true;
     setTuning(true);
     tuningStartTime=performance.now();
+    startTuningSound();
     status.textContent='SUCHE SIGNAL...';
     setActive(true);
     toggle.disabled=true;
@@ -894,7 +1055,14 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     try{
       if(useServerLevels) ensureWebSocketViz();
       if(canAnalyzeAudio && !analyserBroken){
-        try{setupAnalyser()}catch(error){
+        try{
+          setupAnalyser();
+          if(outputGain&&audioContext){
+            const now=audioContext.currentTime;
+            outputGain.gain.cancelScheduledValues(now);
+            outputGain.gain.setValueAtTime(0.0001,now);
+          }
+        }catch(error){
           analyser=null;frequencyData=null;
           vizLog('setup FAILED: '+(error&&error.message?error.message:String(error)));
         }
@@ -907,6 +1075,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       if(analyser && !visualizerFrame) visualizerFrame=requestAnimationFrame(drawEqualizer);
     }catch(error){
       setTuning(false);
+      stopTuningSound(0.2);
       if(forceServerLevelsDebug&&wsSocket){
         status.textContent='SERVER-LEVELS AKTIV';
         setActive(true);
@@ -926,8 +1095,21 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   });
 
   volume.addEventListener('input',function(){
-    if(outputGain) outputGain.gain.value=muteDebugAudio?0:Number(volume.value);
-    else audio.volume=muteDebugAudio?0:Number(volume.value);
+    const targetVol=muteDebugAudio?0:Number(volume.value);
+    if(outputGain&&audioContext){
+      if(!isTuning){
+        outputGain.gain.cancelScheduledValues(audioContext.currentTime);
+        outputGain.gain.setValueAtTime(targetVol,audioContext.currentTime);
+      }
+    }else{
+      if(!isTuning){
+        audio.volume=targetVol;
+      }
+    }
+    if(tuningMasterGain&&audioContext){
+      tuningMasterGain.gain.cancelScheduledValues(audioContext.currentTime);
+      tuningMasterGain.gain.setValueAtTime(Math.min(0.32,Math.max(0.08,targetVol*0.4)),audioContext.currentTime);
+    }
   });
 
   const qualityToggle=document.getElementById('quality-toggle');
@@ -954,16 +1136,41 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     hasStarted=true;
     isPlaying=true;
     const elapsed=performance.now()-tuningStartTime;
-    const minTuningDuration=750;
+    const minTuningDuration=850;
     const remaining=Math.max(0,minTuningDuration-elapsed);
-    if(remaining>0){
-      setTuning(false,remaining);
-      window.setTimeout(function(){
-        if(isPlaying&&!isTuning) status.textContent='ON AIR';
-      },remaining);
-    }else{
-      setTuning(false);
+    const fadeDuration=0.85;
+
+    function applyStreamCrossfade(){
+      stopTuningSound(fadeDuration);
+      if(outputGain&&audioContext){
+        const now=audioContext.currentTime;
+        const targetVol=muteDebugAudio?0:Number(volume.value);
+        outputGain.gain.cancelScheduledValues(now);
+        outputGain.gain.setValueAtTime(0.0001,now);
+        outputGain.gain.linearRampToValueAtTime(targetVol,now+fadeDuration);
+      }else if(!canAnalyzeAudio){
+        const targetVol=muteDebugAudio?0:Number(volume.value);
+        const startTime=performance.now();
+        const startVol=0.02;
+        audio.volume=startVol;
+        const volTimer=setInterval(function(){
+          const p=(performance.now()-startTime)/(fadeDuration*1000);
+          if(p>=1||!isPlaying){
+            if(isPlaying) audio.volume=targetVol;
+            clearInterval(volTimer);
+          }else{
+            audio.volume=startVol+(targetVol-startVol)*p;
+          }
+        },30);
+      }
+      setTuning(false,fadeDuration*1000);
       status.textContent='ON AIR';
+    }
+
+    if(remaining>0){
+      window.setTimeout(applyStreamCrossfade,remaining);
+    }else{
+      applyStreamCrossfade();
     }
     setActive(true);
     /* iOS Safari keeps the AudioContext suspended even after a user gesture;
@@ -974,6 +1181,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   audio.addEventListener('pause',function(){
     setTuning(false);
+    stopTuningSound(0.15);
     if(forceServerLevelsDebug&&wsSocket){
       isPlaying=true;
       window.doomsdayAudioSignal.playing=true;
@@ -993,6 +1201,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   audio.addEventListener('waiting',function(){status.textContent='PUFFERE SIGNAL...'});
   audio.addEventListener('error',function(){
     setTuning(false);
+    stopTuningSound(0.15);
     if(forceServerLevelsDebug&&wsSocket){
       isPlaying=true;
       window.doomsdayAudioSignal.playing=true;

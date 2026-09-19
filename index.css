@@ -205,8 +205,28 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
 
 /* Radio Tuning Mode: analog static noise and desaturated snow logo */
 html.radio-tuning .noise{
-  opacity:0.14 !important;
+  opacity:0.18 !important;
   transition:opacity 0.15s ease-in;
+}
+
+.tuning-snow-canvas{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  z-index:4;
+  pointer-events:none;
+  opacity:0;
+  mix-blend-mode:screen;
+  transition:opacity 0.85s ease-out;
+  border-radius:4px;
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
+}
+
+html.radio-tuning .tuning-snow-canvas{
+  opacity:0.95;
+  transition:opacity 0.05s ease-in;
 }
 
 html.radio-tuning .hero-logo{

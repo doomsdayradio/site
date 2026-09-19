@@ -317,19 +317,19 @@ if (host && !prefersReducedMotion) {
           lastAudioSpray = now;
           const cloudColor = soundWaveColor(now, bass, mid, treble, emissionPunch);
           const kickEmission = hasLocalKick || bcActivityRise >= bcRiseOn || glitchBurstActive;
-          const normalRadius = Math.max(0.005, fxNum(fxEmission, 'normalRadius', 0.035));
-          const normalRadiusScale = Math.max(0, fxNum(fxBassCoupled, 'subRadiusScale', 0.5));
-          const normalForce = fxNum(fxEmission, 'normalForce', 450);
-          const kickRadius = Math.max(0.01, fxNum(fxEmission, 'glitchRadius', 0.22));
+          const normalRadius = Math.max(0.01, fxNum(fxEmission, 'normalRadius', 0.08));
+          const normalRadiusScale = Math.max(0, fxNum(fxBassCoupled, 'subRadiusScale', 0.65));
+          const normalForce = fxNum(fxEmission, 'normalForce', 620);
+          const kickRadius = Math.max(0.02, fxNum(fxEmission, 'glitchRadius', 0.28));
           fluid.setConfig({
             colorPalette: [cloudColor],
-            brightness: 0.28,
+            brightness: 0.32,
             splatRadius: kickEmission
               ? kickRadius
-              : Math.min(0.6, normalRadius + punch * normalRadiusScale),
+              : Math.min(0.65, normalRadius + punch * normalRadiusScale),
             splatForce: kickEmission
-              ? fxNum(fxEmission, 'glitchForce', 950)
-              : normalForce * (0.15 + punch * 0.55)
+              ? fxNum(fxEmission, 'glitchForce', 1050)
+              : normalForce * (0.20 + punch * 0.70)
           });
           const emitters = logoEmitters(0.44 + Math.sin(now * 0.002) * 0.06);
           const emitY = emitters.y + Math.cos(now * 0.003) * 4;
