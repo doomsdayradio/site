@@ -55,6 +55,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 (function(){
   const player=document.querySelector('.radio-player');
   const logo=document.querySelector('.hero-logo');
+  const logoStage=document.querySelector('.hero-logo-stage')||logo;
   const audio=document.getElementById('radio-stream');
   const toggle=document.getElementById('stream-toggle');
   const status=document.getElementById('stream-status');
@@ -160,6 +161,14 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let visualizerFrame=0;
   let isPlaying=false;
   let hasStarted=false;
+  let isTuning=false;
+  let tuningStartTime=0;
+  let carrierQuality=0;
+  const setTuning=function(active){
+    isTuning=active;
+    document.documentElement.classList.toggle('radio-tuning',active);
+    if(logoStage) logoStage.classList.toggle('is-tuning',active);
+  };
   let silentFrames=0;
   let analyserBroken=false;
   let vizMode='off';
@@ -767,7 +776,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const innerColor='rgba('+r+','+g+','+b+','+innerAlpha+')';
     const outerColor='rgba('+r+','+g+','+b+','+outerAlpha+')';
 
-    if(logo){
+    if(logo && !isTuning){
       logo.style.filter='drop-shadow(0 0 '+innerR+' '+innerColor+') drop-shadow(0 0 '+outerR+' '+outerColor+')';
     }
 
@@ -778,33 +787,60 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
     document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
     document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
-    /* Keep the full-screen noise layer static. Treble spikes use their own
-     * localized fluid effect and must not flash the entire background. */
+    /* Keep the full-screen noise layer static unless tuning. */
     if(noiseLayer){
-      noiseLayer.style.opacity=noiseBaseline.toFixed(3);
+      const currentNoise = isTuning ? 0.14 : noiseBaseline;
+      noiseLayer.style.opacity=currentNoise.toFixed(3);
     }
     const bassPercent=Math.round(Math.max(0,Math.min(1,signal.bass))*100);
     bassDebugReadout.textContent=String(bassPercent).padStart(2,'0')+'%';
     bassDebugFill.style.width=bassPercent+'%';
     const hardBassPercent=Math.round(Math.max(0,Math.min(1,signal.hardBass||0))*100);
     bassDebugHardReadout.textContent=String(hardBassPercent).padStart(2,'0')+'% / '+Math.round(getFxHardBassOn()*100)+'%';
-    const litCount=Math.round(Math.max(0,Math.min(1,signal.level))*ledSegments.length);
-    const flickerSeed=performance.now()*0.007;
+
+    /* S-Meter / Carrier Signal Reception Quality (Proposal A: separates Audio-Spectrum from Carrier Quality) */
+    let targetCarrier = 0;
+    if (isTuning) {
+      const tuningElapsed = now - tuningStartTime;
+      if (tuningElapsed < 320) {
+        targetCarrier = 0.28 + Math.sin(now * 0.024) * 0.22 + (Math.random() - 0.5) * 0.15;
+      } else {
+        targetCarrier = 0.62 + Math.sin(now * 0.016) * 0.24 + (Math.random() - 0.5) * 0.12;
+      }
+      targetCarrier = Math.max(0.12, Math.min(0.85, targetCarrier));
+      carrierQuality += (targetCarrier - carrierQuality) * 0.35;
+    } else if (signal.playing || isPlaying) {
+      const rfDrift = Math.sin(now * 0.0007) * 0.022 + Math.cos(now * 0.0019) * 0.012 + (Math.random() - 0.5) * 0.008;
+      targetCarrier = Math.max(0.88, Math.min(0.97, 0.935 + rfDrift));
+      carrierQuality += (targetCarrier - carrierQuality) * 0.08;
+    } else {
+      carrierQuality += (0 - carrierQuality) * 0.18;
+      if (carrierQuality < 0.01) carrierQuality = 0;
+    }
+
+    const carrierPercent = Math.round(carrierQuality * 100);
+    const litCount = Math.round(carrierQuality * ledSegments.length);
+    const flickerSeed = now * 0.007;
+
     ledSegments.forEach(function(segment,index){
       const ratio=index/(ledSegments.length-1);
+      const edge=Math.abs(index-(litCount-1));
       const wobble=Math.sin(flickerSeed+index*0.91)*0.5
         +Math.sin(flickerSeed*1.73+index*1.87)*0.35
         +(Math.random()-0.5)*0.45;
-      const edge=Math.abs(index-(litCount-1));
-      const spark=index>=litCount && index<=litCount+1 && wobble>0.48;
-      const dropout=index<litCount && edge<=2 && wobble<-0.62;
+      const spark=isTuning
+        ? (index>=litCount && index<=litCount+2 && wobble>0.25)
+        : (index>=litCount && index<=litCount+1 && wobble>0.65);
+      const dropout=isTuning
+        ? (index<litCount && edge<=3 && wobble<-0.35)
+        : (index<litCount && edge<=1 && wobble<-0.85);
       const isActive=(index<litCount && !dropout)||spark;
       segment.className='led-segment';
       if(isActive) segment.classList.add('active',ratio>0.75?'high':ratio>0.45?'mid':'low');
     });
-    ledReadout.value=String(percent).padStart(2,'0')+'%';
-    ledReadout.textContent=String(percent).padStart(2,'0')+'%';
-    ledMeter.setAttribute('aria-valuenow',String(percent));
+    ledReadout.value=String(carrierPercent).padStart(2,'0')+'%';
+    ledReadout.textContent=String(carrierPercent).padStart(2,'0')+'%';
+    ledMeter.setAttribute('aria-valuenow',String(carrierPercent));
   }
 
   function updateAmbientMeter(){
@@ -838,9 +874,14 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   async function playStream(){
     hasStarted=true;
-    status.textContent='VERBINDE...';
+    setTuning(true);
+    tuningStartTime=performance.now();
+    status.textContent='SUCHE SIGNAL...';
     setActive(true);
     toggle.disabled=true;
+    window.setTimeout(function(){
+      if(isTuning && status) status.textContent='SYNCHRONISIERE...';
+    },450);
     try{
       if(useServerLevels) ensureWebSocketViz();
       if(canAnalyzeAudio && !analyserBroken){
@@ -856,6 +897,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       await audio.play();
       if(analyser && !visualizerFrame) visualizerFrame=requestAnimationFrame(drawEqualizer);
     }catch(error){
+      setTuning(false);
       if(forceServerLevelsDebug&&wsSocket){
         status.textContent='SERVER-LEVELS AKTIV';
         setActive(true);
@@ -902,6 +944,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   audio.addEventListener('playing',function(){
     hasStarted=true;
     isPlaying=true;
+    setTuning(false);
     setActive(true);
     status.textContent='ON AIR';
     /* iOS Safari keeps the AudioContext suspended even after a user gesture;
@@ -911,6 +954,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   });
 
   audio.addEventListener('pause',function(){
+    setTuning(false);
     if(forceServerLevelsDebug&&wsSocket){
       isPlaying=true;
       window.doomsdayAudioSignal.playing=true;
@@ -929,6 +973,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   audio.addEventListener('waiting',function(){status.textContent='PUFFERE SIGNAL...'});
   audio.addEventListener('error',function(){
+    setTuning(false);
     if(forceServerLevelsDebug&&wsSocket){
       isPlaying=true;
       window.doomsdayAudioSignal.playing=true;

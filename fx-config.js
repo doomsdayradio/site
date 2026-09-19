@@ -167,10 +167,10 @@ window.doomsdayFxConfig = {
     },
     emission: {
       enabled: true,
-      normalRadius: 0.01,
-      normalRadiusScale: 0.4,
-      normalForce: 400,
-      glitchRadius: 0.19,
+      normalRadius: 0.035,
+      normalRadiusScale: 0.5,
+      normalForce: 450,
+      glitchRadius: 0.22,
       glitchForce: 950
     },
     mouse: {

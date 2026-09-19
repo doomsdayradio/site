@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var storageKey = 'ddDebugFxConfigV7';
+  var storageKey = 'ddDebugFxConfigV8';
   var base = window.doomsdayFxConfig || { version: 1, triggers: {} };
   var trigger = base.triggers || (base.triggers = {});
   var analysis = base.audioAnalysis || (base.audioAnalysis = {});
@@ -16,7 +16,7 @@
     sync: { delayMs: 5500 },
     glow: { enabled: true, midWeight: 1.85, trebleWeight: 0.2, floor: 0.49, range: 1, innerAlpha: 1, outerAlpha: 0.37, innerRadius: 32, outerRadius: 85 },
     glitch: { enabled: true, durationMs: 170, topOpacity: 0.78, bottomOpacity: 0.7, fragmentDurationMs: 260 },
-    emission: { enabled: true, normalRadius: 0.01, normalRadiusScale: 0.4, normalForce: 400, glitchRadius: 0.19, glitchForce: 950 },
+    emission: { enabled: true, normalRadius: 0.035, normalRadiusScale: 0.5, normalForce: 450, glitchRadius: 0.22, glitchForce: 950 },
     mouse: { enabled: true, brightness: 0.11, radius: 0.1, radiusLite: 0.06, forceScale: 0.42, tapBrightness: 0.69, tapRadius: 0.16, tapRadiusLite: 0.06, tapForceMin: 26, tapForceRange: 85 },
     treble: { enabled: true, pipeCount: 1, pipeSpacing: 0, radius: 0.0018, radiusScale: 0.001, force: 9, forceScale: 105, lift: 1, direction: 'down', angleSpread: 1.2 },
     bass: { softFloor: 0.25, hardFloor: 0.38 },
