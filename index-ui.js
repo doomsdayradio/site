@@ -63,6 +63,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const volumeControl=document.getElementById('volume-control');
   const volumeMuteToggle=document.getElementById('volume-mute-toggle');
   const volumeIcon=document.getElementById('volume-icon');
+  const trackTitle=document.getElementById('player-track-title');
+  const batteryStatus=document.getElementById('battery-status');
   const equalizer=document.getElementById('equalizer');
   const ledMeter=document.querySelector('.led-meter-wrapper');
   const ledRow=document.getElementById('signal-led-row');
@@ -77,6 +79,54 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   document.querySelectorAll('[data-spectrum-band]').forEach(function(element){
     spectrumBands[element.dataset.spectrumBand]={fill:element.querySelector('em'),readout:element.querySelector('output'),label:element.querySelector('small')};
   });
+
+  function setTrackTitle(value){
+    if(trackTitle) trackTitle.textContent=value||'TRACK // SIGNAL BEREIT';
+  }
+
+  function updateTrackFromStatus(payload){
+    const sources=payload&&payload.icestats&&payload.icestats.source;
+    const source=Array.isArray(sources)?sources[0]:sources;
+    if(!source) return;
+    const title=String(source.title||'').trim();
+    const artist=String(source.artist||'').trim();
+    setTrackTitle(artist&&title?artist+' // '+title:title||artist||'TRACK // SIGNAL BEREIT');
+  }
+
+  async function refreshTrackTitle(){
+    try{
+      const response=await fetch('https://stream.doomsday.radio/status-json.xsl',{cache:'no-store'});
+      if(!response.ok) return;
+      updateTrackFromStatus(await response.json());
+    }catch(error){}
+  }
+
+  refreshTrackTitle();
+  window.setInterval(refreshTrackTitle,15000);
+
+  function setBatteryStatus(level,charging){
+    if(!batteryStatus) return;
+    const percent=Math.max(0,Math.min(100,Math.round(level*100)));
+    batteryStatus.textContent='PWR:'+String(percent).padStart(3,'0')+'%'+(charging?' +':'');
+  }
+
+  async function initBatteryStatus(){
+    if(!navigator.getBattery){
+      setBatteryStatus(1,false);
+      return;
+    }
+    try{
+      const battery=await navigator.getBattery();
+      const update=function(){setBatteryStatus(battery.level,battery.charging)};
+      update();
+      battery.addEventListener('levelchange',update);
+      battery.addEventListener('chargingchange',update);
+    }catch(error){
+      setBatteryStatus(1,false);
+    }
+  }
+
+  initBatteryStatus();
   const btnIcon=toggle?toggle.querySelector('.stream-icon'):null;
   const ledSegments=[];
   const bars=[];

@@ -91,6 +91,10 @@
             </div>
           </div>
         </div>
+        <div class="player-track" aria-live="polite">
+          <span class="player-track-label">NOW PLAYING</span>
+          <span id="player-track-title">TRACK // SIGNAL BEREIT</span>
+        </div>
       </section>
       <p id="station-slogan" class="freq" aria-live="polite">Eine Welt, die sich über Radio vermittelt, ordnet und erinnert.</p>
       <div class="signal-dot"></div>
@@ -106,7 +110,10 @@
       <a class="ddd-focus" href="/archiv/">Archiv</a>
       <a class="ddd-focus" href="/signaldecoder/">Spiele</a>
       <a class="ddd-focus" href="/story/map/">Karte</a>
-      <button id="toggle-paper" class="ddd-focus" type="button" aria-pressed="false" data-start-visible="false">Impressum</button>
+    </div>
+    <div class="utility-menu" aria-label="Weitere Bereiche">
+      <a class="ddd-focus" href="/login/">Login</a>
+      <a class="ddd-focus" href="/story/lore/Orte/Handelsposten/Doomsday-Fanshop.html">Shop</a>
     </div>
   </nav>
 
@@ -144,9 +151,13 @@
     </div>
     <div class="status-telemetry">
       <span id="clock">00:00:00</span>
-      <span class="freq-pwr">FREQ:107.END &nbsp; PWR:LOW</span>
+      <span class="freq-pwr">FREQ:107.END &nbsp; <span id="battery-status">PWR:100%</span></span>
     </div>
   </div>
+
+  <footer class="site-footer" aria-label="Rechtliche Informationen">
+    <button id="toggle-paper" class="ddd-focus" type="button" aria-pressed="false" data-start-visible="false">Impressum</button>
+  </footer>
 
   <script src="./story/map/libs/three.min.js"></script>
   <script src="./script.js?v=2"></script>
