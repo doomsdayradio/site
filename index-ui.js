@@ -163,8 +163,17 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let hasStarted=false;
   let isTuning=false;
   let tuningStartTime=0;
+  let tuningTimer=0;
   let carrierQuality=0;
-  const setTuning=function(active){
+  const setTuning=function(active,delayMs){
+    if(tuningTimer){clearTimeout(tuningTimer);tuningTimer=0}
+    if(!active && delayMs && delayMs>0){
+      tuningTimer=window.setTimeout(function(){
+        tuningTimer=0;
+        setTuning(false);
+      },delayMs);
+      return;
+    }
     isTuning=active;
     document.documentElement.classList.toggle('radio-tuning',active);
     if(logoStage) logoStage.classList.toggle('is-tuning',active);
@@ -944,9 +953,19 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   audio.addEventListener('playing',function(){
     hasStarted=true;
     isPlaying=true;
-    setTuning(false);
+    const elapsed=performance.now()-tuningStartTime;
+    const minTuningDuration=750;
+    const remaining=Math.max(0,minTuningDuration-elapsed);
+    if(remaining>0){
+      setTuning(false,remaining);
+      window.setTimeout(function(){
+        if(isPlaying&&!isTuning) status.textContent='ON AIR';
+      },remaining);
+    }else{
+      setTuning(false);
+      status.textContent='ON AIR';
+    }
     setActive(true);
-    status.textContent='ON AIR';
     /* iOS Safari keeps the AudioContext suspended even after a user gesture;
        resume it whenever playback actually starts. */
     if(audioContext && audioContext.state==='suspended'){audioContext.resume().catch(function(){})}
