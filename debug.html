@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Doomsday Radio - Visualisations-Debug</title>
   <link rel="stylesheet" href="/design-system.css">
-  <link rel="stylesheet" href="./index.css?v=20260919-vol1">
+  <link rel="stylesheet" href="./index.css?v=20260919-deck1">
   <link rel="stylesheet" href="./debug.css?v=5">
   <style>
     .debug-page-note { position: fixed; left: 12px; bottom: 12px; z-index: 20; color: #f5efe4; font: 12px/1.4 monospace; opacity: .82; }
@@ -87,32 +87,38 @@
 
   <div class="status">
     <div id="freqTicks" aria-hidden="true"></div>
-    <div class="status-controls">
-      <div class="volume-control" id="volume-control">
-        <button id="volume-mute-toggle" class="volume-mute-btn ddd-focus" type="button" aria-label="Lautstärke stummschalten" title="Lautstärke">
-          <span id="volume-icon" class="volume-icon" aria-hidden="true">🔊</span>
-        </button>
-        <div class="volume-slider-wrap">
-          <label class="range-wrap">
-            <span class="sr-only">Lautstaerke</span>
-            <input id="stream-volume" type="range" min="0" max="1" step="0.05" value="0.8">
+    <div class="status-deck-group">
+      <div class="status-controls">
+        <div class="volume-control" id="volume-control">
+          <button id="volume-mute-toggle" class="volume-mute-btn ddd-focus" type="button" aria-label="Lautstärke stummschalten" title="Lautstärke">
+            <span id="volume-icon" class="volume-icon" aria-hidden="true">🔊</span>
+          </button>
+          <div class="volume-slider-wrap">
+            <label class="range-wrap">
+              <span class="sr-only">Lautstaerke</span>
+              <input id="stream-volume" type="range" min="0" max="1" step="0.05" value="0.8">
+            </label>
+          </div>
+        </div>
+        <div class="quality-control">
+          <label class="hardware-toggle" for="quality-toggle" title="Sparmodus">
+            <input id="quality-toggle" type="checkbox">
+            <i></i><span>ECO</span>
           </label>
         </div>
       </div>
-      <div class="quality-control">
-        <label class="hardware-toggle" for="quality-toggle" title="Sparmodus">
-          <input id="quality-toggle" type="checkbox">
-          <i></i><span>ECO</span>
-        </label>
+      <div class="status-deck-divider" aria-hidden="true"></div>
+      <div class="led-meter-wrapper" role="meter" aria-label="Signalpegel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <span class="sample-label meter-label">SIG</span>
+        <div id="signal-led-row" class="led-row" aria-hidden="true"></div>
+        <output id="signal-led-readout" class="meter-readout">00%</output>
       </div>
     </div>
-    <div class="led-meter-wrapper" role="meter" aria-label="Signalpegel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-      <div class="meter-meta"><span class="sample-label">SIGNAL</span><output id="signal-led-readout" class="meter-readout">00%</output></div>
-      <div id="signal-led-row" class="led-row" aria-hidden="true"></div>
-    </div>
     <div id="weather-status" class="weather-status" role="status" aria-live="polite"><span id="weather-summary">DEBUG MODE</span></div>
-    <span id="clock">00:00:00</span>
-    <span>FREQ:107.END</span>
+    <div class="status-telemetry">
+      <span id="clock">00:00:00</span>
+      <span class="freq-pwr">FREQ:107.END</span>
+    </div>
   </div>
 
   <p class="debug-page-note">Normal: lokale WebAudio-FFT-Analyse über Proxy | <a href="./ios-debug.html">iOS-Server-Level testen</a></p>
@@ -120,7 +126,7 @@
   <script src="./fx-config.js?v=31"></script>
   <script src="./debug-config.js?v=20"></script>
   <script src="./audio-analysis.js?v=3"></script>
-  <script src="./index-ui.js?v=20260919-status-deck1"></script>
+  <script src="./index-ui.js?v=20260919-deck1"></script>
   <script src="./audio-signal.js?v=2"></script>
   <script type="module" src="./fluid-background.js?v=20260919-sub-emission2"></script>
 </body>
