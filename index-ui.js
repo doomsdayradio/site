@@ -163,6 +163,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let hasStarted=false;
   let isTuning=false;
   let tuningStartTime=0;
+  let crossfadeStartTime=0;
+  let crossfadeDurationMs=1800;
   let tuningTimer=0;
   let carrierQuality=0;
 
@@ -247,15 +249,15 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     stopTuningSound(0);
 
     const sampleRate=ctx.sampleRate||44100;
-    const bufferDuration=2.5;
+    const bufferDuration=3.0;
     const bufferSize=Math.floor(sampleRate*bufferDuration);
     const noiseBuffer=ctx.createBuffer(1,bufferSize,sampleRate);
     const channel=noiseBuffer.getChannelData(0);
     let lastNoise=0;
     for(let i=0;i<bufferSize;i++){
       const white=Math.random()*2-1;
-      const crackle=Math.random()<0.004?(Math.random()*2-1)*2.8:0;
-      lastNoise=(lastNoise*0.84)+(white*0.16)+crackle;
+      const crackle=Math.random()<0.003?(Math.random()*2-1)*2.2:0;
+      lastNoise=(lastNoise*0.88)+(white*0.12)+crackle;
       channel[i]=Math.max(-1,Math.min(1,lastNoise));
     }
 
@@ -263,32 +265,32 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     noiseSource.buffer=noiseBuffer;
     noiseSource.loop=true;
 
-    // Bandpass sweep simulating dial search
+    // Soft bandpass sweep simulating radio dial search
     const bandpass=ctx.createBiquadFilter();
     bandpass.type='bandpass';
-    bandpass.Q.value=3.8;
+    bandpass.Q.value=2.8;
     const now=ctx.currentTime;
-    bandpass.frequency.setValueAtTime(1600,now);
-    bandpass.frequency.linearRampToValueAtTime(750,now+0.28);
-    bandpass.frequency.linearRampToValueAtTime(2400,now+0.65);
-    bandpass.frequency.linearRampToValueAtTime(1100,now+0.95);
+    bandpass.frequency.setValueAtTime(1200,now);
+    bandpass.frequency.linearRampToValueAtTime(700,now+0.4);
+    bandpass.frequency.linearRampToValueAtTime(1600,now+1.1);
+    bandpass.frequency.linearRampToValueAtTime(950,now+2.0);
 
-    // Heterodyne carrier whistle (analog tuner locking in)
+    // Subtle heterodyne carrier whistle (analog tuner locking in)
     const carrierOsc=ctx.createOscillator();
     carrierOsc.type='sine';
-    carrierOsc.frequency.setValueAtTime(2200,now);
-    carrierOsc.frequency.exponentialRampToValueAtTime(440,now+0.55);
-    carrierOsc.frequency.linearRampToValueAtTime(160,now+0.85);
+    carrierOsc.frequency.setValueAtTime(1600,now);
+    carrierOsc.frequency.exponentialRampToValueAtTime(320,now+0.6);
+    carrierOsc.frequency.linearRampToValueAtTime(110,now+1.6);
 
     const carrierGain=ctx.createGain();
-    carrierGain.gain.setValueAtTime(0.045,now);
-    carrierGain.gain.exponentialRampToValueAtTime(0.0001,now+0.85);
+    carrierGain.gain.setValueAtTime(0.022,now);
+    carrierGain.gain.exponentialRampToValueAtTime(0.0001,now+1.6);
     carrierOsc.connect(carrierGain);
 
     tuningMasterGain=ctx.createGain();
     const targetVol=muteDebugAudio?0:Number(volume.value);
     tuningMasterGain.gain.setValueAtTime(0.0001,now);
-    tuningMasterGain.gain.linearRampToValueAtTime(Math.min(0.32,Math.max(0.08,targetVol*0.4)),now+0.06);
+    tuningMasterGain.gain.linearRampToValueAtTime(Math.min(0.12,Math.max(0.03,targetVol*0.18)),now+0.08);
 
     noiseSource.connect(bandpass);
     bandpass.connect(tuningMasterGain);
@@ -486,7 +488,8 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   for(let index=0;index<32;index++){
     const bar=document.createElement('span');
     bar.className='equalizer-bar is-neutral';
-    bar.style.setProperty('--idle-height',(0.08+Math.sin((index+2)*0.55)*0.08+index%3*0.025).toFixed(2));
+    const symDist=Math.abs(index-15.5);
+    bar.style.setProperty('--idle-height',(0.06+Math.cos(symDist*0.22)*0.07+(index%2)*0.02).toFixed(2));
     equalizer.appendChild(bar);
     bars.push(bar);
   }
@@ -576,11 +579,14 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     if(!spectrum||!spectrum.length) return;
     const barCount=bars.length;
     const sourceLength=spectrum.length;
+    const center=(barCount-1)/2;
     bars.forEach(function(bar,index){
-      const sourcePosition=(index+0.5)*sourceLength/barCount-0.5;
-      const leftIndex=Math.max(0,Math.floor(sourcePosition));
+      const distFromCenter=Math.abs(index-center);
+      const normalizedDist=distFromCenter/(barCount/2);
+      const sourcePosition=Math.max(0,Math.min(sourceLength-1,normalizedDist*(sourceLength-1)));
+      const leftIndex=Math.floor(sourcePosition);
       const rightIndex=Math.min(sourceLength-1,leftIndex+1);
-      const fraction=Math.max(0,sourcePosition-leftIndex);
+      const fraction=sourcePosition-leftIndex;
       const left=Number(spectrum[leftIndex])||0;
       const right=Number(spectrum[rightIndex])||0;
       const level=Math.max(0.012,Math.min(1,left+(right-left)*fraction));
@@ -969,15 +975,20 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
     /* S-Meter / Carrier Signal Reception Quality (Proposal A: separates Audio-Spectrum from Carrier Quality) */
     let targetCarrier = 0;
-    if (isTuning) {
-      const tuningElapsed = now - tuningStartTime;
-      if (tuningElapsed < 320) {
-        targetCarrier = 0.28 + Math.sin(now * 0.024) * 0.22 + (Math.random() - 0.5) * 0.15;
+    const isTransitioning = isTuning || (crossfadeStartTime > 0 && now < crossfadeStartTime + crossfadeDurationMs);
+
+    if (isTransitioning) {
+      if (crossfadeStartTime === 0) {
+        const jitter = (Math.random() - 0.5) * 0.16 + Math.sin(now * 0.022) * 0.12;
+        targetCarrier = Math.max(0.14, Math.min(0.42, 0.28 + jitter));
+        carrierQuality += (targetCarrier - carrierQuality) * 0.35;
       } else {
-        targetCarrier = 0.62 + Math.sin(now * 0.016) * 0.24 + (Math.random() - 0.5) * 0.12;
+        const progress = Math.max(0, Math.min(1, (now - crossfadeStartTime) / crossfadeDurationMs));
+        const smoothProgress = 1 - Math.pow(1 - progress, 2);
+        const residualJitter = (Math.random() - 0.5) * (0.10 * (1 - progress)) + Math.sin(now * 0.015) * (0.06 * (1 - progress));
+        targetCarrier = 0.30 + smoothProgress * (0.935 - 0.30) + residualJitter;
+        carrierQuality += (targetCarrier - carrierQuality) * 0.22;
       }
-      targetCarrier = Math.max(0.12, Math.min(0.85, targetCarrier));
-      carrierQuality += (targetCarrier - carrierQuality) * 0.35;
     } else if (signal.playing || isPlaying) {
       const rfDrift = Math.sin(now * 0.0007) * 0.022 + Math.cos(now * 0.0019) * 0.012 + (Math.random() - 0.5) * 0.008;
       targetCarrier = Math.max(0.88, Math.min(0.97, 0.935 + rfDrift));
@@ -990,6 +1001,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const carrierPercent = Math.round(carrierQuality * 100);
     const litCount = Math.round(carrierQuality * ledSegments.length);
     const flickerSeed = now * 0.007;
+    const instability = isTransitioning ? (crossfadeStartTime > 0 ? Math.max(0, 1 - (now - crossfadeStartTime) / crossfadeDurationMs) : 1) : 0;
 
     ledSegments.forEach(function(segment,index){
       const ratio=index/(ledSegments.length-1);
@@ -997,11 +1009,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       const wobble=Math.sin(flickerSeed+index*0.91)*0.5
         +Math.sin(flickerSeed*1.73+index*1.87)*0.35
         +(Math.random()-0.5)*0.45;
-      const spark=isTuning
-        ? (index>=litCount && index<=litCount+2 && wobble>0.25)
+      const spark=instability > 0.08
+        ? (index>=litCount && index<=litCount+2 && wobble>(0.65 - instability * 0.38))
         : (index>=litCount && index<=litCount+1 && wobble>0.65);
-      const dropout=isTuning
-        ? (index<litCount && edge<=3 && wobble<-0.35)
+      const dropout=instability > 0.08
+        ? (index<litCount && edge<=3 && wobble<(-0.85 + instability * 0.45))
         : (index<litCount && edge<=1 && wobble<-0.85);
       const isActive=(index<litCount && !dropout)||spark;
       segment.className='led-segment';
@@ -1045,13 +1057,14 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     hasStarted=true;
     setTuning(true);
     tuningStartTime=performance.now();
+    crossfadeStartTime=0;
     startTuningSound();
     status.textContent='SUCHE SIGNAL...';
     setActive(true);
     toggle.disabled=true;
     window.setTimeout(function(){
       if(isTuning && status) status.textContent='SYNCHRONISIERE...';
-    },450);
+    },350);
     try{
       if(useServerLevels) ensureWebSocketViz();
       if(canAnalyzeAudio && !analyserBroken){
@@ -1075,6 +1088,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       if(analyser && !visualizerFrame) visualizerFrame=requestAnimationFrame(drawEqualizer);
     }catch(error){
       setTuning(false);
+      crossfadeStartTime=0;
       stopTuningSound(0.2);
       if(forceServerLevelsDebug&&wsSocket){
         status.textContent='SERVER-LEVELS AKTIV';
@@ -1108,7 +1122,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     }
     if(tuningMasterGain&&audioContext){
       tuningMasterGain.gain.cancelScheduledValues(audioContext.currentTime);
-      tuningMasterGain.gain.setValueAtTime(Math.min(0.32,Math.max(0.08,targetVol*0.4)),audioContext.currentTime);
+      tuningMasterGain.gain.setValueAtTime(Math.min(0.12,Math.max(0.03,targetVol*0.18)),audioContext.currentTime);
     }
   });
 
@@ -1135,12 +1149,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   audio.addEventListener('playing',function(){
     hasStarted=true;
     isPlaying=true;
-    const elapsed=performance.now()-tuningStartTime;
-    const minTuningDuration=850;
-    const remaining=Math.max(0,minTuningDuration-elapsed);
-    const fadeDuration=0.85;
+    const fadeDuration=2.4;
+    crossfadeDurationMs=fadeDuration*1000;
 
     function applyStreamCrossfade(){
+      crossfadeStartTime=performance.now();
       stopTuningSound(fadeDuration);
       if(outputGain&&audioContext){
         const now=audioContext.currentTime;
@@ -1151,7 +1164,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       }else if(!canAnalyzeAudio){
         const targetVol=muteDebugAudio?0:Number(volume.value);
         const startTime=performance.now();
-        const startVol=0.02;
+        const startVol=0.005;
         audio.volume=startVol;
         const volTimer=setInterval(function(){
           const p=(performance.now()-startTime)/(fadeDuration*1000);
@@ -1159,7 +1172,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
             if(isPlaying) audio.volume=targetVol;
             clearInterval(volTimer);
           }else{
-            audio.volume=startVol+(targetVol-startVol)*p;
+            audio.volume=startVol+(targetVol-startVol)*Math.pow(p,1.3);
           }
         },30);
       }
@@ -1167,11 +1180,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       status.textContent='ON AIR';
     }
 
-    if(remaining>0){
-      window.setTimeout(applyStreamCrossfade,remaining);
-    }else{
-      applyStreamCrossfade();
-    }
+    applyStreamCrossfade();
     setActive(true);
     /* iOS Safari keeps the AudioContext suspended even after a user gesture;
        resume it whenever playback actually starts. */
@@ -1181,6 +1190,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   audio.addEventListener('pause',function(){
     setTuning(false);
+    crossfadeStartTime=0;
     stopTuningSound(0.15);
     if(forceServerLevelsDebug&&wsSocket){
       isPlaying=true;

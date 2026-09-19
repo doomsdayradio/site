@@ -206,7 +206,7 @@ canvas#dust{position:fixed;inset:0;z-index:1;pointer-events:none}
 /* Radio Tuning Mode: analog static noise and desaturated snow logo */
 html.radio-tuning .noise{
   opacity:0.18 !important;
-  transition:opacity 0.15s ease-in;
+  transition:opacity 0.2s ease-in;
 }
 
 .tuning-snow-canvas{
@@ -218,7 +218,7 @@ html.radio-tuning .noise{
   pointer-events:none;
   opacity:0;
   mix-blend-mode:screen;
-  transition:opacity 0.85s ease-out;
+  transition:opacity 2.4s cubic-bezier(0.2, 0.8, 0.2, 1);
   image-rendering:pixelated;
   image-rendering:crisp-edges;
   -webkit-mask-image:url("./ddd_radio_logo.png");
@@ -236,9 +236,25 @@ html.radio-tuning .tuning-snow-canvas{
   transition:opacity 0.05s ease-in;
 }
 
+.hero-logo{
+  position:relative;
+  z-index:2;
+  width:100%;
+  max-width:100%;
+  height:auto;
+  filter:
+    drop-shadow(0 0 var(--audio-glow-inner-r, 0px) var(--audio-glow-color, rgba(243,108,4,0)))
+    drop-shadow(0 0 var(--audio-glow-outer-r, 0px) var(--audio-glow-outer, rgba(243,108,4,0)));
+  animation:logo-float 7s ease-in-out infinite;
+  transform:scale(calc(1 + var(--audio-level,0) * 0.012));
+  will-change:filter;
+  transition:filter 2.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
 html.radio-tuning .hero-logo{
   filter:grayscale(1) contrast(1.7) brightness(1.2) drop-shadow(0 0 10px rgba(255,255,255,0.45)) !important;
   animation:logo-tuning-snow 0.09s steps(2,start) infinite, logo-float 7s ease-in-out infinite !important;
+  transition:none;
 }
 
 .hero-logo-stage.is-tuning::before{
