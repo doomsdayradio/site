@@ -8,7 +8,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_DESIGN_STYLESHEET = "/design-system.css"
-PUBLIC_DESIGN_STYLESHEET_FILE = ROOT / "design-system.css"
+SITE = ROOT / "site"
+PUBLIC_DESIGN_STYLESHEET_FILE = SITE / "design-system.css"
 STYLESHEET_LINK_RX = re.compile(
     r"<link\b(?=[^>]*\brel=[\"']stylesheet[\"'])[^>]*>", re.IGNORECASE
 )
@@ -100,9 +101,9 @@ def validate_public_stylesheet() -> None:
 
 def main() -> None:
     validate_public_stylesheet()
-    for path in (ROOT / "index.html", ROOT / "404.html", ROOT / "bunnycdn_errors" / "404.html"):
+    for path in (SITE / "index.html", SITE / "404.html", SITE / "bunnycdn_errors" / "404.html"):
         validate_public_page(path)
-    validate_map_page(ROOT / "story" / "map" / "index.html")
+    validate_map_page(SITE / "map" / "index.html")
     print("public site design contract valid")
 
 
