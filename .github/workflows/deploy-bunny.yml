@@ -60,8 +60,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p archiv
-          rsync -av --exclude='.git*' .archive-source/ archiv/
+          mkdir -p site/archiv
+          rsync -av --exclude='.git*' .archive-source/ site/archiv/
 
       - name: Download public design stylesheet
         run: |
@@ -70,7 +70,7 @@ jobs:
             --output /tmp/design-system.css; then
             echo "CDN snapshot is not published yet; using the committed snapshot."
           else
-            cp /tmp/design-system.css design-system.css
+            cp /tmp/design-system.css site/design-system.css
           fi
 
       - name: Validate public design contract
@@ -87,7 +87,7 @@ jobs:
             fi
           done
 
-      - name: Upload static files through Bunny S3
+      - name: Upload site files flat through Bunny S3
         env:
           AWS_ACCESS_KEY_ID: ${{ vars.BUNNY_STORAGE_ZONE }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
@@ -95,11 +95,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          aws s3 sync . "s3://${BUNNY_STORAGE_ZONE}/" \
-            --endpoint-url "${BUNNY_STORAGE_ENDPOINT}" \
-            --exclude '.git/*' \
-            --exclude '.github/*' \
-            --exclude 'design-system/*'
+          # `cp` without size/time comparison overwrites every existing object.
+          aws s3 cp site/ "s3://${BUNNY_STORAGE_ZONE}/" \
+            --recursive \
+            --endpoint-url "${BUNNY_STORAGE_ENDPOINT}"
 
       - name: Purge Bunny CDN cache
         env:
