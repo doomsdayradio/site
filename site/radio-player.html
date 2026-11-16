@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Doomsday Radio Player</title>
+  <link rel="stylesheet" href="./radio-player.css?v=20260919-player1">
+</head>
+<body>
+  <main class="player-shell" aria-label="Doomsday Radio Player">
+    <div class="player-brand">
+      <div class="logo-visual" aria-hidden="true">
+        <img src="./ddd_radio_logo.png" alt="">
+        <canvas id="beat-visualizer" width="96" height="56"></canvas>
+      </div>
+      <div class="brand-copy">
+        <strong>DOOMSDAY RADIO</strong>
+        <span id="player-status">SIGNAL BEREIT</span>
+      </div>
+    </div>
+    <button id="play-toggle" class="transport" type="button" aria-label="Livestream abspielen" aria-pressed="false">▶</button>
+    <div class="track-copy" aria-live="polite">
+      <span>NOW PLAYING</span>
+      <strong id="track-title">TRACK // SIGNAL BEREIT</strong>
+    </div>
+    <div class="player-controls">
+      <button id="mute-toggle" class="icon-button" type="button" aria-label="Ton stummschalten">🔊</button>
+      <label class="volume-label" for="volume"><span class="sr-only">Lautstärke</span><input id="volume" type="range" min="0" max="1" step="0.05" value="0.8"></label>
+    </div>
+    <audio id="radio-stream" preload="none" src="https://stream.doomsday.radio/live"></audio>
+  </main>
+  <script src="./radio-player.js?v=20260919-player1"></script>
+</body>
+</html>

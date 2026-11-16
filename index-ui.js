@@ -2,19 +2,11 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
 const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
 const hardwareThreads = navigator.hardwareConcurrency || 8;
 const deviceMemory = navigator.deviceMemory || 8;
-const autoLowPerformance = prefersReducedMotion
+const lowPerformanceMode = prefersReducedMotion
   || coarsePointer
   || hardwareThreads <= 4
   || deviceMemory <= 4
   || window.innerWidth < 900;
-
-let lowPerformanceMode = autoLowPerformance;
-try {
-  const savedQuality = localStorage.getItem('ddLowQuality');
-  if (savedQuality !== null) {
-    lowPerformanceMode = savedQuality === 'true';
-  }
-} catch (error) {}
 
 document.documentElement.classList.toggle('fx-lite', lowPerformanceMode);
 document.documentElement.classList.toggle('reduced-motion', prefersReducedMotion);
@@ -55,16 +47,10 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 (function(){
   const player=document.querySelector('.radio-player');
   const logo=document.querySelector('.hero-logo');
-  const logoStage=document.querySelector('.hero-logo-stage')||logo;
   const audio=document.getElementById('radio-stream');
   const toggle=document.getElementById('stream-toggle');
   const status=document.getElementById('stream-status');
   const volume=document.getElementById('stream-volume');
-  const volumeControl=document.getElementById('volume-control');
-  const volumeMuteToggle=document.getElementById('volume-mute-toggle');
-  const volumeIcon=document.getElementById('volume-icon');
-  const trackTitle=document.getElementById('player-track-title');
-  const batteryStatus=document.getElementById('battery-status');
   const equalizer=document.getElementById('equalizer');
   const ledMeter=document.querySelector('.led-meter-wrapper');
   const ledRow=document.getElementById('signal-led-row');
@@ -79,54 +65,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   document.querySelectorAll('[data-spectrum-band]').forEach(function(element){
     spectrumBands[element.dataset.spectrumBand]={fill:element.querySelector('em'),readout:element.querySelector('output'),label:element.querySelector('small')};
   });
-
-  function setTrackTitle(value){
-    if(trackTitle) trackTitle.textContent=value||'TRACK // SIGNAL BEREIT';
-  }
-
-  function updateTrackFromStatus(payload){
-    const sources=payload&&payload.icestats&&payload.icestats.source;
-    const source=Array.isArray(sources)?sources[0]:sources;
-    if(!source) return;
-    const title=String(source.title||'').trim();
-    const artist=String(source.artist||'').trim();
-    setTrackTitle(artist&&title?artist+' // '+title:title||artist||'TRACK // SIGNAL BEREIT');
-  }
-
-  async function refreshTrackTitle(){
-    try{
-      const response=await fetch('https://stream.doomsday.radio/status-json.xsl',{cache:'no-store'});
-      if(!response.ok) return;
-      updateTrackFromStatus(await response.json());
-    }catch(error){}
-  }
-
-  refreshTrackTitle();
-  window.setInterval(refreshTrackTitle,15000);
-
-  function setBatteryStatus(level,charging){
-    if(!batteryStatus) return;
-    const percent=Math.max(0,Math.min(100,Math.round(level*100)));
-    batteryStatus.textContent='PWR:'+String(percent).padStart(3,'0')+'%'+(charging?' +':'');
-  }
-
-  async function initBatteryStatus(){
-    if(!navigator.getBattery){
-      setBatteryStatus(1,false);
-      return;
-    }
-    try{
-      const battery=await navigator.getBattery();
-      const update=function(){setBatteryStatus(battery.level,battery.charging)};
-      update();
-      battery.addEventListener('levelchange',update);
-      battery.addEventListener('chargingchange',update);
-    }catch(error){
-      setBatteryStatus(1,false);
-    }
-  }
-
-  initBatteryStatus();
   const btnIcon=toggle?toggle.querySelector('.stream-icon'):null;
   const ledSegments=[];
   const bars=[];
@@ -136,7 +74,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const fxHeavyBass=((window.doomsdayFxConfig||{}).triggers||{}).heavyBass||{};
   const getFxHardBassOn=function(){
     const value=Number(fxHeavyBass.on);
-    return Number.isFinite(value)?value:0.8;
+    return Number.isFinite(value)?value:0.88;
   };
   const fxNoiseCfg=((window.doomsdayFxConfig||{}).triggers||{}).noise||{};
   const fxSyncCfg=((window.doomsdayFxConfig||{}).triggers||{}).sync||{};
@@ -145,13 +83,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   const fxGlitchCfg=((window.doomsdayFxConfig||{}).triggers||{}).glitch||{};
   const fxNoiseEnabled=fxNoiseCfg.enabled!==false;
   const fxGlowEnabled=fxGlowCfg.enabled!==false;
-
-  document.documentElement.style.setProperty('--fx-glitch-duration',Math.max(20,Number(fxGlitchCfg.durationMs)||170)+'ms');
-  document.documentElement.style.setProperty('--fx-glitch-top-opacity',Math.max(0,Math.min(1,Number(fxGlitchCfg.topOpacity)||0.78)));
-  document.documentElement.style.setProperty('--fx-glitch-bottom-opacity',Math.max(0,Math.min(1,Number(fxGlitchCfg.bottomOpacity)||0.70)));
-  document.documentElement.style.setProperty('--fx-glitch-fragment-duration',Math.max(20,Number(fxGlitchCfg.fragmentDurationMs)||260)+'ms');
-  document.documentElement.style.setProperty('--fx-glow-inner-radius',Math.max(0,Number(fxGlowCfg.innerRadius)||32)+'px');
-  document.documentElement.style.setProperty('--fx-glow-outer-radius',Math.max(0,Number(fxGlowCfg.outerRadius)||85)+'px');
   const cfgNum=function(group,key,fallback){
     const value=Number(group[key]);
     return Number.isFinite(value)?value:fallback;
@@ -214,186 +145,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   let visualizerFrame=0;
   let isPlaying=false;
   let hasStarted=false;
-  let isTuning=false;
-  let tuningStartTime=0;
-  let crossfadeStartTime=0;
-  let crossfadeDurationMs=1800;
-  let tuningTimer=0;
-  let carrierQuality=0;
-
-  function ensureAudioContext(){
-    if(!audioContext){
-      const AudioContextCtor=window.AudioContext||window.webkitAudioContext;
-      if(AudioContextCtor) audioContext=new AudioContextCtor();
-    }
-    return audioContext;
-  }
-
-  /* TV Static Snow Canvas Generator */
-  let snowCanvas=null;
-  let snowContext=null;
-  let snowAnimId=0;
-
-  function setupSnowCanvas(){
-    if(snowCanvas||!logoStage) return;
-    snowCanvas=document.createElement('canvas');
-    snowCanvas.className='tuning-snow-canvas';
-    snowCanvas.setAttribute('aria-hidden','true');
-    snowContext=snowCanvas.getContext('2d');
-    logoStage.appendChild(snowCanvas);
-    resizeSnowCanvas();
-    window.addEventListener('resize',resizeSnowCanvas,{passive:true});
-  }
-
-  function resizeSnowCanvas(){
-    if(!snowCanvas||!logoStage) return;
-    const rect=logoStage.getBoundingClientRect();
-    const w=Math.max(140,Math.round(rect.width||340));
-    const h=Math.max(140,Math.round(rect.height||280));
-    snowCanvas.width=Math.round(w*0.5);
-    snowCanvas.height=Math.round(h*0.5);
-  }
-
-  function renderSnowFrame(){
-    if(!isTuning||!snowContext||!snowCanvas){
-      if(snowAnimId){cancelAnimationFrame(snowAnimId);snowAnimId=0;}
-      return;
-    }
-    const w=snowCanvas.width;
-    const h=snowCanvas.height;
-    if(w>0&&h>0){
-      const imgData=snowContext.createImageData(w,h);
-      const buf=new Uint32Array(imgData.data.buffer);
-      const len=buf.length;
-      for(let i=0;i<len;i++){
-        const v=(Math.random()*255)|0;
-        buf[i]=(235<<24)|(v<<16)|(v<<8)|v;
-      }
-      if(Math.random()<0.45){
-        const bandY=(Math.random()*h)|0;
-        const bandH=((Math.random()*10)+2)|0;
-        const start=bandY*w;
-        const end=Math.min(len,(bandY+bandH)*w);
-        const inv=Math.random()<0.5?255:0;
-        for(let i=start;i<end;i++){
-          buf[i]=(255<<24)|(inv<<16)|(inv<<8)|inv;
-        }
-      }
-      snowContext.putImageData(imgData,0,0);
-    }
-    snowAnimId=requestAnimationFrame(renderSnowFrame);
-  }
-
-  function startSnowEffect(){
-    setupSnowCanvas();
-    if(!snowAnimId){
-      snowAnimId=requestAnimationFrame(renderSnowFrame);
-    }
-  }
-
-  /* Synthesized Analog Radio Tuning Sound (Web Audio API) */
-  let tuningSourceNodes=null;
-  let tuningMasterGain=null;
-
-  function startTuningSound(){
-    const ctx=ensureAudioContext();
-    if(!ctx) return;
-    if(ctx.state==='suspended') ctx.resume().catch(function(){});
-    stopTuningSound(0);
-
-    const sampleRate=ctx.sampleRate||44100;
-    const bufferDuration=3.0;
-    const bufferSize=Math.floor(sampleRate*bufferDuration);
-    const noiseBuffer=ctx.createBuffer(1,bufferSize,sampleRate);
-    const channel=noiseBuffer.getChannelData(0);
-    let lastNoise=0;
-    for(let i=0;i<bufferSize;i++){
-      const white=Math.random()*2-1;
-      const crackle=Math.random()<0.003?(Math.random()*2-1)*2.2:0;
-      lastNoise=(lastNoise*0.88)+(white*0.12)+crackle;
-      channel[i]=Math.max(-1,Math.min(1,lastNoise));
-    }
-
-    const noiseSource=ctx.createBufferSource();
-    noiseSource.buffer=noiseBuffer;
-    noiseSource.loop=true;
-
-    // Soft bandpass sweep simulating radio dial search
-    const bandpass=ctx.createBiquadFilter();
-    bandpass.type='bandpass';
-    bandpass.Q.value=2.8;
-    const now=ctx.currentTime;
-    bandpass.frequency.setValueAtTime(1200,now);
-    bandpass.frequency.linearRampToValueAtTime(700,now+0.4);
-    bandpass.frequency.linearRampToValueAtTime(1600,now+1.1);
-    bandpass.frequency.linearRampToValueAtTime(950,now+2.0);
-
-    // Subtle heterodyne carrier whistle (analog tuner locking in)
-    const carrierOsc=ctx.createOscillator();
-    carrierOsc.type='sine';
-    carrierOsc.frequency.setValueAtTime(1600,now);
-    carrierOsc.frequency.exponentialRampToValueAtTime(320,now+0.6);
-    carrierOsc.frequency.linearRampToValueAtTime(110,now+1.6);
-
-    const carrierGain=ctx.createGain();
-    carrierGain.gain.setValueAtTime(0.022,now);
-    carrierGain.gain.exponentialRampToValueAtTime(0.0001,now+1.6);
-    carrierOsc.connect(carrierGain);
-
-    tuningMasterGain=ctx.createGain();
-    const targetVol=muteDebugAudio?0:Number(volume.value);
-    tuningMasterGain.gain.setValueAtTime(0.0001,now);
-    tuningMasterGain.gain.linearRampToValueAtTime(Math.min(0.12,Math.max(0.03,targetVol*0.18)),now+0.08);
-
-    noiseSource.connect(bandpass);
-    bandpass.connect(tuningMasterGain);
-    carrierGain.connect(tuningMasterGain);
-    tuningMasterGain.connect(ctx.destination);
-
-    noiseSource.start(now);
-    carrierOsc.start(now);
-
-    tuningSourceNodes={
-      noise:noiseSource,
-      osc:carrierOsc,
-      gain:tuningMasterGain
-    };
-  }
-
-  function stopTuningSound(fadeDuration){
-    if(!tuningSourceNodes||!audioContext) return;
-    const nodes=tuningSourceNodes;
-    tuningSourceNodes=null;
-    const now=audioContext.currentTime;
-    const dur=Math.max(0.04,fadeDuration||0.04);
-    try{
-      nodes.gain.gain.cancelScheduledValues(now);
-      nodes.gain.gain.setValueAtTime(nodes.gain.gain.value,now);
-      nodes.gain.gain.linearRampToValueAtTime(0.0001,now+dur);
-      setTimeout(function(){
-        try{nodes.noise.stop();nodes.noise.disconnect();}catch(e){}
-        try{nodes.osc.stop();nodes.osc.disconnect();}catch(e){}
-        try{nodes.gain.disconnect();}catch(e){}
-      },(dur+0.1)*1000);
-    }catch(e){}
-  }
-
-  const setTuning=function(active,delayMs){
-    if(tuningTimer){clearTimeout(tuningTimer);tuningTimer=0}
-    if(!active && delayMs && delayMs>0){
-      tuningTimer=window.setTimeout(function(){
-        tuningTimer=0;
-        setTuning(false);
-      },delayMs);
-      return;
-    }
-    isTuning=active;
-    document.documentElement.classList.toggle('radio-tuning',active);
-    if(logoStage) logoStage.classList.toggle('is-tuning',active);
-    if(active){
-      startSnowEffect();
-    }
-  };
   let silentFrames=0;
   let analyserBroken=false;
   let vizMode='off';
@@ -541,8 +292,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   for(let index=0;index<32;index++){
     const bar=document.createElement('span');
     bar.className='equalizer-bar is-neutral';
-    const symDist=Math.abs(index-15.5);
-    bar.style.setProperty('--idle-height',(0.06+Math.cos(symDist*0.22)*0.07+(index%2)*0.02).toFixed(2));
+    bar.style.setProperty('--idle-height',(0.08+Math.sin((index+2)*0.55)*0.08+index%3*0.025).toFixed(2));
     equalizer.appendChild(bar);
     bars.push(bar);
   }
@@ -554,8 +304,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   function setupAnalyser(){
     if(analyser) return;
-    ensureAudioContext();
-    if(!audioContext) return;
+    const AudioContext=window.AudioContext||window.webkitAudioContext;
+    if(!AudioContext) return;
+    audioContext=new AudioContext();
     analyser=audioContext.createAnalyser();
     analyser.fftSize=1024;
     analyser.minDecibels=-100;
@@ -564,7 +315,7 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     frequencyData=new Uint8Array(analyser.frequencyBinCount);
     floatFrequencyData=new Float32Array(analyser.frequencyBinCount);
     const source=audioContext.createMediaElementSource(audio);
-    if(!outputGain) outputGain=audioContext.createGain();
+    outputGain=audioContext.createGain();
     outputGain.gain.value=muteDebugAudio?0:Number(volume.value);
     source.connect(analyser);
     source.connect(outputGain).connect(audioContext.destination);
@@ -632,14 +383,11 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     if(!spectrum||!spectrum.length) return;
     const barCount=bars.length;
     const sourceLength=spectrum.length;
-    const center=(barCount-1)/2;
     bars.forEach(function(bar,index){
-      const distFromCenter=Math.abs(index-center);
-      const normalizedDist=distFromCenter/(barCount/2);
-      const sourcePosition=Math.max(0,Math.min(sourceLength-1,normalizedDist*(sourceLength-1)));
-      const leftIndex=Math.floor(sourcePosition);
+      const sourcePosition=(index+0.5)*sourceLength/barCount-0.5;
+      const leftIndex=Math.max(0,Math.floor(sourcePosition));
       const rightIndex=Math.min(sourceLength-1,leftIndex+1);
-      const fraction=sourcePosition-leftIndex;
+      const fraction=Math.max(0,sourcePosition-leftIndex);
       const left=Number(spectrum[leftIndex])||0;
       const right=Number(spectrum[rightIndex])||0;
       const level=Math.max(0.012,Math.min(1,left+(right-left)*fraction));
@@ -744,71 +492,52 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       return total/(to-from);
     };
     const rawLevel=milli(payload.level);
+    /* Band RMS values are absolutely normalized and the top bands are almost
+       always near-empty on our material, so "vs the band average" still reads
+       bass-dominant during loud midrange songs. Measure each range against
+       the strongest OTHER range instead — bass is only "dominant" when it
+       beats the mids and treble outright. Absolute floors keep quiet
+       passages at zero. */
     const clamp01=function(value){return Math.max(0,Math.min(1,value))};
     const rawBass=avg(1,3);
     const rawMid=avg(2,6);
     const rawTreble=avg(6,8);
-    const bass=audioAnalysis.normalizeBandLevel(rawBass,analysisBand.bass);
-    const mid=audioAnalysis.normalizeBandLevel(rawMid,analysisBand.mid);
-    const treble=audioAnalysis.normalizeBandLevel(rawTreble,analysisBand.treble);
+    const bass=clamp01((rawBass-0.10)/0.45);
+    const mid=clamp01((rawMid-0.08)/0.38);
+    const treble=clamp01((rawTreble-0.02)/0.12);
     wsRawLevel=rawLevel;
-    const sub=audioAnalysis.normalizeBandLevel(milli(bands[0]),analysisBand.sub);
-    lastSubLevel=sub;
-    const fastSub=milli(payload.sub_fast);
-    const subRise=Math.max(0,sub-localSubFast);
-    localSubFast+=(sub-localSubFast)*0.28;
     /* Transient: rise above a FAST follower of the level, so it fires on
      * attacks and decays smoothly instead of pegging at 100%. */
-    const transient=Math.max(0,Math.min(1,Math.max((rawLevel-wsFastLevel)/0.08,subRise/0.12)));
+    const transient=Math.max(0,Math.min(1,(rawLevel-wsFastLevel)/0.08));
     wsFastLevel+=(rawLevel-wsFastLevel)*0.5;
-
-    const now=performance.now();
-    const kickRiseFloor=Math.max(0,Math.min(1,cfgNum(fxBassCoupledCfg,'kickRiseFloor',0.01)));
-    const kickRiseRange=Math.max(0.001,Math.min(1-kickRiseFloor,cfgNum(fxBassCoupledCfg,'kickRiseRange',0.241)));
-    const kickStrengthCalc=Math.max(0,Math.min(1,(subRise-kickRiseFloor)/kickRiseRange));
-    const kickRearm=cfgNum(fxBassCoupledCfg,'kickRearm',0);
-    const kickMinimum=cfgNum(fxBassCoupledCfg,'kickSubMin',0.75);
-    const kickThreshold=cfgNum(fxBassCoupledCfg,'kickRiseOn',0.35);
-    const kickCooldown=cfgNum(fxBassCoupledCfg,'kickCooldownMs',500);
-    if((kickRearm<=0 && sub<=localSubFast)||(kickRearm>0 && sub<kickRearm)) localKickArmed=true;
-    if(localKickArmed&&now>=localKickCooldownUntil&&sub>=kickMinimum&&kickStrengthCalc>=kickThreshold){
-      localKickArmed=false;
-      localKickCooldownUntil=now+kickCooldown;
-      localKickSequence+=1;
-      signal.kickSequence=localKickSequence;
-      signal.bassOnset=1;
-    }
-
-    const kick=payload.kick&&typeof payload.kick==='object'?payload.kick:null;
-    const kickSequence=kick&&Number.isFinite(Number(kick.seq))?Number(kick.seq):null;
-    const kickStrength=kick&&Number.isFinite(Number(kick.strength))?clamp01(Number(kick.strength)):0;
-    const hasNewKick=kickSequence!==null&&lastKickSequence!==null&&kickSequence>lastKickSequence;
-    if(kickSequence!==null) lastKickSequence=kickSequence;
-    if(hasNewKick){
-      localKickSequence=Math.max(localKickSequence+1,kickSequence);
-      signal.kickSequence=localKickSequence;
-      signal.bassOnset=Math.max(signal.bassOnset||0,kickStrength||1);
-    }
-    lastKickDebug={sub:sub,fast:fastSub||localSubFast,seq:localKickSequence||0,strength:signal.bassOnset||0};
-
     /* WS bass values are RMS-based and top out around 60% of the 0..1 range,
        so an absolute 0.88 threshold would never fire. Track a slow baseline
        and measure bass as a spike ratio against it: "hardest hit of the
        song". The absolute floor keeps quiet passages from glitching. */
     wsBassBaseline+=(bass-wsBassBaseline)*0.008;
+    const sub=audioAnalysis.normalizeBandLevel(milli(bands[0]),analysisBand.sub);
+    lastSubLevel=sub;
+    const fastSub=milli(payload.sub_fast);
+    const kick=payload.kick&&typeof payload.kick==='object'?payload.kick:null;
+    const kickSequence=kick&&Number.isFinite(Number(kick.seq))?Number(kick.seq):null;
+    const kickStrength=kick&&Number.isFinite(Number(kick.strength))?clamp01(Number(kick.strength)):0;
+    const hasNewKick=kickSequence!==null&&lastKickSequence!==null&&kickSequence>lastKickSequence;
+    const hasQualifiedKick=hasNewKick;
+    if(kickSequence!==null) lastKickSequence=kickSequence;
+    lastKickDebug={sub:sub,fast:fastSub,seq:kickSequence||0,strength:hasQualifiedKick?kickStrength:0};
     const bassSpikeRatio=bass/Math.max(0.15,wsBassBaseline*1.7);
     signal.bass+=(bass-signal.bass)*0.15;
     signal.mid+=(mid-signal.mid)*0.10;
     signal.treble+=(treble-signal.treble)*0.10;
     signal.level+=(rawLevel-signal.level)*0.20;
     signal.sub+=(sub-signal.sub)*0.25;
-    signal.lowBass=sub;
     signal.transient+=(transient-signal.transient)*0.4;
     signal.hardBass=Math.max(0,Math.min(1,(bassSpikeRatio-1.2)/0.8));
-    signal.hardBassConfirmed=(signal.hardBass>=getFxHardBassOn()&&bass>=0.3)||bass>=getFxHardBassOn();
+    signal.hardBassConfirmed=signal.hardBass>=getFxHardBassOn()&&bass>=0.3;
      /* The server retains the latest sequenced event in every payload, so the
        delayed queue may coalesce packets without losing a kick attack. */
-    signal.bassOnset=Number.isFinite(Number(signal.bassOnset))?Number(signal.bassOnset)*0.72:0;
+    signal.bassOnset=Number.isFinite(Number(signal.bassOnset))?Number(signal.bassOnset)*0.62:0;
+     if(hasQualifiedKick) signal.bassOnset=Math.max(signal.bassOnset,kickStrength);
     signal.playing=true;
     if(spectrumSource) spectrumSource.textContent='LEVELS / SERVER';
     const displaySpectrum=[];
@@ -986,9 +715,9 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     const b=Math.round((4*wOrange + 171*wGreen + 228*wWhite)/totalWeight);
 
     const lvl=Math.max(0,Math.min(1,signal.level));
-    const glowMid=(signal.mid||0)*cfgNum(fxGlowCfg,'midWeight',1.85);
-    const glowTreble=(signal.treble||0)*cfgNum(fxGlowCfg,'trebleWeight',0.2);
-    const glowSpectrum=Math.max(0,Math.min(1,(glowMid+glowTreble-cfgNum(fxGlowCfg,'floor',0.49))/cfgNum(fxGlowCfg,'range',1)));
+    const glowMid=(signal.mid||0)*cfgNum(fxGlowCfg,'midWeight',0.65);
+    const glowTreble=(signal.treble||0)*cfgNum(fxGlowCfg,'trebleWeight',0.80);
+    const glowSpectrum=Math.max(0,Math.min(1,(glowMid+glowTreble-cfgNum(fxGlowCfg,'floor',0.10))/cfgNum(fxGlowCfg,'range',0.70)));
       const glowTarget=fxGlowEnabled&&signal.playing&&signal.level>=0.06
         ? glowSpectrum
         : 0;
@@ -996,15 +725,15 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       const nextGlow=previousGlow+(glowTarget-previousGlow)*0.06;
       const glowActivity=Math.abs(nextGlow-previousGlow)<0.008?previousGlow:nextGlow;
       document.documentElement.dataset.glowActivity=glowActivity.toFixed(4);
-    const innerAlpha=(glowActivity*cfgNum(fxGlowCfg,'innerAlpha',1)).toFixed(2);
-    const outerAlpha=(glowActivity*cfgNum(fxGlowCfg,'outerAlpha',0.37)).toFixed(2);
-    const innerR=(glowActivity*cfgNum(fxGlowCfg,'innerRadius',32)).toFixed(1)+'px';
-    const outerR=(glowActivity*cfgNum(fxGlowCfg,'outerRadius',85)).toFixed(1)+'px';
+    const innerAlpha=(glowActivity*cfgNum(fxGlowCfg,'innerAlpha',0.50)).toFixed(2);
+    const outerAlpha=(glowActivity*cfgNum(fxGlowCfg,'outerAlpha',0.22)).toFixed(2);
+    const innerR=(glowActivity*cfgNum(fxGlowCfg,'innerRadius',15)).toFixed(1)+'px';
+    const outerR=(glowActivity*cfgNum(fxGlowCfg,'outerRadius',36)).toFixed(1)+'px';
 
     const innerColor='rgba('+r+','+g+','+b+','+innerAlpha+')';
     const outerColor='rgba('+r+','+g+','+b+','+outerAlpha+')';
 
-    if(logo && !isTuning){
+    if(logo){
       logo.style.filter='drop-shadow(0 0 '+innerR+' '+innerColor+') drop-shadow(0 0 '+outerR+' '+outerColor+')';
     }
 
@@ -1015,66 +744,33 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     document.documentElement.style.setProperty('--audio-bass',signal.bass.toFixed(3));
     document.documentElement.style.setProperty('--audio-mid',signal.mid.toFixed(3));
     document.documentElement.style.setProperty('--audio-treble',signal.treble.toFixed(3));
-    /* Keep the full-screen noise layer static unless tuning. */
+    /* Keep the full-screen noise layer static. Treble spikes use their own
+     * localized fluid effect and must not flash the entire background. */
     if(noiseLayer){
-      const currentNoise = isTuning ? 0.14 : noiseBaseline;
-      noiseLayer.style.opacity=currentNoise.toFixed(3);
+      noiseLayer.style.opacity=noiseBaseline.toFixed(3);
     }
     const bassPercent=Math.round(Math.max(0,Math.min(1,signal.bass))*100);
     bassDebugReadout.textContent=String(bassPercent).padStart(2,'0')+'%';
     bassDebugFill.style.width=bassPercent+'%';
     const hardBassPercent=Math.round(Math.max(0,Math.min(1,signal.hardBass||0))*100);
     bassDebugHardReadout.textContent=String(hardBassPercent).padStart(2,'0')+'% / '+Math.round(getFxHardBassOn()*100)+'%';
-
-    /* S-Meter / Carrier Signal Reception Quality (Proposal A: separates Audio-Spectrum from Carrier Quality) */
-    let targetCarrier = 0;
-    const isTransitioning = isTuning || (crossfadeStartTime > 0 && now < crossfadeStartTime + crossfadeDurationMs);
-
-    if (isTransitioning) {
-      if (crossfadeStartTime === 0) {
-        const jitter = (Math.random() - 0.5) * 0.16 + Math.sin(now * 0.022) * 0.12;
-        targetCarrier = Math.max(0.14, Math.min(0.42, 0.28 + jitter));
-        carrierQuality += (targetCarrier - carrierQuality) * 0.35;
-      } else {
-        const progress = Math.max(0, Math.min(1, (now - crossfadeStartTime) / crossfadeDurationMs));
-        const smoothProgress = 1 - Math.pow(1 - progress, 2);
-        const residualJitter = (Math.random() - 0.5) * (0.10 * (1 - progress)) + Math.sin(now * 0.015) * (0.06 * (1 - progress));
-        targetCarrier = 0.30 + smoothProgress * (0.935 - 0.30) + residualJitter;
-        carrierQuality += (targetCarrier - carrierQuality) * 0.22;
-      }
-    } else if (signal.playing || isPlaying) {
-      const rfDrift = Math.sin(now * 0.0007) * 0.022 + Math.cos(now * 0.0019) * 0.012 + (Math.random() - 0.5) * 0.008;
-      targetCarrier = Math.max(0.88, Math.min(0.97, 0.935 + rfDrift));
-      carrierQuality += (targetCarrier - carrierQuality) * 0.08;
-    } else {
-      carrierQuality += (0 - carrierQuality) * 0.18;
-      if (carrierQuality < 0.01) carrierQuality = 0;
-    }
-
-    const carrierPercent = Math.round(carrierQuality * 100);
-    const litCount = Math.round(carrierQuality * ledSegments.length);
-    const flickerSeed = now * 0.007;
-    const instability = isTransitioning ? (crossfadeStartTime > 0 ? Math.max(0, 1 - (now - crossfadeStartTime) / crossfadeDurationMs) : 1) : 0;
-
+    const litCount=Math.round(Math.max(0,Math.min(1,signal.level))*ledSegments.length);
+    const flickerSeed=performance.now()*0.007;
     ledSegments.forEach(function(segment,index){
       const ratio=index/(ledSegments.length-1);
-      const edge=Math.abs(index-(litCount-1));
       const wobble=Math.sin(flickerSeed+index*0.91)*0.5
         +Math.sin(flickerSeed*1.73+index*1.87)*0.35
         +(Math.random()-0.5)*0.45;
-      const spark=instability > 0.08
-        ? (index>=litCount && index<=litCount+2 && wobble>(0.65 - instability * 0.38))
-        : (index>=litCount && index<=litCount+1 && wobble>0.65);
-      const dropout=instability > 0.08
-        ? (index<litCount && edge<=3 && wobble<(-0.85 + instability * 0.45))
-        : (index<litCount && edge<=1 && wobble<-0.85);
+      const edge=Math.abs(index-(litCount-1));
+      const spark=index>=litCount && index<=litCount+1 && wobble>0.48;
+      const dropout=index<litCount && edge<=2 && wobble<-0.62;
       const isActive=(index<litCount && !dropout)||spark;
       segment.className='led-segment';
       if(isActive) segment.classList.add('active',ratio>0.75?'high':ratio>0.45?'mid':'low');
     });
-    ledReadout.value=String(carrierPercent).padStart(2,'0')+'%';
-    ledReadout.textContent=String(carrierPercent).padStart(2,'0')+'%';
-    ledMeter.setAttribute('aria-valuenow',String(carrierPercent));
+    ledReadout.value=String(percent).padStart(2,'0')+'%';
+    ledReadout.textContent=String(percent).padStart(2,'0')+'%';
+    ledMeter.setAttribute('aria-valuenow',String(percent));
   }
 
   function updateAmbientMeter(){
@@ -1108,27 +804,13 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   async function playStream(){
     hasStarted=true;
-    setTuning(true);
-    tuningStartTime=performance.now();
-    crossfadeStartTime=0;
-    startTuningSound();
-    status.textContent='SUCHE SIGNAL...';
+    status.textContent='VERBINDE...';
     setActive(true);
     toggle.disabled=true;
-    window.setTimeout(function(){
-      if(isTuning && status) status.textContent='SYNCHRONISIERE...';
-    },350);
     try{
       if(useServerLevels) ensureWebSocketViz();
       if(canAnalyzeAudio && !analyserBroken){
-        try{
-          setupAnalyser();
-          if(outputGain&&audioContext){
-            const now=audioContext.currentTime;
-            outputGain.gain.cancelScheduledValues(now);
-            outputGain.gain.setValueAtTime(0.0001,now);
-          }
-        }catch(error){
+        try{setupAnalyser()}catch(error){
           analyser=null;frequencyData=null;
           vizLog('setup FAILED: '+(error&&error.message?error.message:String(error)));
         }
@@ -1140,9 +822,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
       await audio.play();
       if(analyser && !visualizerFrame) visualizerFrame=requestAnimationFrame(drawEqualizer);
     }catch(error){
-      setTuning(false);
-      crossfadeStartTime=0;
-      stopTuningSound(0.2);
       if(forceServerLevelsDebug&&wsSocket){
         status.textContent='SERVER-LEVELS AKTIV';
         setActive(true);
@@ -1161,133 +840,16 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
     else audio.pause();
   });
 
-  let previousVolume=0.8;
-
-  function updateVolumeIcon(vol){
-    if(!volumeIcon) return;
-    if(vol<=0){
-      volumeIcon.textContent='🔇';
-      if(volumeMuteToggle) volumeMuteToggle.setAttribute('aria-label','Ton einschalten');
-    }else if(vol<0.5){
-      volumeIcon.textContent='🔉';
-      if(volumeMuteToggle) volumeMuteToggle.setAttribute('aria-label','Lautstärke stummschalten');
-    }else{
-      volumeIcon.textContent='🔊';
-      if(volumeMuteToggle) volumeMuteToggle.setAttribute('aria-label','Lautstärke stummschalten');
-    }
-  }
-
-  function applyVolume(val){
-    const targetVol=muteDebugAudio?0:Number(val);
-    updateVolumeIcon(targetVol);
-    if(outputGain&&audioContext){
-      if(!isTuning){
-        outputGain.gain.cancelScheduledValues(audioContext.currentTime);
-        outputGain.gain.setValueAtTime(targetVol,audioContext.currentTime);
-      }
-    }else{
-      if(!isTuning){
-        audio.volume=targetVol;
-      }
-    }
-    if(tuningMasterGain&&audioContext){
-      tuningMasterGain.gain.cancelScheduledValues(audioContext.currentTime);
-      tuningMasterGain.gain.setValueAtTime(Math.min(0.12,Math.max(0.03,targetVol*0.18)),audioContext.currentTime);
-    }
-  }
-
-  if(volume){
-    updateVolumeIcon(Number(volume.value));
-    volume.addEventListener('input',function(){
-      const val=Number(volume.value);
-      if(val>0) previousVolume=val;
-      applyVolume(val);
-    });
-  }
-
-  if(volumeMuteToggle){
-    volumeMuteToggle.addEventListener('click',function(e){
-      if(coarsePointer&&volumeControl&&!volumeControl.classList.contains('is-open')){
-        volumeControl.classList.add('is-open');
-        return;
-      }
-      const currentVol=volume?Number(volume.value):0.8;
-      if(currentVol>0){
-        previousVolume=currentVol;
-        if(volume) volume.value='0';
-        applyVolume(0);
-      }else{
-        const restoreVol=previousVolume||0.8;
-        if(volume) volume.value=String(restoreVol);
-        applyVolume(restoreVol);
-      }
-    });
-  }
-
-  if(volumeControl){
-    document.addEventListener('click',function(event){
-      if(!volumeControl.contains(event.target)){
-        volumeControl.classList.remove('is-open');
-      }
-    });
-  }
-
-  const qualityToggle=document.getElementById('quality-toggle');
-  if(qualityToggle){
-    qualityToggle.checked=document.documentElement.classList.contains('fx-lite');
-    qualityToggle.addEventListener('change',function(){
-      const isLite=qualityToggle.checked;
-      lowPerformanceMode=isLite;
-      document.documentElement.classList.toggle('fx-lite',isLite);
-      try{localStorage.setItem('ddLowQuality',String(isLite))}catch(error){}
-      window.dispatchEvent(new CustomEvent('doomsday:quality-change',{detail:{lowPerformanceMode:isLite}}));
-    });
-  }
-
-  window.addEventListener('doomsday:quality-change',function(event){
-    const isLite=Boolean(event.detail&&event.detail.lowPerformanceMode);
-    if(noiseLayer&&fxNoiseEnabled){
-      const baseline=isLite?0.028:0.02;
-      noiseLayer.style.opacity=baseline.toFixed(3);
-    }
+  volume.addEventListener('input',function(){
+    if(outputGain) outputGain.gain.value=muteDebugAudio?0:Number(volume.value);
+    else audio.volume=muteDebugAudio?0:Number(volume.value);
   });
 
   audio.addEventListener('playing',function(){
     hasStarted=true;
     isPlaying=true;
-    const fadeDuration=2.4;
-    crossfadeDurationMs=fadeDuration*1000;
-
-    function applyStreamCrossfade(){
-      crossfadeStartTime=performance.now();
-      stopTuningSound(fadeDuration);
-      if(outputGain&&audioContext){
-        const now=audioContext.currentTime;
-        const targetVol=muteDebugAudio?0:Number(volume.value);
-        outputGain.gain.cancelScheduledValues(now);
-        outputGain.gain.setValueAtTime(0.0001,now);
-        outputGain.gain.linearRampToValueAtTime(targetVol,now+fadeDuration);
-      }else if(!canAnalyzeAudio){
-        const targetVol=muteDebugAudio?0:Number(volume.value);
-        const startTime=performance.now();
-        const startVol=0.005;
-        audio.volume=startVol;
-        const volTimer=setInterval(function(){
-          const p=(performance.now()-startTime)/(fadeDuration*1000);
-          if(p>=1||!isPlaying){
-            if(isPlaying) audio.volume=targetVol;
-            clearInterval(volTimer);
-          }else{
-            audio.volume=startVol+(targetVol-startVol)*Math.pow(p,1.3);
-          }
-        },30);
-      }
-      setTuning(false,fadeDuration*1000);
-      status.textContent='ON AIR';
-    }
-
-    applyStreamCrossfade();
     setActive(true);
+    status.textContent='ON AIR';
     /* iOS Safari keeps the AudioContext suspended even after a user gesture;
        resume it whenever playback actually starts. */
     if(audioContext && audioContext.state==='suspended'){audioContext.resume().catch(function(){})}
@@ -1295,9 +857,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
   });
 
   audio.addEventListener('pause',function(){
-    setTuning(false);
-    crossfadeStartTime=0;
-    stopTuningSound(0.15);
     if(forceServerLevelsDebug&&wsSocket){
       isPlaying=true;
       window.doomsdayAudioSignal.playing=true;
@@ -1316,8 +875,6 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 
   audio.addEventListener('waiting',function(){status.textContent='PUFFERE SIGNAL...'});
   audio.addEventListener('error',function(){
-    setTuning(false);
-    stopTuningSound(0.15);
     if(forceServerLevelsDebug&&wsSocket){
       isPlaying=true;
       window.doomsdayAudioSignal.playing=true;
@@ -1380,42 +937,28 @@ document.documentElement.style.setProperty('--audio-glow-outer-r','0px');
 /* floating dust particles */
 (function(){
   const c=document.getElementById('dust');
-  if(!c) return;
   const ctx=c.getContext('2d');
-  if(!ctx) return;
   let W,H;
   let rafId=0;
   let lastFrame=0;
-  let isLite=document.documentElement.classList.contains('fx-lite');
-  let frameInterval=isLite ? 1000/18 : 1000/30;
-  let particleCount=isLite ? 36 : 72;
+  const frameInterval=lowPerformanceMode ? 1000/18 : 1000/30;
+  const particleCount=lowPerformanceMode ? 36 : 72;
 
   function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
   resize();
   addEventListener('resize',resize);
 
   const particles=[];
-  function initParticles(){
-    particles.length=0;
-    for(let i=0;i<particleCount;i++){
-      particles.push({
-        x:Math.random()*innerWidth,
-        y:Math.random()*innerHeight,
-        r:Math.random()*1.8+0.3,
-        dx:(Math.random()-0.5)*(isLite ? 0.18 : 0.25),
-        dy:Math.random()*(isLite ? 0.11 : 0.15)+0.05,
-        o:Math.random()*0.35+0.05
-      });
-    }
+  for(let i=0;i<particleCount;i++){
+    particles.push({
+      x:Math.random()*innerWidth,
+      y:Math.random()*innerHeight,
+      r:Math.random()*1.8+0.3,
+      dx:(Math.random()-0.5)*(lowPerformanceMode ? 0.18 : 0.25),
+      dy:Math.random()*(lowPerformanceMode ? 0.11 : 0.15)+0.05,
+      o:Math.random()*0.35+0.05
+    });
   }
-  initParticles();
-
-  window.addEventListener('doomsday:quality-change',function(event){
-    isLite=Boolean(event.detail&&event.detail.lowPerformanceMode);
-    frameInterval=isLite ? 1000/18 : 1000/30;
-    particleCount=isLite ? 36 : 72;
-    initParticles();
-  });
 
   function draw(now){
     if(document.hidden){
